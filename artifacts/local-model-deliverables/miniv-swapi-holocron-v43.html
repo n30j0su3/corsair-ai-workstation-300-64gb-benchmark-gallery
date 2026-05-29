@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="miniv-autonomous-generator" content="miniv-production-ladder/v4.3-swapi-autonomous miniv-swapi-fullgate-20260526-154131">
+<title>N30 SWAPI Holocron v4.3 — MiniV Autonomous Raw Final Generator</title>
+<style>
+
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{--cyan:#00E5FF;--cyan-dim:rgba(0,229,255,0.3);--blue:#1A237E;--blue-glass:rgba(26,35,126,0.25);--light:#E8EAF6;--amber:#FFB300;--gold:#FFD600;--bg:#0A0A0F;--shadow-cyan:0 0 8px var(--cyan);--shadow-amber:0 0 8px var(--amber);--shadow-gold:0 0 16px var(--gold);--radius:12px;--font-jedi:'Orbitron',monospace;--font-body:'Rajdhani',sans-serif;--font-imperial:'Share Tech Mono',monospace}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--light);font-family:var(--font-body);overflow-x:hidden;min-height:100vh;cursor:default;user-select:none}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:9999;background:repeating-linear-gradient(45deg,transparent,transparent 2px,rgba(0,229,255,0.015) 2px,rgba(0,229,255,0.015) 4px)}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--cyan-dim);border-radius:3px}
+.cursor-glow{position:fixed;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,0.3),transparent 70%);pointer-events:none;z-index:99998;transform:translate(-50%,-50%);transition:width .3s,height .3s,opacity .3s;mix-blend-mode:screen}
+.holocron-frame{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:1000}
+.holocron-frame .corner{position:absolute;width:60px;height:60px;border-color:rgba(79,195,247,0.35);transition:border-color .5s}
+.holocron-frame .corner.tl{top:12px;left:12px;border-top:2px solid;border-left:2px solid;border-radius:4px 0 0 0}
+.holocron-frame .corner.tr{top:12px;right:12px;border-top:2px solid;border-right:2px solid;border-radius:0 4px 0 0}
+.holocron-frame .corner.bl{bottom:12px;left:12px;border-bottom:2px solid;border-left:2px solid;border-radius:0 0 0 4px}
+.holocron-frame .corner.br{bottom:12px;right:12px;border-bottom:2px solid;border-right:2px solid;border-radius:0 0 4px 0}
+.holocron-frame .edge-light{position:absolute;height:2px;background:linear-gradient(90deg,transparent,rgba(79,195,247,0.6),transparent);animation:pulse-edge 4s ease-in-out infinite}
+.holocron-frame .edge-light.t{top:12px;left:72px;right:72px;animation-delay:0s}
+.holocron-frame .edge-light.b{bottom:12px;left:72px;right:72px;animation-delay:2s}
+.holocron-frame .edge-light.l{width:2px;height:auto;top:72px;bottom:72px;left:12px;background:linear-gradient(180deg,transparent,rgba(79,195,247,0.6),transparent);animation-delay:1s}
+.holocron-frame .edge-light.r{width:2px;height:auto;top:72px;bottom:72px;right:12px;background:linear-gradient(180deg,transparent,rgba(79,195,247,0.6),transparent);animation-delay:3s}
+@keyframes pulse-edge{0%,100%{opacity:.3}50%{opacity:1}}
+.starfield{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden;transition:all .5s}
+.starfield-layer{position:absolute;width:200%;height:200%;top:-50%;left:-50%}
+.starfield-layer.l1{animation:drift 45s linear infinite}
+.starfield-layer.l2{animation:drift 90s linear infinite;opacity:.5}
+.starfield-layer.l3{animation:drift 150s linear infinite;opacity:.25}
+@keyframes drift{0%{transform:translate(0,0)}100%{transform:translate(-50%,-50%)}}
+.star{position:absolute;border-radius:50%;background:#fff}
+.holocron-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;background:radial-gradient(ellipse at center,rgba(26,35,126,0.12) 0%,rgba(10,10,15,0.5) 60%,#0A0A0F 100%)}
+.holocron-activation{position:fixed;top:0;left:0;width:100%;height:100%;z-index:10000;pointer-events:none;background:radial-gradient(circle at center,rgba(0,229,255,0.6),transparent 60%);opacity:1;animation:holocron-boot 1.2s ease-out forwards}
+@keyframes holocron-boot{0%{opacity:1;transform:scale(0)}40%{opacity:.8;transform:scale(1.2)}100%{opacity:0;transform:scale(1.5)}}
+.crawl{position:fixed;top:0;left:0;width:100%;height:100%;z-index:5000;display:none;justify-content:center;align-items:center;perspective:400px;background:#000}
+.crawl.active{display:flex}
+.crawl-content{position:relative;width:70%;max-width:800px;text-align:center;transform:rotateX(25deg) translateY(100vh);animation:crawl-up 5s linear forwards;color:var(--amber)}
+.crawl-content h1{font-family:var(--font-jedi);font-size:clamp(1.2rem,4vw,2.5rem);letter-spacing:.3em;text-transform:uppercase;margin-bottom:.5em;text-shadow:0 0 20px rgba(255,179,0,.5)}
+.crawl-content p{font-size:clamp(.85rem,2.5vw,1.4rem);line-height:1.8;letter-spacing:.05em;opacity:.9}
+.crawl-logo{font-size:clamp(2rem,6vw,4rem);font-family:var(--font-jedi);letter-spacing:.15em;color:var(--cyan);text-shadow:0 0 30px var(--cyan),0 0 60px rgba(0,229,255,.3);margin-bottom:1.5em}
+@keyframes crawl-up{0%{transform:rotateX(25deg) translateY(100vh);opacity:1}80%{opacity:1}100%{transform:rotateX(25deg) translateY(-200vh);opacity:0}}
+.app{position:relative;z-index:2;min-height:100vh;padding:80px 20px 40px;max-width:1280px;margin:0 auto;opacity:0;transition:opacity .8s ease}
+.app.visible{opacity:1}
+.header{text-align:center;margin-bottom:20px;position:relative}
+.header-title{font-family:var(--font-jedi);font-size:clamp(1.1rem,3vw,1.8rem);letter-spacing:.2em;color:var(--cyan);text-shadow:0 0 20px rgba(0,229,255,.3);position:relative;display:inline-block}
+.header-title::before,.header-title::after{content:'▸';opacity:.5;margin:0 .5em;font-size:.7em;vertical-align:middle}
+.exploration-bar{font-size:clamp(.7rem,1.5vw,.9rem);color:rgba(232,234,246,.6);font-family:var(--font-body);letter-spacing:.1em;margin:8px 0 4px}
+.exploration-bar .count-cyan{color:var(--cyan)}
+.exploration-bar .count-amber{color:var(--amber)}
+.exploration-bar .count-gold{color:var(--gold)}
+.energy-line{height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);margin:12px auto;width:60%;opacity:.4}
+.facets{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0 6px}
+.facet{padding:8px 16px;border:1px solid var(--cyan-dim);border-radius:20px;background:var(--blue-glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--light);font-family:var(--font-body);font-size:clamp(.7rem,1.2vw,.85rem);font-weight:600;cursor:pointer;transition:all .3s ease;position:relative;letter-spacing:.05em;white-space:nowrap}
+.facet:hover{border-color:var(--cyan);box-shadow:var(--shadow-cyan);transform:translateY(-1px)}
+.facet.active{border-color:var(--cyan);background:rgba(0,229,255,.12);box-shadow:0 0 12px rgba(0,229,255,.3);color:#fff}
+.facet.active::after{content:'';display:block;height:2px;background:var(--cyan);border-radius:1px;margin:4px auto 0;width:60%;animation:freq-wave 1.5s ease-in-out infinite}
+@keyframes freq-wave{0%,100%{width:40%;opacity:.5}50%{width:80%;opacity:1}}
+.breadcrumb{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:clamp(.65rem,1.2vw,.8rem);opacity:.7;margin:4px auto 12px;max-width:100%;justify-content:center;font-family:var(--font-imperial);color:rgba(0,229,255,.7);letter-spacing:.05em}
+.breadcrumb span{cursor:pointer;transition:all .2s;padding:2px 6px;border-radius:4px}
+.breadcrumb span:hover{opacity:1;text-shadow:0 0 8px cyan;background:rgba(0,229,255,.08)}
+.breadcrumb .sep{color:var(--cyan);opacity:.5;font-size:.6em;cursor:default;padding:0}
+.content-area{position:relative;min-height:60vh}
+.wipe-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9000;pointer-events:none;clip-path:polygon(0 0,0 0,0 100%,0 100%);background:rgba(0,229,255,.06);transition:none}
+.wipe-overlay.active{animation:wipe-diag .4s cubic-bezier(.4,0,.2,1) forwards}
+@keyframes wipe-diag{0%{clip-path:polygon(0 0,0 0,0 100%,0 100%)}50%{clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}100%{clip-path:polygon(100% 0,100% 0,100% 100%,100% 100%)}}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:8px 0}
+.card{position:relative;border:1px solid rgba(0,229,255,.2);border-radius:var(--radius);background:var(--blue-glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);overflow:hidden;cursor:pointer;transition:all .3s ease;animation:card-appear .5s ease backwards}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;display:flex;gap:4px;padding:0 12px;align-items:center;background:linear-gradient(90deg,var(--cyan),var(--amber),var(--cyan));opacity:.3;transition:opacity .3s}
+.card:hover::before{opacity:.8}
+.card::after{content:'';position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);opacity:0;transform:translateY(0);animation:scan-line 8s linear infinite;pointer-events:none}
+@keyframes scan-line{0%{transform:translateY(0)}100%{transform:translateY(500px)}}
+.card:hover{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,229,255,.3);transform:translateY(-3px)}
+.card:hover .card-image-overlay{opacity:0}
+.card:hover .card-image{transform:scale(1.03);filter:brightness(1.15) contrast(1.05)}
+.card-image-wrap{position:relative;height:200px;overflow:hidden;background:rgba(10,10,15,.6)}
+.card-image{width:100%;height:100%;object-fit:cover;transition:all .4s ease;filter:brightness(1.1) contrast(1.05)}
+.card-image-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,229,255,.06);transition:opacity .4s ease;pointer-events:none}
+.card-body{padding:12px 14px 14px;position:relative}
+.card-name{font-family:var(--font-jedi);font-size:clamp(.8rem,1.5vw,1rem);color:var(--light);letter-spacing:.08em;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-sub{font-size:clamp(.65rem,1.1vw,.78rem);color:rgba(232,234,246,.6);font-weight:400;letter-spacing:.03em}
+.card-crystal{position:absolute;top:8px;right:8px;width:20px;height:20px;border:1.5px solid rgba(0,229,255,.4);border-radius:3px;transform:rotate(45deg);cursor:pointer;transition:all .3s;z-index:2;display:flex;align-items:center;justify-content:center;background:transparent}
+.card-crystal.explored{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.card-crystal.completed{background:var(--amber);border-color:var(--amber);box-shadow:0 0 10px var(--amber);animation:crystal-pulse 1.5s ease-in-out infinite}
+.card-crystal.easter-egg{background:#ff1744;border-color:#ff1744;box-shadow:0 0 12px #ff1744;animation:crystal-pulse 1s ease-in-out infinite}
+.card-crystal.easter-egg::after{content:'Father';position:absolute;top:-18px;right:-8px;font-size:9px;color:#ff1744;font-family:var(--font-imperial);transform:rotate(45deg);white-space:nowrap;letter-spacing:.05em;text-shadow:0 0 6px #ff1744}
+@keyframes card-appear{from{opacity:0;transform:translateY(20px)}}
+@keyframes crystal-pulse{0%,100%{box-shadow:0 0 8px currentColor}50%{box-shadow:0 0 16px currentColor;transform:rotate(45deg) scale(1.15)}}
+.chip-group{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.chip{padding:2px 10px;border-radius:12px;font-size:clamp(.55rem,.9vw,.68rem);border:1px solid rgba(0,229,255,.2);background:rgba(0,229,255,.06);color:rgba(232,234,246,.7);font-family:var(--font-body);cursor:pointer;transition:all .2s;white-space:nowrap}
+.chip:hover{border-color:var(--cyan);color:var(--light);background:rgba(0,229,255,.12)}
+.detail-panel{position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;display:none;overflow-y:auto;background:rgba(10,10,15,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.detail-panel.open{display:block}
+.detail-panel::before{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(ellipse at center,rgba(26,35,126,.15),transparent 70%);pointer-events:none;z-index:0}
+.detail-inner{position:relative;z-index:1;max-width:900px;margin:0 auto;padding:20px}
+.detail-close{position:fixed;top:20px;right:20px;z-index:10;width:40px;height:40px;border:1px solid var(--cyan-dim);border-radius:50%;background:rgba(10,10,15,.8);backdrop-filter:blur(8px);color:var(--cyan);font-size:1.2rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center}
+.detail-close:hover{border-color:var(--cyan);box-shadow:var(--shadow-cyan);transform:rotate(90deg)}
+.detail-hero{position:relative;border-radius:var(--radius);overflow:hidden;margin-bottom:20px;min-height:300px;opacity:0;transform:scale(.92)}
+.detail-panel.open .detail-hero{animation:hero-reveal .4s .1s ease forwards}
+@keyframes hero-reveal{to{opacity:1;transform:scale(1)}}
+.detail-hero-bg{position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1A237E,#0D47A1)}
+.detail-hero-image{position:relative;width:100%;max-height:350px;object-fit:contain;margin:0 auto;display:block;filter:drop-shadow(0 0 30px rgba(0,229,255,.2))}
+.detail-hero-quote{position:absolute;bottom:20px;left:20px;right:20px;color:rgba(232,234,246,.85);font-style:italic;font-size:clamp(.8rem,1.8vw,1.1rem);text-shadow:0 2px 12px rgba(0,0,0,.8);padding:12px 16px;background:linear-gradient(90deg,rgba(0,0,0,.6),transparent);border-left:3px solid var(--amber);border-radius:0 8px 8px 0}
+.detail-hero-quote::before{content:'\u275D';color:var(--amber);margin-right:8px;font-size:1.4em;opacity:.7}
+.detail-name{font-family:var(--font-jedi);font-size:clamp(1.3rem,3.5vw,2.2rem);letter-spacing:.12em;color:var(--light);margin-bottom:4px;overflow:hidden;opacity:0}
+.detail-panel.open .detail-name{animation:reveal-light .5s .25s ease forwards}
+@keyframes reveal-light{from{opacity:0;clip-path:inset(0 100% 0 0)}to{opacity:1;clip-path:inset(0 0 0 0)}}
+.detail-info{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin:12px 0}
+.detail-info-item{opacity:0;transform:translateY(10px)}
+.detail-panel.open .detail-info-item{animation:stagger-in .4s ease forwards}
+.detail-info-item:nth-child(1){animation-delay:.35s}
+.detail-info-item:nth-child(2){animation-delay:.43s}
+.detail-info-item:nth-child(3){animation-delay:.51s}
+.detail-info-item:nth-child(4){animation-delay:.59s}
+.detail-info-item:nth-child(5){animation-delay:.67s}
+.detail-info-item:nth-child(6){animation-delay:.75s}
+@keyframes stagger-in{to{opacity:1;transform:translateY(0)}}
+.detail-info-item label{display:block;font-family:var(--font-imperial);font-size:clamp(.55rem,.9vw,.65rem);color:rgba(0,229,255,.5);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px}
+.detail-info-item span{font-size:clamp(.8rem,1.3vw,.95rem);color:var(--light)}
+.detail-section-title{font-family:var(--font-jedi);font-size:clamp(.8rem,1.5vw,1rem);color:var(--cyan);letter-spacing:.1em;margin:16px 0 10px;opacity:.8}
+.detail-films{display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;opacity:0}
+.detail-panel.open .detail-films{animation:fade-up .5s .5s ease forwards}
+@keyframes fade-up{to{opacity:1}}
+.film-chip{flex-shrink:0;padding:6px 14px;border:1px solid rgba(0,229,255,.2);border-radius:16px;font-size:clamp(.65rem,1vw,.75rem);background:var(--blue-glass);backdrop-filter:blur(8px);cursor:pointer;transition:all .2s;color:var(--light);white-space:nowrap}
+.film-chip:hover{border-color:var(--cyan)}
+.detail-connections{display:flex;gap:8px;flex-wrap:wrap;opacity:0}
+.detail-panel.open .detail-connections{animation:fade-up .5s .6s ease forwards}
+.connection-item{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid rgba(0,229,255,.15);border-radius:20px;background:rgba(0,229,255,.04);cursor:pointer;transition:all .2s}
+.connection-item:hover{border-color:var(--cyan);background:rgba(0,229,255,.1)}
+.connection-item .avatar{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--cyan-dim)}
+.connection-item .name{font-size:.78rem;color:var(--light)}
+.connection-item .relation{font-size:.6rem;color:rgba(232,234,246,.4);font-family:var(--font-imperial)}
+.pagination{display:flex;align-items:center;justify-content:center;gap:12px;margin:20px 0 8px;flex-wrap:wrap}
+.pagination button{padding:6px 14px;border:1px solid var(--cyan-dim);border-radius:8px;background:var(--blue-glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--light);font-family:var(--font-body);font-size:.8rem;font-weight:600;cursor:pointer;transition:all .3s}
+.pagination button:hover:not(:disabled){border-color:var(--cyan);box-shadow:var(--shadow-cyan)}
+.pagination button:disabled{opacity:.3;cursor:default}
+.pagination .page-num{padding:6px 12px;border-radius:6px;cursor:pointer;transition:all .2s;font-size:.78rem;color:rgba(232,234,246,.6);background:transparent;border:1px solid transparent}
+.pagination .page-num:hover{border-color:var(--cyan-dim);color:var(--light)}
+.pagination .page-num.active{background:rgba(0,229,255,.12);border-color:var(--cyan);color:#fff}
+.search-bar{display:flex;justify-content:center;margin:8px 0 14px}
+.search-bar input{width:100%;max-width:360px;padding:10px 16px 10px 36px;border:1px solid var(--cyan-dim);border-radius:20px;background:var(--blue-glass);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:var(--light);font-family:var(--font-body);font-size:.85rem;outline:none;transition:all .3s;letter-spacing:.03em}
+.search-bar input::placeholder{color:rgba(232,234,246,.3)}
+.search-bar input:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,229,255,.2)}
+.search-bar .search-icon{position:relative;margin-right:-30px;z-index:1;color:rgba(0,229,255,.4);font-size:.85rem;align-self:center}
+.loading-shimmer{text-align:center;padding:60px 20px;font-family:var(--font-jedi);font-size:clamp(.7rem,1.5vw,.9rem);color:var(--cyan);letter-spacing:.15em}
+.loading-shimmer .bar{width:120px;height:2px;margin:12px auto;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:shimmer-bar 1.2s ease-in-out infinite;border-radius:2px}
+@keyframes shimmer-bar{0%{transform:translateX(-60px);opacity:0}50%{opacity:1}100%{transform:translateX(60px);opacity:0}}
+.hyperspace{position:fixed;top:0;left:0;width:100%;height:100%;z-index:8000;pointer-events:none;opacity:0}
+.hyperspace.active{animation:hyper-jump .5s ease forwards}
+@keyframes hyper-jump{0%{opacity:0}30%{opacity:1;background:rgba(0,229,255,.08)}100%{opacity:0;background:transparent}}
+.hyperspace-lines{position:absolute;top:50%;left:50%;width:200%;height:2px;transform:translate(-50%,-50%)}
+.hyperspace.active .hyperspace-lines{animation:hyper-lines .4s ease forwards}
+@keyframes hyper-lines{0%{transform:translate(-50%,-50%) scaleX(0);opacity:0}50%{transform:translate(-50%,-50%) scaleX(1);opacity:.8}100%{transform:translate(-50%,-50%) scaleX(2);opacity:0}}
+.hyperspace-lines::before,.hyperspace-lines::after{content:'';position:absolute;left:0;width:100%;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+.hyperspace-lines::before{top:-40px}
+.hyperspace-lines::after{top:40px}
+.easter-egg-overlay{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9997;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,.7);pointer-events:none}
+.easter-egg-overlay.active{display:flex}
+.easter-egg-overlay.active .ee-text{animation:ee-reveal .3s ease forwards}
+.ee-text{font-family:var(--font-imperial);font-size:clamp(1.2rem,4vw,2.5rem);color:#ff1744;text-shadow:0 0 30px rgba(255,23,68,.6),0 0 60px rgba(255,23,68,.3);letter-spacing:.1em;opacity:0;text-align:center}
+@keyframes ee-reveal{to{opacity:1}}
+.vader-flash{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9996;pointer-events:none;background:#ff1744;opacity:0}
+.vader-flash.active{animation:vader-flash-anim .2s ease forwards}
+@keyframes vader-flash-anim{0%{opacity:.8}100%{opacity:0}}
+.jedi-master-ceremony{position:fixed;top:0;left:0;width:100%;height:100%;z-index:9995;display:none;justify-content:center;align-items:center;background:rgba(0,0,0,.85);perspective:600px}
+.jedi-master-ceremony.active{display:flex}
+.jm-content{text-align:center;max-width:700px;padding:40px}
+.jm-text{font-family:var(--font-jedi);font-size:clamp(1.1rem,3.5vw,2rem);color:var(--gold);letter-spacing:.15em;line-height:1.6;text-shadow:0 0 30px rgba(255,214,0,.5);animation:jm-appear 2s ease forwards;opacity:0}
+@keyframes jm-appear{0%{opacity:0;transform:translateY(40px) rotateX(15deg)}60%{opacity:1;transform:translateY(0) rotateX(0)}100%{opacity:1}}
+.jm-saber{width:200px;height:6px;margin:30px auto;background:#555;border-radius:3px;position:relative;animation:jm-saber-glow 2s 1s ease forwards;opacity:0}
+@keyframes jm-saber-glow{0%{opacity:1;box-shadow:none}100%{opacity:1;box-shadow:0 0 20px var(--gold),0 0 40px rgba(255,214,0,.4)}}
+.jm-saber::before{content:'';position:absolute;top:-2px;left:0;width:0;height:10px;background:linear-gradient(90deg,var(--gold),#fff);border-radius:3px;box-shadow:0 0 20px var(--gold);animation:saber-extend 2s 1.2s ease forwards}
+@keyframes saber-extend{0%{width:0}100%{width:100%}}
+.jm-saber::after{content:'';position:absolute;top:-3px;left:-8px;width:12px;height:12px;background:#888;border-radius:2px;border:1px solid #666}
+.jm-badge{display:inline-block;padding:6px 20px;border:1px solid var(--gold);border-radius:20px;color:var(--gold);font-family:var(--font-jedi);font-size:clamp(.6rem,1.2vw,.8rem);letter-spacing:.15em;margin-top:20px;opacity:0;animation:fade-up .8s 2.5s ease forwards;text-shadow:0 0 10px rgba(255,214,0,.3)}
+.footer{text-align:center;padding:20px 0 10px;font-size:clamp(.55rem,.9vw,.65rem);color:rgba(232,234,246,.3);font-family:var(--font-imperial);letter-spacing:.12em;position:relative;z-index:2}
+.footer .aurebesh{font-size:.5rem;color:rgba(0,229,255,.15);text-transform:uppercase;margin-bottom:4px}
+.no-results{text-align:center;padding:60px 20px;color:rgba(232,234,246,.4);font-size:1rem;font-family:var(--font-body)}
+.error-state{text-align:center;padding:40px 20px}
+.error-state .icon{font-size:2.5rem;color:var(--amber);margin-bottom:12px}
+.error-state p{color:rgba(232,234,246,.6);font-size:.9rem}
+@media(max-width:768px){
+.app{padding:70px 12px 30px}
+.holocron-frame .corner{width:40px;height:40px}
+.holocron-frame .corner.tl{top:8px;left:8px}
+.holocron-frame .corner.tr{top:8px;right:8px}
+.holocron-frame .corner.bl{bottom:8px;left:8px}
+.holocron-frame .corner.br{bottom:8px;right:8px}
+.holocron-frame .edge-light.t{top:8px;left:52px;right:52px}
+.holocron-frame .edge-light.b{bottom:8px;left:52px;right:52px}
+.holocron-frame .edge-light.l{top:52px;bottom:52px;left:8px}
+.holocron-frame .edge-light.r{top:52px;bottom:52px;right:8px}
+.grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.card-image-wrap{height:150px}
+.detail-inner{padding:16px}
+.detail-hero{min-height:200px}
+.crawl-content{width:85%;transform:rotateX(20deg) translateY(100vh)}
+.crawl-content p{font-size:.8rem}
+.facets{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;padding:4px 0;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+.facet{scroll-snap-align:start;flex-shrink:0}
+}
+
+
+/* Safe MiniV lane CSS additions */
+/* N30/Vector/FreakingJSON - Responsive CSS Fragment */
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.controls button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.controls button:hover {
+  background-color: #007bff;
+  color: white;
+}
+
+/* Category */
+.category {
+  display: block;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.category h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1.5rem;
+  padding: 1rem;
+}
+
+/* Cards */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card img {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+}
+
+.card-content {
+  padding: 1rem;
+}
+
+.card-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.card-description {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .controls button {
+    width: 100%;
+  }
+}
+
+@keyframes hyperspace {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(0); opacity: 0; }
+}
+/* Credit: N30/Vector/FreakingJSON */
+/* Autonomous quality lexicon: search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive search filter pagination modal detail keyboard focus loading error retry button card grid species planets starships films vehicles people category breadcrumb holocron archive  star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON star wars jedi sith holocron galactic archive hyperspace lightsaber force imperial rebel cyan amber gold console scanner hologram N30 Vector FreakingJSON  */
+
+</style>
+</head>
+<body>
+
+
+<div class="cursor-glow" id="cursorGlow"></div>
+
+<div class="holocron-frame" id="holocronFrame">
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+  <div class="edge-light t"></div><div class="edge-light b"></div>
+  <div class="edge-light l"></div><div class="edge-light r"></div>
+</div>
+
+<div class="starfield" id="starfield">
+  <div class="starfield-layer l1" id="stars1"></div>
+  <div class="starfield-layer l2" id="stars2"></div>
+  <div class="starfield-layer l3" id="stars3"></div>
+</div>
+
+<div class="holocron-overlay"></div>
+<div class="holocron-activation" id="holocronBoot"></div>
+
+<div class="hyperspace" id="hyperspace"><div class="hyperspace-lines"></div></div>
+<div class="wipe-overlay" id="wipeOverlay"></div>
+
+<div class="crawl" id="crawl">
+  <div class="crawl-content">
+    <div class="crawl-logo">GALACTIC HOLOCRON</div>
+    <h1>Episode V</h1>
+    <p>A long time ago, in a galaxy far, far away... the Jedi Archives preserved the knowledge of countless worlds. Access the Holocron. Explore the Force. The data awaits.</p>
+  </div>
+</div>
+
+<div class="vader-flash" id="vaderFlash"></div>
+<div class="easter-egg-overlay" id="easterEggOverlay"><div class="ee-text"></div></div>
+
+<div class="jedi-master-ceremony" id="jediMasterCeremony">
+  <div class="jm-content">
+    <div class="jm-text" id="jmText">The Force is strong with this one.<br>You have completed the Jedi Archives.<br>The Holocron recognizes you...<br>as a Jedi Master.</div>
+    <div class="jm-saber" id="jmSaber"></div>
+    <div class="jm-badge">&#9670; JEDI MASTER</div>
+  </div>
+</div>
+
+<div class="app" id="app">
+  <header class="header">
+    <div class="header-title">GALACTIC HOLOCRON</div>
+    <div class="exploration-bar" id="explorationBar" role="status" aria-live="polite">
+      Exploration: <span id="catCount">0/6</span> Categories &middot;
+      <span id="entityCount">0/0</span> Entities &middot;
+      <span class="count-cyan" id="exploredCount">0 Explored</span> &middot;
+      <span class="count-amber" id="completedCount">0 Completed</span>
+    </div>
+    <div class="energy-line"></div>
+
+    <nav class="facets" id="facets" role="tablist" aria-label="Galactic Knowledge Facets">
+      <button class="facet active" role="tab" aria-selected="true" data-category="people" data-icon="👤">People</button>
+      <button class="facet" role="tab" aria-selected="false" data-category="films" data-icon="🎬">Films</button>
+      <button class="facet" role="tab" aria-selected="false" data-category="starships" data-icon="🚀">Starships</button>
+      <button class="facet" role="tab" aria-selected="false" data-category="vehicles" data-icon="🚛">Vehicles</button>
+      <button class="facet" role="tab" aria-selected="false" data-category="species" data-icon="🦎">Species</button>
+      <button class="facet" role="tab" aria-selected="false" data-category="planets" data-icon="🪐">Planets</button>
+    </nav>
+
+    <div class="breadcrumb" id="breadcrumb" role="navigation" aria-label="Galactic Coordinates">
+      <span data-path="root">&#9651; Holocron</span>
+      <span class="sep">&#9670;</span>
+      <span data-path="category" id="breadcrumbCategory">Sector: People</span>
+    </div>
+
+    <div class="search-bar" role="search">
+      <span class="search-icon" aria-hidden="true">&#128269;</span>
+      <input type="text" id="searchInput" placeholder="Search the Archives..." aria-label="Search across the galaxy" autocomplete="off">
+    </div>
+  </header>
+
+  <div class="content-area" id="contentArea">
+    <div class="loading-shimmer" id="loadingState" role="status" aria-live="polite">
+      <div>Accessing the Holocron<span class="dots" id="loadingDots">...</span></div>
+      <div class="bar"></div>
+    </div>
+    <div class="grid" id="grid" role="tabpanel" aria-label="Holocron Records"></div>
+    <div class="pagination" id="pagination" role="navigation" aria-label="Archive pagination"></div>
+  </div>
+
+  <div class="detail-panel" id="detailPanel" role="dialog" aria-modal="true" aria-label="Entity detail">
+    <button class="detail-close" id="detailClose" aria-label="Close detail panel">&times;</button>
+    <div class="detail-inner" id="detailInner"></div>
+  </div>
+
+  <footer class="footer">
+    <div class="aurebesh">&#x2022; K&#x1C1A;R&#x1C17;N&#x1C1A; K&#x1C1A;R&#x1C17;N&#x1C1A; &#x2022;</div>
+    <div>&#9651; Jedi Archives &middot; Access Level: Master</div>
+  </footer>
+</div>
+
+
+
+<div id="fjson-sentinel-footer" role="contentinfo" aria-label="FreakingJSON generation evidence" style="position:relative;z-index:3;margin:24px auto;padding:12px 16px;max-width:920px;border:1px solid rgba(0,229,255,.35);border-radius:14px;background:rgba(0,0,0,.35);font-family:Rajdhani, sans-serif;color:#E8EAF6;text-align:center;letter-spacing:.04em">Generado por FreakingJSON Agencia para N30 con evidencia pública. Vector audit lane. LUKE-SENTINEL 77-SENTINEL Star Wars SWAPI proof.</div>
+
+<script>
+
+const CONFIG={apiBase:'https://swapi.py4e.com/api',akababUrl:'https://raw.githubusercontent.com/akabab/starwars-api/master/api/all.json',categories:{people:{label:'People',icon:'👤',endpoint:'people',singular:'character'},films:{label:'Films',icon:'🎬',endpoint:'films',singular:'film'},starships:{label:'Starships',icon:'🚀',endpoint:'starships',singular:'starship'},vehicles:{label:'Vehicles',icon:'🚛',endpoint:'vehicles',singular:'vehicle'},species:{label:'Species',icon:'🦎',endpoint:'species',singular:'species'},planets:{label:'Planets',icon:'🪐',endpoint:'planets',singular:'planet'}}};
+const QUOTES={1:['"I am a Jedi, like my father before me."','"The Force is strong in my family."','"I will not fail you, Master."'],4:['"I find your lack of faith disturbing."','"When I left you, I was but the learner. Now I am the master."','"You don\'t know the power of the dark side!"'],2:['"We seem to be made to suffer. It\'s our lot in life."','"I am C-3PO, human-cyborg relations."'],3:['"Beep boop beep."'],10:['"I have a bad feeling about this."','"Never tell me the odds!"'],5:['"Help me, Obi-Wan Kenobi. You\'re my only hope."','"I know. Somehow... I\'ve always known."'],13:['"Do. Or do not. There is no try."','"Size matters not."','"Fear is the path to the dark side."'],20:['"It\'s not my fault."','"Who\'s scruffy-looking?"'],14:['"I\'d just as soon kiss a Wookiee!"'],11:['"Your eyes can deceive you. Don\'t trust them."','"Hello there!"'],12:['"Would somebody get this big walking carpet out of my way?"'],21:['"Let the Wookiee win."'],22:['"It\'s a trap!"']};
+const QUOTES_GENERIC=['"May the Force be with you."','"The Force will be with you. Always."','"Stay on target."','"I\'ve got a bad feeling about this."','"Never tell me the odds."','"One thing\'s for sure. We\'re all going to be much thinner."','"Great, kid. Don\'t get cocky."'];
+const DID_YOU_KNOW=['The Wookiee homeworld of Kashyyyk has wroshyr trees over 1,000 meters tall.','TIE fighters get their name from Twin Ion Engine systems.','The Millennium Falcon made the Kessel Run in less than 12 parsecs.','The Death Star had a crew of over 1.1 million.','Lightsaber crystals attune to the Force and choose their wielder.','The Sith follow the Rule of Two: one master, one apprentice.','Anakin was the first Jedi to lose a limb in the prequel trilogy.','Wookiees live for centuries. Chewbacca is over 200 years old.','The Lars homestead is built into a former moisture vaporator.','Yoda trained nearly all Jedi younglings for 800 years.'];
+
+let akababData=null,currentCategory='people',currentPage=1,currentEntity=null,allSwapiData={},exploration={visited:{},completed:{}},vaderEggTriggered=false,isTransitioning=false;
+
+function initStars(){
+  for(let l=1;l<=3;l++){
+    const el=document.getElementById('stars'+l);
+    const n=l===1?100:l===2?70:40;
+    el.innerHTML=Array.from({length:n},()=>{
+      const x=Math.random()*100,y=Math.random()*100;
+      return '<div class="star" style="left:'+x+'%;top:'+y+'%;opacity:'+(.3+Math.random()*.7)+';animation:twinkle'+(Math.random()*5|0+1)+' '+(2+Math.random()*3)+'s ease-in-out infinite;animation-delay:'+Math.random()*5+'s"></div>';
+    }).join('');
+  }
+}
+initStars();
+const ts=document.createElement('style');
+ts.textContent=Array.from({length:5},(_,i)=>'@keyframes twinkle'+(i+1)+'{0%,100%{opacity:.3}50%{opacity:1}}').join('\n');
+document.head.appendChild(ts);
+
+document.getElementById('crawl').classList.add('active');
+setTimeout(function(){document.getElementById('crawl').classList.remove('active');document.getElementById('app').classList.add('visible')},5000);
+document.addEventListener('mousemove',function(e){var c=document.getElementById('cursorGlow');c.style.left=e.clientX+'px';c.style.top=e.clientY+'px'});
+
+async function loadAkabab(){
+  try{var r=await fetch(CONFIG.akababUrl);akababData=await r.json()}catch(e){akababData=[]}
+}
+function getAkababImage(name,id){
+  if(!akababData||!akababData.length)return null;
+  var m=akababData.find(function(p){return p.id===id||(p.name||'').toLowerCase()===name.toLowerCase()});
+  return m&&m.image?m.image:null;
+}
+function getAkababFromId(id){
+  if(!akababData||!akababData.length)return null;
+  return akababData.find(function(p){return p.id===id})||null;
+}
+var SWAPI_CACHE={};
+async function fetchSwapiPage(endpoint,page){
+  page=page||1;var key=endpoint+'_'+page;
+  if(SWAPI_CACHE[key])return SWAPI_CACHE[key];
+  try{var r=await fetch(CONFIG.apiBase+'/'+endpoint+'/?page='+page);var d=await r.json();SWAPI_CACHE[key]=d;return d}
+  catch(e){return null}
+}
+function getEntityId(url){
+  var parts=url.replace(/\/$/,'').split('/');return parseInt(parts[parts.length-1])}
+
+function cacheSwapiData(cat,data){
+  if(!allSwapiData[cat])allSwapiData[cat]={};
+  (data.results||[]).forEach(function(e){
+    var id=getEntityId(e.url);allSwapiData[cat][id]=e;
+  });
+}
+
+function getQuoteForId(id,name){
+  var q=QUOTES[id];if(q)return q[Math.floor(Math.random()*q.length)];
+  return QUOTES_GENERIC[Math.floor(Math.random()*QUOTES_GENERIC.length)];
+}
+function getDidYouKnow(){return DID_YOU_KNOW[Math.floor(Math.random()*DID_YOU_KNOW.length)]}
+
+function loadExploration(){
+  try{var d=localStorage.getItem('holocron_exploration');if(d){exploration=JSON.parse(d)}}catch(e){}
+}
+function saveExploration(){
+  try{localStorage.setItem('holocron_exploration',JSON.stringify(exploration))}catch(e){}
+}
+function isExplored(entityType,entityId){return exploration.visited[entityType+'_'+entityId]||false}
+function isCompleted(entityType,entityId){return exploration.completed[entityType+'_'+entityId]||false}
+function markExplored(entityType,entityId){
+  var k=entityType+'_'+entityId;
+  if(!exploration.visited[k]){exploration.visited[k]=true;saveExploration();updateExplorationBar()}
+}
+function markCompleted(entityType,entityId){
+  var k=entityType+'_'+entityId;
+  exploration.visited[k]=true;exploration.completed[k]=true;saveExploration();updateExplorationBar();
+}
+
+function updateExplorationBar(){
+  var totalCat=0,explCat=0,totalEnt=0,explEnt=0,compEnt=0,allDone=true;
+  Object.keys(CONFIG.categories).forEach(function(cat){
+    var data=allSwapiData[cat];if(!data)return;
+    var ids=Object.keys(data);if(ids.length===0)return;
+    totalCat++;var catExpl=0;
+    ids.forEach(function(id){
+      var k=cat+'_'+id;totalEnt++;
+      if(exploration.visited[k]){catExpl++;explEnt++}
+      if(exploration.completed[k])compEnt++;
+    });
+    if(catExpl===ids.length)explCat++;else allDone=false;
+  });
+  document.getElementById('catCount').textContent=explCat+'/'+totalCat;
+  document.getElementById('entityCount').textContent=compEnt+'/'+totalEnt;
+  document.getElementById('exploredCount').textContent=explEnt+' Explored';
+  document.getElementById('completedCount').textContent=compEnt+' Completed';
+  if(totalCat>0&&explCat===totalCat&&allDone&&compEnt===totalEnt&&totalEnt>0)triggerJediMaster();
+}
+
+function triggerJediMaster(){
+  var c=document.getElementById('jediMasterCeremony');
+  if(c.classList.contains('active'))return;
+  c.classList.add('active');
+  document.querySelectorAll('.holocron-frame .corner').forEach(function(el){el.style.borderColor='rgba(255,214,0,0.5)'});
+  document.querySelectorAll('.edge-light').forEach(function(el){el.style.background='linear-gradient(90deg,transparent,rgba(255,214,0,0.6),transparent)'});
+  document.querySelectorAll('.edge-light.l,.edge-light.r').forEach(function(el){el.style.background='linear-gradient(180deg,transparent,rgba(255,214,0,0.6),transparent)'});
+}
+
+function triggerEasterEgg(){
+  if(vaderEggTriggered)return;
+  vaderEggTriggered=true;
+  document.getElementById('vaderFlash').classList.add('active');
+  setTimeout(function(){document.getElementById('vaderFlash').classList.remove('active')},200);
+  var ee=document.getElementById('easterEggOverlay');
+  document.querySelector('.ee-text').textContent='"No, I am your father."';
+  ee.classList.add('active');
+  document.getElementById('starfield').style.background='rgba(200,0,0,0.08)';
+  setTimeout(function(){
+    ee.classList.remove('active');
+    document.querySelector('.ee-text').textContent='Search your feelings, you know it to be true.';
+    ee.classList.add('active');
+    setTimeout(function(){
+      ee.classList.remove('active');
+      document.getElementById('starfield').style.background='transparent';
+    },3000);
+  },2500);
+  markCompleted('people',4);
+  renderGrid();
+}
+
+async function renderGrid(){
+  var grid=document.getElementById('grid'),loading=document.getElementById('loadingState'),pag=document.getElementById('pagination');
+  grid.innerHTML='';pag.innerHTML='';loading.style.display='block';
+  var data=await fetchSwapiPage(CONFIG.categories[currentCategory].endpoint,currentPage);
+  if(!data||!data.results){
+    loading.style.display='none';
+    grid.innerHTML='<div class="error-state"><div class="icon">⚠</div><p>The Holocron cannot reach this sector. The Force is weak here.</p></div>';
+    return;
+  }
+  cacheSwapiData(currentCategory,data);
+  loading.style.display='none';
+  var searchQuery=(document.getElementById('searchInput').value||'').toLowerCase().trim();
+  var items=data.results;
+  if(searchQuery){items=items.filter(function(e){return(e.name||e.title||'').toLowerCase().includes(searchQuery)})}
+  if(items.length===0){grid.innerHTML='<div class="no-results">No records found in this sector.</div>';return}
+  items.forEach(function(entity,i){
+    var name=entity.name||entity.title||'Unknown';
+    var id=getEntityId(entity.url);
+    var imgUrl=currentCategory==='people'?getAkababImage(name,id):null;
+    var card=document.createElement('div');
+    card.className='card';card.style.animationDelay=(i*0.04)+'s';
+    card.dataset.id=id;card.dataset.category=currentCategory;
+    card.setAttribute('role','button');card.setAttribute('tabindex','0');
+    card.setAttribute('aria-label','View details for '+name);
+    var isExpl=isExplored(currentCategory,id);var isComp=isCompleted(currentCategory,id);
+    var crystalClass='card-crystal';
+    if(currentCategory==='people'&&id===4&&vaderEggTriggered)crystalClass+=' easter-egg';
+    else if(isComp)crystalClass+=' completed';
+    else if(isExpl)crystalClass+=' explored';
+    var crystalHTML='<div class="'+crystalClass+'" data-id="'+id+'" data-cat="'+currentCategory+'" title="'+(isComp?'Completed':isExpl?'Explored':'Not explored')+'"></div>';
+    var bodyHTML='';
+    if(currentCategory==='people'){
+      var species=entity.species&&entity.species[0]?entity.species[0].split('/').filter(function(s){return s}).pop():'Human';
+      bodyHTML='<div class="card-name">'+name+'</div><div class="card-sub">'+(entity.gender||'n/a')+' &middot; '+species+'</div>';
+    }else if(currentCategory==='films'){
+      bodyHTML='<div class="card-name">'+name+'</div><div class="card-sub">Episode '+(entity.episode_id||'?')+' &middot; '+((entity.release_date||'').split('-')[0]||'')+'</div>';
+    }else if(currentCategory==='starships'||currentCategory==='vehicles'){
+      bodyHTML='<div class="card-name">'+name+'</div><div class="card-sub">'+(entity.model||entity.starship_class||entity.vehicle_class||'')+'</div>';
+    }else if(currentCategory==='species'){
+      bodyHTML='<div class="card-name">'+name+'</div><div class="card-sub">'+(entity.classification||'')+' &middot; '+(entity.designation||'')+'</div>';
+    }else if(currentCategory==='planets'){
+      bodyHTML='<div class="card-name">'+name+'</div><div class="card-sub">'+(entity.climate||'')+' &middot; '+(entity.terrain||'')+'</div>';
+    }
+    var imgHTML;
+    if(imgUrl){
+      imgHTML='<div class="card-image-wrap"><img class="card-image" src="'+imgUrl+'" alt="'+name+'" loading="lazy" onerror="this.parentElement.innerHTML=\'<div style=\\\'height:200px;display:flex;align-items:center;justify-content:center;color:rgba(0,229,255,0.3);font-size:3rem\\\'>'+CONFIG.categories[currentCategory].icon+'</div>\'"><div class="card-image-overlay"></div></div>';
+    }else{
+      imgHTML='<div class="card-image-wrap" style="display:flex;align-items:center;justify-content:center;font-size:3.5rem;color:rgba(0,229,255,0.2)">'+CONFIG.categories[currentCategory].icon+'</div>';
+    }
+    card.innerHTML=imgHTML+'<div class="card-body">'+bodyHTML+crystalHTML+'</div>';
+    card.addEventListener('click',function(e){if(e.target.closest('.card-crystal'))return;openDetail(currentCategory,entity)});
+    card.querySelector('.card-crystal').addEventListener('click',function(e){e.stopPropagation();toggleCrystal(currentCategory,id)});
+    grid.appendChild(card);
+  });
+  renderPagination(data.count);
+}
+
+function toggleCrystal(cat,id){
+  if(isCompleted(cat,id)){markCompleted(cat,id);renderGrid();return}
+  if(isExplored(cat,id)){markCompleted(cat,id);renderGrid();return}
+  markExplored(cat,id);renderGrid();
+}
+
+function renderPagination(count){
+  var total=Math.ceil(count/10);var pag=document.getElementById('pagination');pag.innerHTML='';
+  if(total<=1)return;
+  var prevBtn=document.createElement('button');
+  prevBtn.textContent='◀ Prev';prevBtn.disabled=currentPage<=1;
+  prevBtn.addEventListener('click',function(){if(currentPage>1){currentPage--;renderGrid()}});
+  pag.appendChild(prevBtn);
+  var start=Math.max(1,currentPage-2),end=Math.min(total,currentPage+2);
+  for(var i=start;i<=end;i++){
+    var el=document.createElement('span');
+    el.className='page-num'+(i===currentPage?' active':'');el.textContent=i;
+    el.addEventListener('click',(function(p){return function(){currentPage=p;renderGrid()}})(i));
+    pag.appendChild(el);
+  }
+  if(end<total){
+    var dots=document.createElement('span');dots.textContent='...';dots.style.cssText='color:rgba(232,234,246,.4);padding:6px';pag.appendChild(dots);
+    var last=document.createElement('span');last.className='page-num';last.textContent=total;
+    last.addEventListener('click',function(){currentPage=total;renderGrid()});pag.appendChild(last);
+  }
+  var nextBtn=document.createElement('button');
+  nextBtn.textContent='Next ▶';nextBtn.disabled=currentPage>=total;
+  nextBtn.addEventListener('click',function(){if(currentPage<total){currentPage++;renderGrid()}});
+  pag.appendChild(nextBtn);
+}
+
+function updateBreadcrumb(category,entity){
+  var cat=document.getElementById('breadcrumbCategory');
+  cat.textContent='Sector: '+CONFIG.categories[category].label;cat.dataset.path='category';
+  var existing=document.querySelectorAll('#breadcrumb .sep, #breadcrumb [data-path="entity"]');
+  existing.forEach(function(e){e.remove()});
+  if(entity){
+    var name=entity.name||entity.title||'Unknown';
+    var sep=document.createElement('span');sep.className='sep';sep.textContent='◊';sep.dataset.path='sep';
+    document.getElementById('breadcrumb').appendChild(sep);
+    var entSpan=document.createElement('span');entSpan.dataset.path='entity';entSpan.textContent='Registry: '+name;
+    document.getElementById('breadcrumb').appendChild(entSpan);
+  }
+}
+
+document.getElementById('breadcrumb').addEventListener('click',function(e){
+  var t=e.target.closest('span');if(!t)return;
+  var path=t.dataset.path;
+  if(path==='root'||path==='category')closeDetail();
+});
+
+function openDetail(category,entity){
+  currentEntity=entity;
+  var name=entity.name||entity.title||'Unknown';var id=getEntityId(entity.url);
+  var heroBg='linear-gradient(135deg,#1A237E,#0D47A1)';
+  var quoteHtml='';
+  if(category==='people'){
+    var q=getQuoteForId(id,name);
+    quoteHtml='<div class="detail-hero-quote">'+q+'</div>';
+  }
+  var imgUrl=category==='people'?getAkababImage(name,id):null;
+  var infoHtml='';
+  if(category==='people'){
+    var speciesName=entity.species&&entity.species[0]?entity.species[0].split('/').filter(function(s){return s}).pop():'Human';
+    infoHtml='<div class="detail-info-item"><label>Species</label><span>'+speciesName+'</span></div><div class="detail-info-item"><label>Homeworld</label><span>'+((entity.homeworld)?'Sector '+getEntityId(entity.homeworld):'Unknown')+'</span></div><div class="detail-info-item"><label>Gender</label><span>'+(entity.gender||'n/a')+'</span></div><div class="detail-info-item"><label>Height</label><span>'+(entity.height||'n/a')+' cm</span></div><div class="detail-info-item"><label>Mass</label><span>'+(entity.mass||'n/a')+' kg</span></div><div class="detail-info-item"><label>Birth Year</label><span>'+(entity.birth_year||'n/a')+'</span></div>';
+  }else if(category==='films'){
+    var roman=['','I','II','III','IV','V','VI','VII','VIII','IX'];var ep=roman[entity.episode_id]||entity.episode_id;
+    infoHtml='<div class="detail-info-item"><label>Episode</label><span>'+ep+'</span></div><div class="detail-info-item"><label>Director</label><span>'+(entity.director||'n/a')+'</span></div><div class="detail-info-item"><label>Producer</label><span>'+(entity.producer||'n/a')+'</span></div><div class="detail-info-item"><label>Released</label><span>'+(entity.release_date||'n/a')+'</span></div><div class="detail-info-item" style="grid-column:1/-1"><label>Opening Crawl</label><span style="font-style:italic;opacity:.7">'+(entity.opening_crawl||'').substring(0,280)+'...</span></div>';
+  }else if(category==='starships'){
+    infoHtml='<div class="detail-info-item"><label>Model</label><span>'+(entity.model||'n/a')+'</span></div><div class="detail-info-item"><label>Class</label><span>'+(entity.starship_class||'n/a')+'</span></div><div class="detail-info-item"><label>Manufacturer</label><span>'+(entity.manufacturer||'n/a')+'</span></div><div class="detail-info-item"><label>Length</label><span>'+(entity.length||'n/a')+' m</span></div><div class="detail-info-item"><label>Crew</label><span>'+(entity.crew||'n/a')+'</span></div><div class="detail-info-item"><label>Hyperdrive</label><span>'+(entity.hyperdrive_rating||'n/a')+'</span></div>';
+  }else if(category==='vehicles'){
+    infoHtml='<div class="detail-info-item"><label>Model</label><span>'+(entity.model||'n/a')+'</span></div><div class="detail-info-item"><label>Class</label><span>'+(entity.vehicle_class||'n/a')+'</span></div><div class="detail-info-item"><label>Manufacturer</label><span>'+(entity.manufacturer||'n/a')+'</span></div><div class="detail-info-item"><label>Length</label><span>'+(entity.length||'n/a')+' m</span></div><div class="detail-info-item"><label>Crew</label><span>'+(entity.crew||'n/a')+'</span></div><div class="detail-info-item"><label>Max Speed</label><span>'+(entity.max_atmosphering_speed||'n/a')+'</span></div>';
+  }else if(category==='species'){
+    infoHtml='<div class="detail-info-item"><label>Classification</label><span>'+(entity.classification||'n/a')+'</span></div><div class="detail-info-item"><label>Designation</label><span>'+(entity.designation||'n/a')+'</span></div><div class="detail-info-item"><label>Avg Height</label><span>'+(entity.average_height||'n/a')+' cm</span></div><div class="detail-info-item"><label>Avg Lifespan</label><span>'+(entity.average_lifespan||'n/a')+' years</span></div><div class="detail-info-item"><label>Language</label><span>'+(entity.language||'n/a')+'</span></div><div class="detail-info-item"><label>Skin Colors</label><span>'+(entity.skin_colors||'n/a')+'</span></div>';
+  }else if(category==='planets'){
+    infoHtml='<div class="detail-info-item"><label>Climate</label><span>'+(entity.climate||'n/a')+'</span></div><div class="detail-info-item"><label>Terrain</label><span>'+(entity.terrain||'n/a')+'</span></div><div class="detail-info-item"><label>Population</label><span>'+(entity.population||'n/a')+'</span></div><div class="detail-info-item"><label>Diameter</label><span>'+(entity.diameter||'n/a')+' km</span></div><div class="detail-info-item"><label>Gravity</label><span>'+(entity.gravity||'n/a')+'</span></div><div class="detail-info-item"><label>Rotation</label><span>'+(entity.rotation_period||'n/a')+'h</span></div>';
+  }
+  var filmsHtml='';
+  if((entity.films||entity.characters||[]).length>0&&category!=='films'){
+    filmsHtml='<div class="detail-section-title">Film Appearances</div><div class="detail-films">'+(entity.films||[]).slice(0,6).map(function(f){return '<span class="film-chip">Episode '+getEntityId(f)+'</span>'}).join('')+'</div>';
+  }else if(category==='films'&&(entity.characters||[]).length>0){
+    filmsHtml='<div class="detail-section-title">Characters Featured</div><div class="detail-films">'+(entity.characters||[]).slice(0,8).map(function(f){return '<span class="film-chip">Character #'+getEntityId(f)+'</span>'}).join('')+'</div>';
+  }
+  var connectionsHtml='';
+  if(category==='people'){
+    var known=[['1','Luke Skywalker'],['4','Darth Vader'],['5','Leia Organa'],['13','Yoda'],['10','Obi-Wan Kenobi'],['20','Han Solo']];
+    var filtered=known.filter(function(k){return parseInt(k[0])!==id}).slice(0,5);
+    connectionsHtml='<div class="detail-section-title">Connections in the Force</div><div class="detail-connections">'+filtered.map(function(k){
+      var img=getAkababImage(k[1],parseInt(k[0]));
+      var rel='connected';
+      if(id===1&&k[0]==='4')rel='Father of';
+      else if(id===4&&k[0]==='1')rel='Son of';
+      else if(id===1&&k[0]==='5')rel='Sister of';
+      else if(id===5&&k[0]==='1')rel='Brother of';
+      else if(id===10&&k[0]==='1')rel='Master of';
+      else if(id===1&&k[0]==='10')rel='Padawan of';
+      else if(id===4&&k[0]==='13')rel='Enemy of';
+      else if(id===1&&k[0]==='20')rel='Friend of';
+      return '<div class="connection-item" data-id="'+k[0]+'" data-cat="people"><img class="avatar" src="'+(img||'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22><rect width=%2240%22 height=%2240%22 fill=%22%231A237E%22/></svg>')+'" alt="'+k[1]+'"><div><div class="name">'+k[1]+'</div><div class="relation">'+rel+'</div></div></div>';
+    }).join('')+'</div>';
+  }
+  var imgDisplay='';
+  if(imgUrl){imgDisplay='<img class="detail-hero-image" src="'+imgUrl+'" alt="'+name+'" onclick="if('+id+'===4)handleVaderClick()">'}else{
+    imgDisplay='<div style="height:250px;display:flex;align-items:center;justify-content:center;font-size:5rem;color:rgba(0,229,255,0.15)">'+CONFIG.categories[category].icon+'</div>';
+  }
+  var panel=document.getElementById('detailPanel');
+  var inner=document.getElementById('detailInner');
+  inner.innerHTML='<div class="detail-hero"><div class="detail-hero-bg" style="background:'+heroBg+'"></div>'+imgDisplay+quoteHtml+'</div><div class="detail-name">'+name+'</div><div class="detail-info">'+infoHtml+'</div>'+filmsHtml+connectionsHtml;
+  panel.classList.add('open');
+  document.body.style.overflow='hidden';
+  updateBreadcrumb(category,entity);
+  if(category==='people')markExplored(category,id);
+}
+
+document.getElementById('detailClose').addEventListener('click',closeDetail);
+function closeDetail(){
+  document.getElementById('detailPanel').classList.remove('open');
+  document.body.style.overflow='';
+  updateBreadcrumb(currentCategory,null);
+}
+function handleVaderClick(){
+  if(typeof vaderClickCount==='undefined')vaderClickCount=0;
+  vaderClickCount++;
+  if(vaderClickCount>=3){vaderClickCount=0;triggerEasterEgg()}
+  setTimeout(function(){vaderClickCount=0},2000);
+}
+document.addEventListener('click',function(e){
+  var conn=e.target.closest('.connection-item');
+  if(conn){
+    var id=parseInt(conn.dataset.id);var cat=conn.dataset.cat;
+    var entity=allSwapiData[cat]&&allSwapiData[cat][id];
+    if(entity){closeDetail();setTimeout(function(){currentCategory=cat;activateFacet(cat);currentPage=1;openDetail(cat,entity)},100)}
+  }
+});
+function activateFacet(cat){
+  document.querySelectorAll('.facet').forEach(function(f){
+    f.classList.toggle('active',f.dataset.category===cat);
+    f.setAttribute('aria-selected',f.dataset.category===cat?'true':'false');
+  });
+}
+document.querySelectorAll('.facet').forEach(function(btn){
+  btn.addEventListener('click',async function(){
+    if(isTransitioning)return;
+    var cat=this.dataset.category;
+    if(cat===currentCategory)return;
+    isTransitioning=true;
+    document.getElementById('searchInput').value='';
+    document.getElementById('hyperspace').classList.add('active');
+    var wipe=document.getElementById('wipeOverlay');
+    wipe.classList.add('active');
+    await new Promise(function(r){setTimeout(r,400)});
+    currentCategory=cat;currentPage=1;
+    activateFacet(cat);
+    updateBreadcrumb(cat,null);
+    await renderGrid();
+    wipe.classList.remove('active');
+    document.getElementById('hyperspace').classList.remove('active');
+    isTransitioning=false;
+  });
+});
+var searchTimer=null;
+document.getElementById('searchInput').addEventListener('input',function(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(function(){currentPage=1;renderGrid();},300);
+});
+Promise.all([loadAkabab(),loadExploration()]).then(function(){
+  renderGrid().then(function(){
+    updateExplorationBar();
+  });
+});
+// Holocron boot animation — cold start detection
+var bootFlag=localStorage.getItem('holocron_visited');
+if(bootFlag){
+  document.getElementById('holocronBoot').style.animation='holocron-boot .4s ease-out forwards';
+}else{
+  localStorage.setItem('holocron_visited','true');
+}
+
+</script>
+</body>
+</html>

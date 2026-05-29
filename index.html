@@ -87,13 +87,59 @@
   body[data-theme="light"] .control-btn.active, body[data-theme="light"] .control-btn[aria-pressed="true"] { color:#062632; background:rgba(6,182,212,.22); }
   body[data-theme="light"] code { background:rgba(15,23,42,.06); }
 
+
+
+  /* Premium mobile controls + evidence artifacts patch — 2026-05-29 */
+  .control-bar { position:sticky; top:10px; z-index:30; box-shadow:0 18px 55px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.035); }
+  .control-group { background:rgba(255,255,255,.025); border:1px solid rgba(255,255,255,.055); border-radius:999px; padding:4px; flex-wrap:nowrap; }
+  .control-label { padding:0 5px 0 8px; white-space:nowrap; }
+  .control-btn { min-width:46px; box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+  #theme-toggle { min-width:112px; }
+  .impact-hero { display:grid; grid-template-columns:1.15fr .85fr; gap:14px; align-items:stretch; }
+  .impact-copy { background:linear-gradient(135deg,rgba(6,182,212,.14),rgba(64,224,208,.045)); border:1px solid rgba(6,182,212,.24); border-radius:16px; padding:18px; box-shadow:0 20px 70px rgba(6,182,212,.07); }
+  .impact-kicker { font-family:'JetBrains Mono',monospace; color:#40E0D0; font-size:.62em; letter-spacing:2.8px; text-transform:uppercase; margin-bottom:8px; }
+  .impact-title { color:#e2e8f0; font-weight:700; font-size:1.18em; line-height:1.2; margin-bottom:8px; }
+  .impact-copy p { color:#8b95a5; font-size:.8em; line-height:1.6; }
+  .impact-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+  .impact-card { background:rgba(0,0,0,.42); border:1px solid rgba(255,255,255,.065); border-radius:14px; padding:13px; }
+  .impact-card strong { display:block; color:#06b6d4; font-family:'JetBrains Mono',monospace; font-size:.68em; letter-spacing:1.6px; text-transform:uppercase; margin-bottom:5px; }
+  .impact-card span { display:block; color:#8b95a5; font-size:.74em; line-height:1.45; }
+  .artifact-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:12px; }
+  .artifact-card { background:rgba(0,0,0,.48); border:1px solid rgba(6,182,212,.16); border-radius:16px; overflow:hidden; box-shadow:0 18px 65px rgba(0,0,0,.25); }
+  .artifact-head { padding:13px 14px; border-bottom:1px solid rgba(6,182,212,.12); display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
+  .artifact-head strong { color:#e2e8f0; font-family:'JetBrains Mono',monospace; font-size:.78em; line-height:1.35; }
+  .artifact-head small { display:block; color:#64748b; font-size:.63em; line-height:1.5; margin-top:5px; }
+  .artifact-sha { color:#40E0D0; font-family:'JetBrains Mono',monospace; font-size:.58em; letter-spacing:.7px; white-space:nowrap; }
+  .artifact-frame { height:360px; background:rgba(1,4,3,.7); border-bottom:1px solid rgba(6,182,212,.12); }
+  .artifact-frame iframe { width:100%; height:100%; border:0; display:block; background:#010403; }
+  .artifact-actions { display:flex; flex-wrap:wrap; gap:8px; padding:12px 14px 14px; }
+  .artifact-actions .link-pill { margin:0; }
+  body[data-theme="light"] .impact-copy { background:linear-gradient(135deg,rgba(6,182,212,.16),rgba(64,224,208,.07)); border-color:rgba(6,116,144,.2); box-shadow:0 18px 45px rgba(15,23,42,.08); }
+  body[data-theme="light"] .impact-title, body[data-theme="light"] .artifact-head strong { color:#102033; }
+  body[data-theme="light"] .impact-copy p, body[data-theme="light"] .impact-card span, body[data-theme="light"] .artifact-head small { color:#475569; }
+  body[data-theme="light"] .impact-card, body[data-theme="light"] .artifact-card { background:rgba(255,255,255,.72); border-color:rgba(15,23,42,.08); }
+
   @media(max-width:700px){
+
+    .control-bar { top:6px; flex-direction:row; align-items:center; justify-content:center; flex-wrap:wrap; gap:7px; padding:8px; border-radius:18px; }
+    .control-group { width:auto; justify-content:center; gap:4px; padding:3px; }
+    .control-label { width:auto; font-size:.5em; letter-spacing:1px; padding:0 4px 0 6px; }
+    .control-btn { flex:0 0 auto; min-width:40px; min-height:32px; padding:6px 9px; font-size:.58em; }
+    #theme-toggle { min-width:92px; }
+    .control-status { display:none; }
+    .impact-hero, .artifact-grid { grid-template-columns:1fr; }
+    .impact-copy { padding:14px; }
+    .impact-title { font-size:1.02em; }
+    .impact-copy p { font-size:.78em; }
+    .artifact-head { flex-direction:column; gap:7px; }
+    .artifact-sha { white-space:normal; overflow-wrap:anywhere; }
+    .artifact-frame { height:280px; }
     body { padding:10px; overflow-x:hidden; }
     .container { width:100%; max-width:100%; }
-    .control-bar { position:relative; align-items:flex-start; flex-direction:column; padding:10px; gap:9px; }
-    .control-group { width:100%; justify-content:space-between; gap:6px; }
-    .control-label { width:100%; font-size:.56em; letter-spacing:1.4px; }
-    .control-btn { flex:1; min-width:72px; padding:8px 9px; font-size:.6em; }
+    .control-bar { position:sticky; top:6px; align-items:center; flex-direction:row; justify-content:center; flex-wrap:wrap; padding:8px; gap:7px; }
+    .control-group { width:auto; justify-content:center; gap:4px; }
+    .control-label { width:auto; font-size:.5em; letter-spacing:1px; }
+    .control-btn { flex:0 0 auto; min-width:40px; padding:6px 9px; font-size:.58em; }
     .header { padding:16px 0 10px; }
     .header h1 { font-size:clamp(1.02rem,7.2vw,1.55rem); letter-spacing:.45px; line-height:1.16; overflow-wrap:anywhere; word-break:normal; }
     .subtitle { font-size:.58em; letter-spacing:1.35px; line-height:1.48; padding:0 4px; }
@@ -136,12 +182,12 @@
 <canvas id="matrix-canvas"></canvas>
 <div class="container">
 <div class="control-bar" aria-label="Live view controls">
-  <div class="control-group" role="group" aria-label="Language controls">
+  <div class="control-group lang-switch" role="group" aria-label="Language controls">
     <span class="control-label" data-i18n="controls.language">Language</span>
     <button class="control-btn" type="button" id="lang-en" onclick="setLanguage('en')" aria-pressed="true">EN</button>
     <button class="control-btn" type="button" id="lang-es" onclick="setLanguage('es')" aria-pressed="false">ES</button>
   </div>
-  <div class="control-group" role="group" aria-label="Theme controls">
+  <div class="control-group theme-switch" role="group" aria-label="Theme controls">
     <span class="control-label" data-i18n="controls.theme">Theme</span>
     <button class="control-btn" type="button" id="theme-toggle" onclick="toggleTheme()" aria-pressed="false" data-i18n="controls.themeButton">Light mode</button>
     <span class="control-status" id="view-status" aria-live="polite" data-i18n="controls.status">Live ES/EN · Dark/Light</span>
@@ -173,6 +219,22 @@
     <div class="metric-box"><div class="val m-o">1/13</div><div class="label">Gold Passed All</div></div>
     <div class="metric-box"><div class="val m-l">75.4</div><div class="label">Top measured tok/s</div></div>
 </div>
+</div>
+
+<div class="tier impact-tier">
+  <div class="tier-label" data-l10n data-en="<span class=&quot;icon&quot;>⚡</span> EXECUTIVE DECISION LAYER <span class=&quot;count&quot;>MiniV default lane</span>" data-es="<span class=&quot;icon&quot;>⚡</span> CAPA DE DECISIÓN EJECUTIVA <span class=&quot;count&quot;>carril MiniV default</span>"><span class="icon">⚡</span> EXECUTIVE DECISION LAYER <span class="count">MiniV default lane</span></div>
+  <div class="impact-hero">
+    <div class="impact-copy">
+      <div class="impact-kicker" data-l10n data-en="What changed" data-es="Qué cambió">What changed</div>
+      <div class="impact-title" data-l10n data-en="MiniV is framed as a gated local workstation, not a raw model zoo." data-es="MiniV se presenta como workstation local con gates, no como zoológico de modelos.">MiniV is framed as a gated local workstation, not a raw model zoo.</div>
+      <p data-l10n data-en="Twenty-six lanes remain visible, but the narrative now points to the one strict champion and the operational rule that prevents recovered/draft attempts from being overclaimed." data-es="Los 26 carriles siguen visibles, pero la narrativa apunta al único campeón estricto y a la regla operativa que evita sobrevender intentos recuperados o draft.">Twenty-six lanes remain visible, but the narrative now points to the one strict champion and the operational rule that prevents recovered/draft attempts from being overclaimed.</p>
+    </div>
+    <div class="impact-grid">
+      <div class="impact-card"><strong data-l10n data-en="Champion" data-es="Campeón">Champion</strong><span data-l10n data-en="miniv-qwopus36-27b-v2-q5 is the strict gold lane for MiniV Vulkan UMA." data-es="miniv-qwopus36-27b-v2-q5 es el carril gold estricto de MiniV Vulkan UMA.">miniv-qwopus36-27b-v2-q5 is the strict gold lane for MiniV Vulkan UMA.</span></div>
+      <div class="impact-card"><strong data-l10n data-en="Discipline" data-es="Disciplina">Discipline</strong><span data-l10n data-en="Framework-ready is useful, but only full gold strict pass moves into production routing." data-es="Framework-ready es útil, pero solo un pass gold estricto entra a ruteo productivo.">Framework-ready is useful, but only full gold strict pass moves into production routing.</span></div>
+      <div class="impact-card"><strong data-l10n data-en="Evidence" data-es="Evidencia">Evidence</strong><span data-l10n data-en="Raw MiniV Pokedex/SWAPI deliverables are embedded with SHA references for direct inspection." data-es="Los entregables raw MiniV Pokedex/SWAPI quedan embebidos con referencias SHA para inspección directa.">Raw MiniV Pokedex/SWAPI deliverables are embedded with SHA references for direct inspection.</span></div>
+    </div>
+  </div>
 </div>
 
 <div class="tier t2">
@@ -507,10 +569,34 @@
   </div>
 </div>
 
+
+<div class="tier artifact-tier">
+  <div class="tier-label" data-l10n data-en="<span class=&quot;icon&quot;>🧩</span> REAL LOCAL-MODEL DELIVERABLES <span class=&quot;count&quot;>MiniV raw finals</span>" data-es="<span class=&quot;icon&quot;>🧩</span> ENTREGABLES REALES DE MODELOS LOCALES <span class=&quot;count&quot;>finales raw MiniV</span>"><span class="icon">🧩</span> REAL LOCAL-MODEL DELIVERABLES <span class="count">MiniV raw finals</span></div>
+  <div class="note" data-l10n data-en="Embedded from local benchmark outputs, with public-gallery identity repair applied only where required; open the frames or full pages to inspect the actual generated HTML." data-es="Embebidos desde outputs locales del benchmark, con reparación de identidad pública solo donde fue requerida; abre los frames o páginas completas para inspeccionar el HTML generado real.">Embedded from local benchmark outputs, with public-gallery identity repair applied only where required; open the frames or full pages to inspect the actual generated HTML.</div>
+  <div class="artifact-grid">
+    <article class="artifact-card">
+      <div class="artifact-head">
+        <div><strong data-l10n data-en="POKEDEX Artifact" data-es="Artifact POKEDEX">POKEDEX Artifact</strong><small data-l10n data-en="MiniV raw autonomous Pokédex artifact with full gate evidence and SHA lock." data-es="Entregable Pokedex real generado por modelo local; embebido con reparación de identidad pública cuando fue requerida.">MiniV raw autonomous Pokédex artifact with full gate evidence and SHA lock.</small></div>
+        <span class="artifact-sha">SHA c535e7587ff3…</span>
+      </div>
+      <div class="artifact-frame"><iframe title="POKEDEX Artifact" src="artifacts/local-model-deliverables/miniv-pokedex-v43.html" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="artifact-actions"><a class="link-pill" href="artifacts/local-model-deliverables/miniv-pokedex-v43.html" target="_blank" rel="noopener" data-l10n data-en="Open full artifact" data-es="Abrir artifact completo">Open full artifact</a><a class="link-pill" href="artifacts/local-model-deliverables/manifest.json" target="_blank" rel="noopener">manifest.json</a></div>
+    </article>
+    <article class="artifact-card">
+      <div class="artifact-head">
+        <div><strong data-l10n data-en="SWAPI Holocron Artifact" data-es="Artifact SWAPI Holocron">SWAPI Holocron Artifact</strong><small data-l10n data-en="MiniV raw autonomous SWAPI Holocron artifact validated by browser evidence." data-es="Entregable SWAPI Holocron real generado por modelo local; embebido con reparación de identidad pública cuando fue requerida.">MiniV raw autonomous SWAPI Holocron artifact validated by browser evidence.</small></div>
+        <span class="artifact-sha">SHA 7348234a572b…</span>
+      </div>
+      <div class="artifact-frame"><iframe title="SWAPI Holocron Artifact" src="artifacts/local-model-deliverables/miniv-swapi-holocron-v43.html" loading="lazy" referrerpolicy="no-referrer"></iframe></div>
+      <div class="artifact-actions"><a class="link-pill" href="artifacts/local-model-deliverables/miniv-swapi-holocron-v43.html" target="_blank" rel="noopener" data-l10n data-en="Open full artifact" data-es="Abrir artifact completo">Open full artifact</a><a class="link-pill" href="artifacts/local-model-deliverables/manifest.json" target="_blank" rel="noopener">manifest.json</a></div>
+    </article>
+  </div>
+</div>
+
 <div class="tier t4">
   <div class="tier-label"><span class="icon">🔗</span> PROVENANCE & OFFICIAL LINKS <span class="count">public evidence</span></div>
   <div class="note"><b>Source run:</b> <code>all-local-model-eval-20260528-231052</code> · <b>Summary SHA256:</b> <code>4fd13586827e78a8…</code> · <b>State SHA256:</b> <code>f8baa63f755c2887…</code></div>
-  <div class="link-row"><a class="link-pill" href="https://github.com/n30j0su3" target="_blank" rel="noopener">N30 GitHub</a><a class="link-pill" href="https://linktr.ee/freakingjson" target="_blank" rel="noopener">FreakingJSON Linktree</a><a class="link-pill" href="https://x.com/freakingjson" target="_blank" rel="noopener">X / Twitter</a><a class="link-pill" href="https://www.youtube.com/@freakingjson" target="_blank" rel="noopener">YouTube</a><a class="link-pill" href="https://github.com/n30j0su3" target="_blank" rel="noopener">N30 GitHub</a></div>
+  <div class="link-row"><a class="link-pill" href="https://linktr.ee/freakingjson" target="_blank" rel="noopener">FreakingJSON Linktree</a><a class="link-pill" href="https://www.youtube.com/@freakingjson" target="_blank" rel="noopener">YouTube</a><a class="link-pill" href="artifacts/local-model-deliverables/manifest.json" target="_blank" rel="noopener">Artifact manifest</a></div>
 </div>
 
 <div class="footer">
@@ -562,7 +648,7 @@ const PAGE_TEXT={
     'comparison.publicBody2':'We reuse the comparison vocabulary — agentic reasoning, production UI, and canvas/WebGL — while showing N30\'s stricter local multi-pass trust gates.',
     'mapping.smoke':'<b>Smoke</b> → agentic trust probes and structured output reliability.','mapping.framework':'<b>Framework</b> → spec/framework planning and review tasks.','mapping.gold':'<b>Gold</b> → creative UI/canvas-style gold references.','mapping.policy':'<b>Policy</b> → attempt 1 strict; retries are recovery signal only.',
     'provenance.source':'<b>Source run:</b> <code>all-local-model-eval-20260528-231052</code> · <b>Summary SHA256:</b> <code>4fd13586827e78a8…</code> · <b>State SHA256:</b> <code>f8baa63f755c2887…</code>',
-    'link.jackrong':'Jackrong qwopus36-eval reference','link.github':'N30 GitHub','link.linktree':'FreakingJSON Linktree','link.x':'X / Twitter','link.youtube':'YouTube',
+    'link.jackrong':'Jackrong qwopus36-eval reference','link.github':'N30 GitHub','link.linktree':'FreakingJSON Linktree','link.youtube':'YouTube',
     'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · RTX 5060 Ti Benchmark Gallery<div style="margin-top:4px;color:rgba(6,182,212,.45);">All benchmark orchestration, methodology design, and AI model evaluations directed by N30.</div>',
     'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · Corsair AI Workstation 300 64GB Benchmark Gallery<div style="margin-top:4px;color:rgba(6,182,212,.45);">All benchmark orchestration, methodology design, and AI model evaluations directed by N30.</div>',
     'chart.axis':'Trust lane score (classification-derived)','chart.axisShort':'Trust lane score','chart.toks':'tok/s','chart.strictGold':'STRICT GOLD','chart.recoverable':'RECOVERABLE','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'LOAD FAIL','chart.quarantine':'QUARANTINE','chart.draft':'DRAFT','fallback.trust':'Plotly CDN unavailable; table data below is the canonical source.','fallback.legacy':'Plotly CDN unavailable; throughput data preserved in JSON files.'
@@ -598,7 +684,7 @@ const PAGE_TEXT={
     'comparison.publicBody2':'Reutilizamos el vocabulario comparativo — razonamiento agentic, UI de producción y canvas/WebGL — mostrando los gates locales multi-pass más estrictos de N30.',
     'mapping.smoke':'<b>Smoke</b> → pruebas de confianza agentic y confiabilidad de output estructurado.','mapping.framework':'<b>Framework</b> → tareas de planificación/revisión de specs y framework.','mapping.gold':'<b>Gold</b> → referencias Gold creativas estilo UI/canvas.','mapping.policy':'<b>Política</b> → intento 1 estricto; los reintentos son sólo señal de recuperación.',
     'provenance.source':'<b>Run fuente:</b> <code>all-local-model-eval-20260528-231052</code> · <b>SHA256 resumen:</b> <code>4fd13586827e78a8…</code> · <b>SHA256 estado:</b> <code>f8baa63f755c2887…</code>',
-    'link.jackrong':'Referencia Jackrong qwopus36-eval','link.github':'GitHub N30','link.linktree':'Linktree FreakingJSON','link.x':'X / Twitter','link.youtube':'YouTube',
+    'link.jackrong':'Referencia Jackrong qwopus36-eval','link.github':'GitHub N30','link.linktree':'Linktree FreakingJSON','link.youtube':'YouTube',
     'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark RTX 5060 Ti<div style="margin-top:4px;color:rgba(6,182,212,.45);">Toda la orquestación del benchmark, el diseño metodológico y las evaluaciones de modelos IA fueron dirigidas por N30.</div>',
     'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark Corsair AI Workstation 300 64GB<div style="margin-top:4px;color:rgba(6,182,212,.45);">Toda la orquestación del benchmark, el diseño metodológico y las evaluaciones de modelos IA fueron dirigidas por N30.</div>',
     'chart.axis':'Puntaje de carril de confianza (derivado por clasificación)','chart.axisShort':'Puntaje de confianza','chart.toks':'tok/s','chart.strictGold':'GOLD ESTRICTO','chart.recoverable':'RECUPERABLE','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'FALLA CARGA','chart.quarantine':'CUARENTENA','chart.draft':'DRAFT','fallback.trust':'Plotly CDN no disponible; la tabla inferior es la fuente canónica.','fallback.legacy':'Plotly CDN no disponible; los datos de throughput están preservados en JSON.'
@@ -637,13 +723,14 @@ function bindI18n(){
   document.querySelectorAll('.t3 .note').forEach((el,i)=>{ set(el, i===0?'comparison.publicBody1':'comparison.publicBody2', true); });
   document.querySelectorAll('.mini-list li').forEach((el,i)=>set(el,['mapping.smoke','mapping.framework','mapping.gold','mapping.policy'][i],true));
   const prov=document.querySelector('.t4 .note'); set(prov,'provenance.source',true);
-  document.querySelectorAll('a.link-pill').forEach(a=>{ const href=a.href; if(href.includes('huggingface')) set(a,'link.jackrong'); else if(href.includes('linktr.ee')) set(a,'link.linktree'); else if(href.includes('x.com')) set(a,'link.x'); else if(href.includes('youtube')) set(a,'link.youtube'); else if(href.includes('github.com')) set(a,'link.github'); });
+  document.querySelectorAll('a.link-pill').forEach(a=>{ const href=a.href; if(href.includes('huggingface')) set(a,'link.jackrong'); else if(href.includes('linktr.ee')) set(a,'link.linktree'); else if(href.includes('youtube')) set(a,'link.youtube'); else if(href.includes('github.com')) set(a,'link.github'); });
   set(document.querySelector('.footer'),`footer.${PAGE_KIND}`,true);
 }
 function applyLanguage(lang){
   localStorage.setItem(LANG_KEY,lang); document.documentElement.lang=lang;
   document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent=tr(el.dataset.i18n); });
   document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML=tr(el.dataset.i18nHtml); });
+  document.querySelectorAll('[data-l10n]').forEach(el=>{ const value=lang==='es'?el.dataset.es:el.dataset.en; if(value!==undefined) el.innerHTML=value; });
   document.getElementById('lang-en')?.classList.toggle('active',lang==='en');
   document.getElementById('lang-es')?.classList.toggle('active',lang==='es');
   document.getElementById('lang-en')?.setAttribute('aria-pressed',String(lang==='en'));
