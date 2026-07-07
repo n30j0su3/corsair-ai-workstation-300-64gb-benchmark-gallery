@@ -1,0 +1,453 @@
+We need produce complete HTML file only. Need implement playable 3D flight sim locally browser with HTML/CSS/Canvas/WebGL/JS no external. We can use Canvas 2D with custom 3D math, easier than WebGL. Need complete single file. Need robust game.
+
+We need think through requirements. Need output code only. Need include HTML, CSS, JS. Need playable. We'll make Canvas full screen, 3D scene. Aircraft model rendered via polygons/lines. Terrain as grid mesh with height function, mountains, towers, gates rings, runway. Objects. Camera chase/cockpit toggle. Input: WASD/arrow for pitch/yaw/roll? Throttle Q/E or slider maybe. Space brake? C camera. R restart. Need HUD.
+
+Need flight physics aircraft-like: throttle affects speed, drag, lift, gravity. We'll implement simplified.
+
+State:
+- world size 6000 x 6000, grid maybe 80x80. Height function combines base terrain + mountains (gaussian peaks), valleys. Need obstacles towers.
+- Course: 8 rings in sequence, placed around terrain. Rings vertical? Gate rings oriented perpendicular to course direction. Need checkpoint tracking. Simpler: rings are torus/ring lying in vertical plane perpendicular to path, with center at center, radius 90. Need calculate nearest center distance < radius and maybe forward threshold. If pass through ring plane from behind. We can use course path sequence. For each checkpoint, check distance to center < ringRadius and player dot with dir >? More robust: use center and normal dir (path direction). If distance to center < 100 and signed distance along normal > -80 and < maybe 150 after crossing; checkpoint advances when signed distance > -150 and < 250 and lateral < 100. Or use cross-track distance. We'll maintain prev position, normal = course[i].dir, dist = dot(pos - center, normal); if abs(lateral)<100 and dist between -80 and 120 and speed > 20, mark. If ring missed? okay.
+- final runway landing zone as final objective. At course end, player needs land on runway with low speed/altitude, attitude not too steep, maybe touch down. Need win if position over runway zone and altitude < maybe 8, vertical speed < 25, speed < 80, throttle < 60? We'll implement. Failure: crash on terrain/obstacles, stall, roll inverted, speed too low, fuel? No fuel maybe. Ground collision if altitude < 5 and speed high? Need failure. Also terrain collision if altitude below ground+5 and vertical velocity negative. We'll fail with message.
+
+Physics:
+- Position vec3, velocity, orientation basis: forward, right, up. Heading yaw, pitch, roll. We can represent orientation by heading in radians and pitch/roll. Use Euler:
+forward = normalize([sin(heading)*cos(pitch), sin(pitch), cos(heading)*cos(pitch)]). right = [cos(heading),0,-sin(heading)] maybe after pitch? roll affects right/up. Need proper.
+Simpler: heading yaw around Y, pitch around Z? right = normalize([cos(heading),0,-sin(heading)]), up = normalize([ -sin(heading)*sin(pitch), cos(pitch), cos(heading)*sin(pitch)]). Then right with roll: r = cos(roll)*right + sin(roll)*up? Need coordinate. roll around forward, so new right = cos(roll)*right + sin(roll)*up? Up = -sin(roll)*right + cos(roll)*up. Forward unchanged initially. But pitch changes forward. We'll update orientation from angular velocities.
+Alternative maintain quaternion? More complex but manageable. Euler okay.
+Aircraft-like:
+- throttle 0..1. speed magnitude.
+- drag: F_drag = -speed*speed*dragCoeff*velocity/speed.
+- lift: direction up * liftCoeff * speed^2 * clamp(cos(roll),0.8,1.3) maybe. Also pitch controls lift? In plane, pitch changes angle of attack; but we can include.
+- gravity: velocity.y -= g*dt*0.35? Need units. Use units meters? Canvas units arbitrary. g maybe 22 m/s^2. Need keep altitude.
+- speed: throttle acceleration along forward; drag; lift changes vertical.
+- Bank affects turning: yaw rate = turnRate * sin(roll) maybe; if roll right positive? Need define roll positive right wing down? Input A/D roll left/right. If roll positive right wing down, turn to right. In coordinate, right vector points to right. yaw rate positive around y increases heading? Need heading convention: forward = [sin heading cos pitch, sin pitch, cos heading cos pitch]. If heading=0, forward +z. Positive yaw? rotation around y: derivative forward = heading' * [cos h cosp,0,-sin h cosp]. At h=0, derivative +x. In right-handed coordinate, positive yaw turns from +z to +x? That's right if right vector at h=0 = [1,0,0]. So positive yaw = right. Good. roll positive right wing down, bank right, yaw positive.
+
+Update:
+- dt clamp 0.05.
+- input: rollInput = D - A? right wing down positive. pitchInput = S - W? Need pitch down/up. Up negative? We'll define pitch angle positive nose up. W raises nose: pitch -=? Since pitch positive nose up. If W, pitch -= pitchRate*dt. S increases pitch. Roll D = positive roll, A negative. Throttle E inc, Q dec.
+- clamp pitch maybe ±60°, roll ±130°.
+- angular velocities: yawRate = -rollInput*turnRate + maybe autopitch? turnRate = 1.5 rad/s * throttle? Actually bank. yawAccum += -rollInput * turnRate * dt; clamp yaw.
+- pitchAccum += pitchInput * pitchRate * throttle * dt; pitch = clamp(pitch + pitchInput*pitchRate*throttle*dt, -0.8,0.75)
+- rollAccum += rollInput * rollRate * dt.
+Need roll damping to level? For aircraft-like, add roll damping and yaw damping. Could implement using roll velocity? Simpler.
+- Speed: desiredSpeed = throttle*maxSpeed + 35 (min). acceleration = (desired - speed)* (throttle? maybe 1.2) along forward. Drag = speed^2 * dragCoeff. Use speed scalar update: speed += (throttle*accel - drag)*dt. Then if speed < 28, lift low and stall; maybe apply stall: speed decays, lift reduced, yaw less.
+- Lift: L = liftCoeff * speed^2 * cos(roll)*dt? But speed units m/s, lift huge. Need scale. Use g: liftAccel = clamp(1.2 - speed*speed*0.00005? Let's tune.
+Let's define speed in "m/s" but arbitrary. At speed=70, dynamic pressure. Lift accel = 18 * cos(roll) at speed 70? Need balance. Use lift = 14 * (speed/70)^2 * cos(roll), max 24. Gravity g=24. Net vertical acceleration = lift*cos(pitch) - g + maybe thrust vertical component. If level at speed 70, lift ~18, gravity 24 => descends. Need lift ~24 at cruise. Use lift = 24*(speed/75)^2*cos(roll)^1.2. At 75 level. At 50 lift=10.7, descends; stall if <35. Good.
+- Vertical velocity update: vy += (lift*cos(pitch)-gravity + forward.y*thrustAccel)*dt; vx/vz from vy. But if we update speed scalar and position based on velocity, okay.
+- Drag: speed -= dragCoeff*speed^2*dt, dragCoeff maybe 0.004. At throttle max acceleration 22; terminal maybe sqrt(22/0.004)=74. Good.
+- Thrust = throttle*25.
+- If throttle high, speed increases; if speed low, drag less.
+- Gravity always.
+- Altitude = pos.y - groundHeight.
+- Collision:
+- ground: if altitude < 0 and vy<0 -> crash. Also if altitude < 3 maybe fail? Maybe if altitude < 0.
+- obstacles: towers as cylinders/cubes at positions; if distance to tower base < radius and altitude < towerHeight+50 -> crash.
+- mountains no separate beyond terrain.
+- ring no collision.
+- wind? no.
+- Stall failure: speed < 24 for >1s or pitch too steep maybe.
+- Over-speed: speed > 125 fail? Maybe.
+
+Rendering:
+Use 2D canvas. Need 3D perspective with projection.
+Coordinate: x east, y up, z north? Camera.
+Functions:
+- project(worldPoint, cam): relative = world - cam.pos; transform to camera basis (right/up/forward) maybe. We need camera looking forward. Camera basis: cam.forward = normalize(desired?); right = normalize(cross(cam.forward, worldUp)); up = cross(right, cam.forward). z = dot(rel, forward); if z<=0 invisible. screenX = w/2 + (dot(rel,right)/z)*f; screenY = h/2 - (dot(rel,up)/z)*f. f = (h*0.55)/tan(fov/2).
+- For terrain mesh: generate grid vertices and faces. Draw sorted? Need proper depth ordering. We can render terrain faces back-to-front sorted by avg z depth descending. World size 6000, grid maybe 80 => 12800 faces. Sorting each frame okay? 12k*60 = 720k sorts maybe okay in JS? Could be okay but maybe heavy. Need local browser. We can draw terrain by rows? But proper depth ordering required. We'll use depth sort for terrain faces maybe every other grid 60 => 7200 faces. Fine.
+- Draw sky gradient. Sun.
+- Draw terrain after sky maybe before objects? Depth sort includes terrain. Need sort all ground faces by depth descending (far first). We can precompute face vertices and height. But height function. For each frame generate faces? Grid static; generate faces once with vertices (x,z,y). Then for each frame project and sort based on average depth. 7200 faces. okay.
+- Draw terrain colored by height maybe via per-face color interpolation. Canvas fill polygon with gradient? We can set fillStyle based on height, shade by normal. Need draw. For each face, compute avg height, color. Could use HSL: low green, high brown/white. Use face brightness based on light. Simpler: color by height; add shade from slope maybe.
+- Draw course rings: rings vertical planes. Draw as elliptical projection of circle. Need orient in world. We can generate 32 points around ring: center + right*radius*cos + up*radius*sin. Project, draw lines with depth maybe sort segments by average depth. Draw if visible. Need ring color checkpoint active. At least 8.
+- Draw obstacles: towers as lines/cubes. Need render 3D. For each tower, draw vertical pole and top beacon. Use depth sort for lines. Use cylinders approximated by 4 vertical lines and cross beams. Draw with line width. Need collision radius.
+- Draw aircraft: model in world or projected relative to cam. Need render 3D aircraft with depth ordering. Could draw projected polygons. Need render own plane depending camera. Chase camera follows behind, cockpit camera from cockpit. We can draw model always if behind? For chase, camera behind and above looking at plane, draw plane. For cockpit, draw model relative to cockpit maybe not visible except nose/ground? But requirement render 3D aircraft; maybe in chase always visible. In cockpit, draw cockpit frame and perhaps nose.
+- Aircraft model: local vertices:
+- fuselage: nose (0,0,3.5), tail (-0,0,-2.5), left/right wing etc. Coordinates local with x right, y up, z forward. We'll create triangles and lines. Transform local to world via basis:
+world = pos + right*x + up*y + forward*z.
+- Project all vertices, draw triangles sorted by avg depth. Need depth sorting for aircraft model. Use fill colors. For cockpit, maybe draw cockpit frame overlay and not draw plane? Could draw nose as small.
+- Draw contrails/particles:
+- contrail: emit small particles behind aircraft every frame if throttle high? Use array max 80, update position = pos - forward*distance + etc, lifetime, project and draw circles/lines. Need sense speed. We can add ground streaks? Maybe draw terrain texture. We can also draw "speed lines" when high speed? Keep simple.
+- Ground movement: terrain moves.
+
+Camera:
+- Chase camera: camPos = aircraft.pos - forward*25 - right? Actually behind: pos - forward*28 + up*12. target = pos + forward*12 + up*1. Smooth camPos += (desired - camPos)*factor. camForward = normalize(target - camPos). Need right/up.
+- Cockpit: camPos = pos + right*0 + up*1.5 + forward*2; camForward = forward. Need HUD horizon. In cockpit, artificial horizon large. Need maybe not draw terrain below? We'll draw.
+- C toggles.
+- Mouse? Could support mouse drag to adjust camera yaw in cockpit? Requirement camera control toggle. Could add mouse drag in cockpit/ chase? Maybe not but nice.
+- Keyboard:
+W/S pitch up/down, A/D roll, Q/E throttle, C camera, R restart, P pause maybe.
+- Need prevent page scroll arrows.
+
+HUD:
+Draw overlay div with panels:
+- Airspeed, Altitude, Throttle, Heading, Checkpoint N/8, State.
+- Artificial horizon: small canvas or div inside HUD. Could implement in same canvas or separate canvas. Easier: draw in main canvas HUD and use overlay for text. But artificial horizon needs draw in canvas. We'll have HUD overlay for text and mini horizon canvas? Single file.
+Maybe use div#hud with CSS, and canvas. Text in overlay. Mini horizon canvas 180x90. Use JS to draw horizon with aircraft pitch/roll. Good.
+- Progress bar.
+
+UI:
+Start screen overlay with instructions, start button. Restart button maybe. Game state.
+Need "Output only complete HTML file" so no markdown. Include code.
+
+Need ensure code works. Let's design.
+
+Coordinate and math:
+Define vec operations:
+const V = {add, sub, mul, dot, cross, len, norm, clamp...}
+Need orientation:
+function updateOrientation(dt)
+Inputs:
+let pitchInput = 0, rollInput = 0.
+- W: pitchInput -=1; S +=1. A rollInput -=1; D +=1.
+- clamp pitch by smoothing? pitchVelocity maybe. Use pitchAngle += pitchInput*pitchRate*throttle*dt. Roll angle += rollInput*rollRate*dt.
+- Damping: pitchAngle += -pitchAngle*1.5*dt? rollAngle += -rollAngle*4*dt.
+- Turn rate: if throttle <0.15, turnRate=0.6; else 1.4*(throttle+0.4). yawAngle += -rollInput*turnRate*dt; yawAngle = clamp(yawAngle, -Math.PI*1.3, Math.PI*1.3); maybe auto-level yaw? If no roll, yaw damping: yawAngle += -yawAngle*0.5*dt. But if roll input, yaw. Also bank affects turning.
+- But if roll positive right, yaw positive right. pitchInput positive = nose down, negative = nose up.
+- Need set forward/right/up from yaw,pitch,roll. yaw positive right. pitch positive nose up.
+Use:
+forward = [
+Math.sin(yaw)*Math.cos(pitch),
+Math.sin(pitch),
+Math.cos(yaw)*Math.cos(pitch)
+]
+right0 = [Math.cos(yaw),0,-Math.sin(yaw)]
+up0 = [-Math.sin(yaw)*Math.sin(pitch), Math.cos(pitch), Math.cos(yaw)*Math.sin(pitch)]
+Then roll:
+right = norm(cross(forward, up0)? Wait local right after roll around forward: right = cos(roll)*right0 + sin(roll)*up0? If roll positive right wing down, up rotates toward right? Let's test h=0, pitch=0: right0=[1,0,0], up0=[0,1,0]. roll=+90 right=[0,1,0] (right wing up? Actually right wing down would right vector points up? If roll positive right wing down, right vector points up? Hmm roll around forward positive by right-hand rule: positive roll from up toward right? In aircraft, right bank: right wing down, left wing up, aircraft right axis points up? Coordinate y up, right axis points right; if right wing down, right axis tilts upward? Let's think: roll clockwise looking forward (right wing down), local up tilts left? Actually if right wing down, the local right axis tilts toward ground? Wait local right axis is wing direction. If right wing down, local right vector points downward? But our y up is world. For bank angle positive right wing down, right vector should have negative y? Let's test roll=+90 in roll formula right = cos*r0 + sin*u0 gives right=[0,1,0] (up), left wing down. That's left bank. If roll positive left bank. For positive bank right, use right=cos*r0 - sin*u0, up=sin*r0 + cos*u0? Let's define bank positive nose right (right wing down), formula right = cos(roll)*right0 - sin(roll)*up0; up = sin(roll)*right0 + cos(roll)*up0. At roll=+90, right=[0,-1,0] (right wing down), up=[1,0,0]. Good. Use this.
+Then yaw turn positive right with roll positive. Good.
+But if roll=+90 and forward unchanged, right points down, up points right. okay.
+- Need bank affects lift: cos(roll) becomes small at high roll, stall maybe. At roll=90, lift reduced.
+
+Now produce the final answer. Be concrete and complete.</think>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Single File 3D Flight Simulator</title>
+<style>
+  html,body{
+    margin:0;
+    height:100%;
+    overflow:hidden;
+    background:#07111d;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#fff;
+    touch-action:none;
+  }
+  #game{
+    display:block;
+    width:100vw;
+    height:100vh;
+    background:#82bfff;
+  }
+  #hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    text-shadow:0 2px 4px rgba(0,0,0,.7);
+  }
+  #leftPanel,#rightPanel,#bottomPanel{
+    position:absolute;
+    background:linear-gradient(180deg,rgba(5,12,20,.68),rgba(5,12,20,.28));
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 8px 30px rgba(0,0,0,.25);
+    backdrop-filter:blur(3px);
+  }
+  #leftPanel{left:16px;top:16px;padding:12px 14px;width:210px}
+  #rightPanel{right:16px;top:16px;padding:12px 14px;width:210px}
+  #bottomPanel{left:50%;transform:translateX(-50%);bottom:14px;padding:10px 18px;min-width:320px;text-align:center}
+  .title{
+    font-weight:800;
+    letter-spacing:.08em;
+    font-size:13px;
+    color:#8ee7ff;
+    margin-bottom:8px;
+  }
+  .row{
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    font-size:14px;
+    margin:4px 0;
+  }
+  .bar{
+    width:190px;
+    height:9px;
+    border:1px solid rgba(255,255,255,.35);
+    background:rgba(0,0,0,.35);
+    overflow:hidden;
+  }
+  .bar > i{
+    display:block;
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#32ff77,#ffe04a,#ff4d4d);
+    transition:width .08s linear;
+  }
+  #progressFill{background:linear-gradient(90deg,#46a8ff,#38ffcb,#fff176)}
+  #stateText{
+    font-size:28px;
+    font-weight:900;
+    margin-top:6px;
+  }
+  #miniHorizon{
+    position:absolute;
+    right:16px;
+    bottom:16px;
+    width:180px;
+    height:120px;
+    border:2px solid rgba(255,255,255,.35);
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+    background:#87ceeb;
+  }
+  #startOverlay,#messageOverlay{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(circle at center,rgba(15,32,55,.76),rgba(2,6,12,.92));
+    pointer-events:auto;
+    z-index:5;
+  }
+  #messageOverlay{
+    background:rgba(0,0,0,.35);
+  }
+  .card{
+    width:min(720px,92vw);
+    padding:28px 34px;
+    background:linear-gradient(180deg,rgba(9,22,36,.94),rgba(6,12,22,.9));
+    border:1px solid rgba(255,255,255,.22);
+    box-shadow:0 20px 70px rgba(0,0,0,.55);
+    border-radius:18px;
+    text-align:center;
+  }
+  h1{
+    margin:0 0 10px;
+    font-size:42px;
+    letter-spacing:.08em;
+    color:#8ee7ff;
+  }
+  h2{
+    margin:0 0 12px;
+    font-size:34px;
+    color:#8ee7ff;
+  }
+  p{
+    margin:8px 0;
+    line-height:1.45;
+  }
+  .keys{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    justify-content:center;
+    margin:16px 0 20px;
+  }
+  kbd{
+    padding:7px 10px;
+    border-radius:7px;
+    background:#152335;
+    border:1px solid rgba(255,255,255,.22);
+    color:#e9fbff;
+    box-shadow:inset 0 -2px 0 rgba(0,0,0,.35);
+  }
+  button{
+    pointer-events:auto;
+    appearance:none;
+    border:0;
+    border-radius:12px;
+    padding:13px 24px;
+    font-weight:900;
+    font-size:17px;
+    letter-spacing:.06em;
+    color:#07111d;
+    background:linear-gradient(180deg,#a9fff0,#35d8ff);
+    cursor:pointer;
+    box-shadow:0 8px 24px rgba(31,206,255,.28);
+  }
+  button:hover{filter:brightness(1.08)}
+  button:active{transform:translateY(1px)}
+  #crosshair{
+    position:fixed;
+    left:50%;
+    top:50%;
+    width:22px;
+    height:22px;
+    transform:translate(-50%,-50%);
+    pointer-events:none;
+    opacity:.75;
+  }
+  #crosshair:before,#crosshair:after{
+    content:"";
+    position:absolute;
+    background:rgba(255,255,255,.9);
+    box-shadow:0 0 4px rgba(0,0,0,.8);
+  }
+  #crosshair:before{left:10px;top:0;width:2px;height:22px}
+  #crosshair:after{left:0;top:10px;width:22px;height:2px}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="hud">
+  <div id="leftPanel">
+    <div class="title">FLIGHT SIM</div>
+    <div class="row"><span>Airspeed</span><span id="speedVal">0 km/h</span></div>
+    <div class="row"><span>Altitude</span><span id="altVal">0 m</span></div>
+    <div class="row"><span>Throttle</span><span id="throttleVal">50%</span></div>
+    <div class="row"><span>Heading</span><span id="headingVal">000°</span></div>
+    <div class="row"><span>Stall warning</span><span id="stallVal">OK</span></div>
+    <div class="title" style="margin-top:12px">Checkpoint</div>
+    <div class="row"><span id="cpText">1 / 8</span><span id="cpState">Approach</span></div>
+    <div class="bar"><i id="progressFill"></i></div>
+  </div>
+
+  <div id="rightPanel">
+    <div class="title">Controls</div>
+    <div class="row"><span>W / S</span><span>Pitch</span></div>
+    <div class="row"><span>A / D</span><span>Roll / Turn</span></div>
+    <div class="row"><span>Q / E</span><span>Throttle</span></div>
+    <div class="row"><span>C</span><span>Cockpit camera</span></div>
+    <div class="row"><span>R</span><span>Restart mission</span></div>
+    <div class="row"><span>Goal</span><span>8 gates → runway</span></div>
+    <canvas id="miniHorizon"></canvas>
+  </div>
+
+  <div id="bottomPanel">
+    <div id="stateText">READY</div>
+    <p style="margin:4px 0 0">Navigate every glowing checkpoint, avoid towers and mountains, then land softly on the blue runway.</p>
+  </div>
+
+  <div id="crosshair"></div>
+</div>
+
+<div id="startOverlay">
+  <div class="card">
+    <h1>SKY RACE 3D</h1>
+    <p>Complete the course by flying through eight checkpoint rings, then land on the runway at low speed and shallow attitude.</p>
+    <div class="keys">
+      <kbd>W/S</kbd><kbd>A/D</kbd><kbd>Q/E</kbd><kbd>C</kbd><kbd>R</kbd><kbd>Mouse cockpit drag</kbd>
+    </div>
+    <button id="startBtn">Start Mission</button>
+  </div>
+</div>
+
+<div id="messageOverlay" style="display:none">
+  <div class="card">
+    <h2 id="messageTitle">Mission Failed</h2>
+    <p id="messageText">Something went wrong.</p>
+    <button id="restartBtn">Restart Mission</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha:false });
+  const mini = document.getElementById("miniHorizon");
+  const mctx = mini.getContext("2d");
+
+  const speedVal = document.getElementById("speedVal");
+  const altVal = document.getElementById("altVal");
+  const throttleVal = document.getElementById("throttleVal");
+  const headingVal = document.getElementById("headingVal");
+  const stallVal = document.getElementById("stallVal");
+  const cpText = document.getElementById("cpText");
+  const cpState = document.getElementById("cpState");
+  const progressFill = document.getElementById("progressFill");
+  const stateText = document.getElementById("stateText");
+  const startOverlay = document.getElementById("startOverlay");
+  const messageOverlay = document.getElementById("messageOverlay");
+  const messageTitle = document.getElementById("messageTitle");
+  const messageText = document.getElementById("messageText");
+  const startBtn = document.getElementById("startBtn");
+  const restartBtn = document.getElementById("restartBtn");
+
+  const W = () => canvas.width = Math.floor(innerWidth);
+  const H = () => canvas.height = Math.floor(innerHeight);
+  addEventListener("resize", () => { W(); H(); });
+  W(); H();
+
+  const TAU = Math.PI * 2;
+  const DEG = Math.PI / 180;
+  const UP = [0,1,0];
+  const WORLD = {
+    size: 7600,
+    half: 3800,
+    grid: 78
+  };
+
+  const game = {
+    running:false,
+    paused:false,
+    camera:"chase",
+    message:"",
+    won:false,
+    crashed:false,
+    time:0,
+    last:performance.now(),
+    mouseDrag:false,
+    mouseMoved:false,
+    mouseYaw:0,
+    mousePitch:0
+  };
+
+  const keys = Object.create(null);
+  const input = { pitch:0, roll:0, throttleDelta:0 };
+
+  const course = [
+    { center:[-2100,145,-2300], dir:[1,0,0], radius:115 },
+    { center:[-1550,180,-1250], dir:[0.85,0.08,0.52], radius:115 },
+    { center:[-900,150,-60], dir:[0.9,-0.02,0.44], radius:115 },
+    { center:[-20,210,820], dir:[0.72,0.14,0.68], radius:115 },
+    { center:[900,175,1650], dir:[0.3,0.05,0.95], radius:115 },
+    { center:[1750,230,2550], dir:[-0.25,0.08,0.97], radius:115 },
+    { center:[2850,190,1600], dir:[-0.9,0.04,0.45], radius:115 },
+    { center:[3350,150,450], dir:[-0.75,0.12,-0.65], radius:115 }
+  ];
+
+  const obstacles = [
+    { pos:[-2600,410,-900], h:360, r:42, name:"radio tower" },
+    { pos:[-2350,260,1350], h:260, r:35, name:"tower" },
+    { pos:[-700,350,1700], h:310, r:40, name:"radio tower" },
+    { pos:[520,260,-1850], h:250, r:34, name:"tower" },
+    { pos:[1150,430,-550], h:390, r:44, name:"radio tower" },
+    { pos:[2450,330,-1200], h:300, r:38, name:"tower" },
+    { pos:[3150,250,700], h:235, r:34, name:"tower" },
+    { pos:[240,380,2450], h:330, r:42, name:"radio tower" }
+  ];
+
+  const mountains = [
+    { pos:[-3100,-2900], r:650, h:520, seed:1 },
+    { pos:[-3000,1500], r:520, h:440, seed:2 },
+    { pos:[-1000,-2600], r:430, h:390, seed:3 },
+    { pos:[1300,-2400], r:560, h:500, seed:4 },
+    { pos:[3000,2800], r:620, h:560, seed:5 },
+    { pos:[3300,-1300], r:500, h:430, seed:6 },
+    { pos:[-1200,2600], r:470, h:360, seed:7 },
+    { pos:[2100,1100], r:360, h:310, seed:8 }
+  ];
+
+  const terrainFaces = [];
+  const terrainVerts = [];
+  const texVerts = [];
+
+  function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  function lerp(a,b,t){ return a + (b-a)*t; }
+  function smoothstep(a,b,x){ const t = clamp((x-a)/(b-a),0,1); return t*t*(3-2*t); }
+  function dist2(a,b){
+    const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2];
+    return dx*dx+dy*dy+dz*dz;
+  }
+  function len(v){ return Math.hypot(v[0],v[1],v[2]); }
+  function norm(v){
+    const l = len(v) || 1;
+    return [v[0]/l,v[1]/l,v[2]/l];
+  }
+  function add(a,b){ return [a[0]+b[0],a[1]+b[1],a[2]+b[2]]; }
+  function sub(a,b){ return [a[0]-b[0],a

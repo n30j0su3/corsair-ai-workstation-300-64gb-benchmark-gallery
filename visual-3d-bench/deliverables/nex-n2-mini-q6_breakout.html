@@ -1,0 +1,651 @@
+We need answer with complete HTML only. Need craft game. Need ensure works. Need think thoroughly. Since final only HTML. Need produce code in final. But can reason here. Need produce complete HTML file, no explanations.
+
+Need implement Breakout/Arkanoid with canvas and vanilla JS. Requirements:
+- Player paddle bottom, mouse and arrow keys.
+- Ball physics realistic bouncing angles based on paddle hit position.
+- At least 5 rows bricks with different colors and point values.
+- Power-ups multi-ball, wider paddle, laser shots, slow ball drop randomly from bricks.
+- 3 lives system with game over screen.
+- Level progression clear all bricks advance next level faster ball.
+- Score/lives/level display.
+- Particle effects when bricks break.
+- Sound effects using Web Audio API procedural.
+- Start screen instructions, pause with Escape.
+- Restart without page reload.
+
+Need single HTML file. Need include CSS, JS. Need robust.
+
+Let's design.
+
+Canvas maybe 900x600. UI overlay.
+
+State:
+const canvas, ctx;
+let game = {
+state: 'start'|'playing'|'paused'|'gameover',
+score, lives, level,
+paddle: {x,y,w,h,speed},
+balls: [{x,y,vx,vy,r}],
+bricks: [],
+particles: [],
+powerups: [],
+laserBullets: [],
+keys: {},
+lastTime,
+combo? no.
+}
+
+Need start screen with instructions, pause with Escape. Restart button maybe overlay.
+
+Mouse movement: canvas coordinates. Arrow keys: left/right. Need avoid page scroll? preventDefault for arrows.
+
+Ball physics:
+- bounce off canvas top and sides.
+- bottom => lose life, reset ball/paddle.
+- paddle collision: compute hit = (ball.x - (paddle.x+paddle.w/2))/(paddle.w/2), clamp [-1,1]. angle = hit * maxBounceAngle (60 deg?); speed = min(currentSpeed+level* etc? maybe maintain speed). vx = sin(angle) * speed, vy = -cos(angle)*speed. Need avoid too horizontal. If vy > -220? set.
+- Bricks collision: loop bricks. If ball circle intersects rect. Determine collision side by previous position or overlap. Simpler: check if previous ball pos inside rect or x/y crossing. Use ball.prevX prevY. If prevY+ball.r <= brick.y -> top; else if prevY-prev.r >= brick.y+h => bottom; else if prevX+ball.r <= brick.x => left; else right. Flip vx/vy. Break. Score based on brick.value. Particles. Sound. If all bricks cleared next level.
+- Speed: Level progression faster ball. Use baseSpeed = 300 + (level-1)*28 maybe. Ball speed can be set at reset. Slow power-up sets slowMultiplier maybe. Multi-ball: create additional balls. Laser shots: fire upward bullets from paddle. Bullets collide with bricks, destroy them, particles/sound. Maybe laser power-up active for 8 sec. Need power-ups drop randomly from bricks: after breaking a brick, if Math.random()<0.18 drop. Types: 'multi','wide','laser','slow'. Powerup object with x,y,vx,vy,w,h,type. Move, bounce sides, bottom remove? If hits paddle, apply:
+multi: add balls maybe up to 4? active? In breakout, multi-ball active maybe permanent for level. Requirement power-up multi-ball. Could make permanent, or duration. Simpler permanent. But can "activate" maybe if balls<4 add. Need display timer for wide/laser/slow. Wider paddle: duration 10 sec. Laser: duration 8 sec. Slow ball: duration 7 sec. Multi-ball maybe permanent or duration? Maybe permanent for current level or 12 sec? Could be okay. Maybe display timers.
+
+Need sound effects. Web Audio API procedural beeps. Need create AudioContext on user interaction. start button. Sounds:
+- playTone(freq,duration,type,volume,delta?)
+- hitWall, paddle, brick, powerup, loseLife, gameover, levelup.
+Need call after user starts due autoplay. Start screen "Click or press Space to start". On start, create/resume AudioContext.
+
+Need particles: break bricks, spawn small colored squares/circles.
+
+Need game loop with requestAnimationFrame. Use delta time.
+
+Start screen with overlay, instructions. Pause overlay. Gameover overlay with restart button.
+
+Need restart without reload: resetGame() and state playing.
+
+Need high DPI maybe canvas scaled for crisp. Canvas internal fixed 900x600, CSS width maybe min 100%. Need handle mouse coordinate with rect scaling. If CSS resizing, use canvas.width/height logical.
+
+Need UI display. Could use DOM top overlay and canvas. Score display.
+
+Need code. Need ensure no external files.
+
+Let's craft carefully.
+
+HTML structure:
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset...><title>Breakout...</title><style>...</style></head>
+<body>
+<div id="gameWrap">
+<canvas id="gameCanvas" width="900" height="600" aria-label...></canvas>
+<div id="hud">
+<div>Score: <span id=score>0</span></div>...
+<div>Timers maybe <span id=wideTimer>Wide: 0.0</span> etc</div>
+</div>
+<div id="startScreen" class="overlay">
+<h1>Breakout</h1>
+<p>Move with mouse or Arrow keys</p>...
+<button id=startBtn>Start Game</button>
+</div>
+<div id="pauseScreen" class="overlay hidden">...
+</div>
+<div id="gameOverScreen" class="overlay hidden">...
+</div>
+</div>
+<script>...</script>
+</body></html>
+
+CSS body black, canvas border etc. Overlay absolute.
+
+JS:
+(() => {
+'use strict';
+const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+const W=900,H=600;
+const HUD...
+const BRICK_ROWS=6, BRICK_COLS=10;
+const BRICK_TOP=70, BRICK_LEFT=45, BRICK_GAP=8, BRICK_WIDTH=(W-2*BRICK_LEFT-(BRICK_COLS-1)*BRICK_GAP)/BRICK_COLS; BRICK_HEIGHT=24;
+const paddle base W=120,H=14;
+const balls...
+const powerTypes...
+let state='start';
+let score=0,lives=3,level=1;
+let last=0;
+let audio=null;
+let keys = {};
+let pointerActive? mouse x.
+
+Need canvas draw all.
+
+Utility:
+function clamp(v,min,max)
+function rand(min,max)
+function createAudio() { AudioContext = window.AudioContext||webkitAudioContext; audio = new AudioContext(); }
+function beep(freq,dur=0.05,type='sine',vol=0.05,delay=0) { if (!audio) return; const now=audio.currentTime+delay; const osc=audio.createOscillator(); const gain=audio.createGain(); osc.type=type; osc.frequency.setValueAtTime(freq,now); gain.gain.setValueAtTime(0,now); gain.gain.linearRampToValueAtTime(vol,now+0.005); gain.gain.exponentialRampToValueAtTime(0.0001,now+dur); osc.connect(gain).connect(audio.destination); osc.start(now); osc.stop(now+dur+0.02); }
+function sound(name) switch.
+
+Need maybe avoid audio if not started. On start button and keydown Space.
+
+Need resetGame:
+score=0,lives=3,level=1; buildLevel(1); resetBall(); resetPaddle(); timers=0; particles=[]; powerups=[]; lasers=[]; state='playing'; show/hide overlays; updateHUD(); beep levelup?
+Need resetBall: paddle centered, ball at paddle center, speed = levelSpeed(); balls = [{x:paddle.x+paddle.w/2, y:paddle.y-10, vx: Math.cos(angle)*speed, vy:-speed, r:7, trail:[]}]; maybe angle random small.
+But if reset after life lost, ball should attach to paddle. Need resetBall(true). It should reset balls array? For losing life, remove one? We can reset all balls maybe. For multi-ball, after lose life, reset all balls on paddle.
+resetBall:
+const speed = getBallSpeed();
+const angle = rand(-0.4,0.4); balls = [{x:paddle.x+paddle.w/2,y:paddle.y-12,vx:Math.sin(angle)*speed,vy:-Math.cos(angle)*speed,r:7}];
+Need if multi active? On new level, reset to single ball.
+
+Paddle:
+const paddle={x:W/2-60,y:H-35,w:120,h:14,maxW:180};
+function resetPaddle(){ paddle.w=120; paddle.x=(W-paddle.w)/2; paddle.y=H-35; timers wide=0; }
+If wide timer expires, restore w 120? But if reset ball? okay. Need if wide active and lose life? maybe wide persists? Could persist until expiry. resetPaddle sets wide timer maybe keep? Simpler reset wide timer? Hmm if wide power-up active and lose life, maybe keep? But reset ball not reset paddle width? Requirements not specify. Could keep timers. But resetPaddle maybe preserve w? Need careful.
+
+Maybe timers:
+let timers={wide:0,laser:0,slow:0};
+resetPaddle({keepPowerups:false})? On start/reset set wide=0. On lose life, not reset timers. But ball reset.
+
+Paddle update:
+function updatePaddle(dt) {
+let dir=0; if keys.ArrowLeft||keys.KeyA dir--; if keys.ArrowRight||keys.KeyD dir++; if keys.Space? maybe fire? Laser automatic.
+if dir) paddle.x += dir * paddleSpeed * dt;
+paddle.x=clamp(paddle.x,20,W-paddle.w-20);
+if pointerDown? We move with mouse always if pointer inside? "moves with mouse and arrow keys". Could set paddle.x = mouse.x - w/2 whenever mouse moves; arrow keys also. Simpler update: if mouse.active set target, else arrow keys. But requirement moves with mouse and arrow keys. Need both. Could set paddle.x to mouse coordinate while mouse is active, and also arrow keys. But if arrow keys pressed, mouse movement might override. Use mode: if mouseInside or pointerMoved, set x to mouse, else arrow keys. But after mouse leaves? It can still use arrow.
+Better:
+if (mouse.active) paddle.x = mouse.x - paddle.w/2; // if mouse active (pointer moves over canvas)
+else if (dir) paddle.x +=...
+But when game starts via click on overlay, mouse.active true and canvas coords? The click coordinates relative to canvas maybe center? Could be okay.
+Need mouse coordinates update:
+canvas.addEventListener('mousemove', e => { const rect=canvas.getBoundingClientRect(); mouse.x = (e.clientX-rect.left)*canvas.width/rect.width; mouse.y=...; mouse.active=true; if state==='playing') paddle.x=clamp(mouse.x-paddle.w/2,20,W-paddle.w-20);});
+canvas.addEventListener('mouseleave',()=>{ mouse.active=false;});
+Need if mouse active and arrow keys? maybe arrow keys should still work even with mouse active? Could combine? If mouse active, set target based on mouse x, then arrow dir modifies? That might be weird. Use if arrow keys pressed, arrow controls, otherwise mouse. But if both, arrow should override? Simpler:
+let dir = ...;
+if (dir !== 0) paddle.x += dir*speed*dt;
+else if (mouse.active) paddle.x = clamp(mouse.x-paddle.w/2,...);
+This means mouse sets position only when no arrow keys. Good.
+
+Need if mouse coordinate outside, clamp.
+
+Bricks:
+function buildLevel(level) {
+bricks=[];
+const rows=6;
+const cols=10;
+for r=0..5:
+for c=0..cols-1:
+value = 1 + Math.floor(r*0.35?) Need different colors and point values.
+Maybe color by row and level. point = 1 + Math.floor((rows-1-r)/2)? Actually bottom higher. Let value = 1 + Math.floor(r/2)? top row 1, next 2, middle 3, bottom 4? Need at least 5 rows. Use rows=6.
+colors array:
+[
+'#ef4444', '#f97316', '#facc15', '#22c55e', '#3b82f6', '#a855f7'
+]
+point = r < 2 ? 100 : r<4 ? 200 : 300 maybe.
+bricks.push({x:...,y:...,w:BRICK_WIDTH,h:BRICK_HEIGHT,value,points:point,color,alive:true,health:1});
+Maybe level >1 increase rows? Requirement at least 5. Use rows=Math.min(6,5+Math.floor((level-1)/2)) maybe but colors. But if level >1, more rows? Could make faster ball. Need clear all bricks. Use rows=5+Math.floor((level-1)/3) maybe. But at least 5.
+Need brick layout.
+Maybe for level, cols=10, rows=5+Math.floor((level-1)/2), up to 8? But if 8 rows, BRICK_HEIGHT 24, top 70, bottom 70+8*24+7*8=314. Fine. But "at least 5 rows" yes.
+Colors by row.
+
+Need collision with bricks. Ball has prevX,prevY from previous frame. In updateBall:
+for b alive:
+if circleRectIntersect(ball,b):
+resolveBrickCollision(ball,b)
+break? Usually break one per frame maybe.
+function resolve:
+let prevInside = pointInRect(ball.prevX,ball.prevY,b)
+let hitTop = ball.prevY + ball.r <= b.y || prevInside && ball.vy>=0? Need side.
+if prevInside:
+const overlapLeft = ball.x + ball.r - b.x;
+const overlapRight = b.x + b.w - (ball.x - ball.r);
+const overlapTop = ball.y + ball.r - b.y;
+const overlapBottom = b.y + b.h - (ball.y - ball.r);
+min = ...
+if min === overlapTop -> top, flip vy; etc.
+else:
+if ball.prevY + ball.r <= b.y -> top
+else if ball.prevY - ball.r >= b.y + b.h -> bottom
+else if ball.prevX + ball.r <= b.x -> left
+else if ball.prevX - ball.r >= b.x + b.w -> right
+else use velocities?
+Need flip. If top/bottom invert vy; left/right invert vx.
+If ball moving upward and hits top, vy=-abs(vy), etc.
+Then brick.alive=false; score+=points*level? Maybe point values.
+play sound. particles.
+if (Math.random()<0.18) spawnPowerup(b.x+b.w/2,b.y+b.h/2)
+if balls.length > 0 maybe speed up? Could increase speed after brick hits? Maybe not.
+Check all bricks cleared: if no alive, levelUp();
+Need if brick destroyed by laser, same.
+
+Laser shots:
+let lasers = [];
+During update if timers.laser>0, maybe fire automatically every 0.16s. Need fireLaser():
+lasers.push({x:paddle.x+paddle.w/2, y:paddle.y-4, w:4,h:16,vx:0,vy:-700});
+Maybe two lasers? Laser shots plural. If timer active, fire every 0.12s. Could fire two side beams? Use one or two? For visual, if laserTimer>0, fireLaser at interval. Need avoid many. In update, if laserTimer>0 and fireCooldown<=0, fireLaser(); fireCooldown -= dt; maybe if two, push two lasers at x= paddle.x+paddle.w*0.25, 0.75.
+Laser collision with bricks: for each laser, check rect intersection. If hit, destroy brick and remove laser. Need not collide with powerups. Use bricks loop.
+Need if laser hits top? remove.
+Need if powerup hits paddle:
+for each powerup:
+p.y += vy*dt; p.x += vx*dt; bounce sides; if p.y+p.h> paddle.y - maybe apply.
+if intersects circle/rect with paddle:
+applyPowerup(p)
+remove.
+Powerup types:
+const POWERUPS = {
+multi:{label:'Multi',color:'#60a5fa'},
+wide:{label:'Wide',color:'#22c55e'},
+laser:{label:'Laser',color:'#facc15'},
+slow:{label:'Slow',color:'#a78bfa'}
+};
+applyPowerup:
+if type multi:
+if balls.length<4:
+const existing=balls.length||1;
+for i=1;i<3;i++ addBallWithAngle(i, existing?) Actually if balls length 1, add 2 balls. If 2, add 1? Multi-ball power-up could create extra until 4. Use addBall(extraCount).
+for n=0; n<2; n++: addBall(n, balls.length); // But if balls.length 1, adds 2, total 3. If balls.length 2, adds 2? okay. If 4, maybe no.
+sound.
+wide:
+timers.wide=10; update HUD.
+laser: timers.laser=8; fireCooldown=0
+slow:
+timers.slow=7; balls.forEach(b=> b.vy*=0.65; maybe vx too? Need slow ball. If speed multiplier = 0.65 for both.
+Need active timers displayed.
+Slow ball: "slow ball" maybe set speed. Need if active, update speeds by 0.65 each frame.Now produce the final answer. Be concrete and complete.</think>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Breakout / Arkanoid</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      background: radial-gradient(circle at top, #172554, #020617 70%);
+      color: white;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    #gameWrap {
+      position: relative;
+      width: min(100vw, 960px);
+      aspect-ratio: 3 / 2;
+      border: 3px solid #38bdf8;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.55);
+      background: #020617;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: #020617;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 0 18px;
+      background: linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(2, 6, 23, 0));
+      pointer-events: none;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+      font-size: 15px;
+      white-space: nowrap;
+    }
+
+    .hud span {
+      color: #e0f2fe;
+    }
+
+    .timerBar {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 18px;
+      height: 6px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.25);
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .timerBar > div {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #22c55e, #facc15);
+      border-radius: 999px;
+      transition: width 0.08s linear;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(2, 6, 23, 0.78);
+      backdrop-filter: blur(4px);
+      text-align: center;
+      z-index: 5;
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .panel {
+      width: min(680px, 92%);
+      padding: 34px 30px;
+      border: 1px solid rgba(125, 211, 252, 0.45);
+      border-radius: 22px;
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.94), rgba(2, 6, 23, 0.94));
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.45);
+    }
+
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(38px, 7vw, 72px);
+      line-height: 0.95;
+      letter-spacing: 2px;
+      color: #e0f2fe;
+      text-shadow: 0 0 24px rgba(56, 189, 248, 0.55);
+    }
+
+    h2 {
+      margin: 0 0 16px;
+      font-size: clamp(30px, 5vw, 54px);
+      color: #fda4af;
+      text-shadow: 0 0 24px rgba(251, 113, 133, 0.35);
+    }
+
+    p {
+      margin: 8px 0;
+      color: #cbd5e1;
+      line-height: 1.45;
+    }
+
+    .instructions {
+      margin: 18px auto;
+      max-width: 560px;
+      text-align: left;
+      color: #dbeafe;
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    .instructions b {
+      color: #ffffff;
+    }
+
+    button {
+      margin-top: 18px;
+      padding: 13px 24px;
+      border: 0;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+      color: white;
+      font: 800 17px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 12px 30px rgba(56, 189, 248, 0.25);
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.1);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .small {
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    @media (max-width: 650px) {
+      .hud {
+        font-size: 12px;
+        gap: 8px;
+        padding: 0 10px;
+      }
+
+      .hud .timerText {
+        display: none;
+      }
+
+      .instructions {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameWrap">
+    <canvas id="gameCanvas" width="900" height="600"></canvas>
+
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Lives: <span id="lives">3</span></div>
+      <div>Level: <span id="level">1</span></div>
+      <div class="timerText">Wide: <span id="wideTimer">0.0</span>s</div>
+      <div class="timerText">Laser: <span id="laserTimer">0.0</span>s</div>
+      <div class="timerText">Slow: <span id="slowTimer">0.0</span>s</div>
+    </div>
+
+    <div id="startScreen" class="overlay">
+      <div class="panel">
+        <h1>BREAKOUT</h1>
+        <p>Smash every brick, collect power-ups, and survive 3 lives.</p>
+        <div class="instructions">
+          <p><b>Move:</b> Mouse or <b>Arrow Keys</b> / <b>A</b> <b>D</b></p>
+          <p><b>Pause:</b> <b>Escape</b></p>
+          <p><b>Power-ups:</b> Multi-ball, wider paddle, laser shots, slow ball</p>
+        </div>
+        <button id="startBtn">Start Game</button>
+        <p class="small">Tip: hit the paddle edges for sharper angles.</p>
+      </div>
+    </div>
+
+    <div id="pauseScreen" class="overlay hidden">
+      <div class="panel">
+        <h2>Paused</h2>
+        <p>Press <b>Escape</b> to resume.</p>
+        <button id="resumeBtn">Resume</button>
+      </div>
+    </div>
+
+    <div id="gameOverScreen" class="overlay hidden">
+      <div class="panel">
+        <h2>Game Over</h2>
+        <p>Final score: <b id="finalScore">0</b></p>
+        <button id="restartBtn">Restart</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d");
+
+      const scoreEl = document.getElementById("score");
+      const livesEl = document.getElementById("lives");
+      const levelEl = document.getElementById("level");
+      const wideTimerEl = document.getElementById("wideTimer");
+      const laserTimerEl = document.getElementById("laserTimer");
+      const slowTimerEl = document.getElementById("slowTimer");
+      const finalScoreEl = document.getElementById("finalScore");
+
+      const startScreen = document.getElementById("startScreen");
+      const pauseScreen = document.getElementById("pauseScreen");
+      const gameOverScreen = document.getElementById("gameOverScreen");
+
+      const startBtn = document.getElementById("startBtn");
+      const resumeBtn = document.getElementById("resumeBtn");
+      const restartBtn = document.getElementById("restartBtn");
+
+      const W = canvas.width;
+      const H = canvas.height;
+
+      const paddle = {
+        x: W / 2 - 60,
+        y: H - 38,
+        w: 120,
+        h: 14,
+        speed: 620
+      };
+
+      const maxPaddleW = 185;
+      const ballRadius = 7;
+      const baseBallSpeed = 330;
+      const speedIncreasePerLevel = 34;
+      const maxBounceAngle = 72 * Math.PI / 180;
+
+      let score = 0;
+      let lives = 3;
+      let level = 1;
+      let state = "start";
+      let lastTime = 0;
+      let audio = null;
+      let keys = Object.create(null);
+      let particles = [];
+      let powerups = [];
+      let lasers = [];
+      let balls = [];
+      let bricks = [];
+      let timers = { wide: 0, laser: 0, slow: 0 };
+      let laserFireTimer = 0;
+
+      const mouse = {
+        x: W / 2,
+        y: H / 2,
+        active: false
+      };
+
+      const powerupConfig = {
+        multi: { label: "M", color: "#60a5fa", glow: "rgba(96,165,250,0.55)" },
+        wide: { label: "W", color: "#22c55e", glow: "rgba(34,197,94,0.55)" },
+        laser: { label: "L", color: "#facc15", glow: "rgba(250,204,21,0.55)" },
+        slow: { label: "S", color: "#a78bfa", glow: "rgba(167,139,250,0.55)" }
+      };
+
+      const brickColors = [
+        "#ef4444",
+        "#f97316",
+        "#facc15",
+        "#22c55e",
+        "#3b82f6",
+        "#a855f7"
+      ];
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function rand(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function pointInRect(px, py, rect) {
+        return px >= rect.x && px <= rect.x + rect.w && py >= rect.y && py <= rect.y + rect.h;
+      }
+
+      function circleRectCollision(ball, rect) {
+        const closestX = clamp(ball.x, rect.x, rect.x + rect.w);
+        const closestY = clamp(ball.y, rect.y, rect.y + rect.h);
+        const dx = ball.x - closestX;
+        const dy = ball.y - closestY;
+        return dx * dx + dy * dy <= ball.r * ball.r;
+      }
+
+      function initAudio() {
+        if (audio) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        audio = new AudioContextClass();
+        if (audio.state === "suspended") audio.resume();
+      }
+
+      function beep(freq = 440, duration = 0.05, type = "sine", volume = 0.04, delay = 0) {
+        if (!audio) return;
+
+        const now = audio.currentTime + delay;
+        const osc = audio.createOscillator();
+        const gain = audio.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(volume, now + 0.006);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(audio.destination);
+
+        osc.start(now);
+        osc.stop(now + duration + 0.03);
+      }
+
+      function playSound(name) {
+        if (!audio) return;
+
+        if (name === "wall") {
+          beep(180, 0.045, "triangle", 0.035);
+        } else if (name === "paddle") {
+          beep(430, 0.06, "triangle", 0.06);
+          beep(690, 0.05, "sine", 0.035, 0.035);
+        } else if (name === "brick") {
+          beep(720, 0.055, "square", 0.035);
+          beep(960, 0.05, "triangle", 0.035, 0.035);
+        } else if (name === "power") {
+          beep(520, 0.07, "sine", 0.05);
+          beep(780, 0.08, "sine", 0.05, 0.08);
+        } else if (name === "laser") {
+          beep(1100, 0.035, "sawtooth", 0.035);
+        } else if (name === "life") {
+          beep(260, 0.09, "sawtooth", 0.055);
+          beep(180, 0.12, "sawtooth", 0.055, 0.09);
+        } else if (name === "level") {
+          beep(520, 0.08, "triangle", 0.05);
+          beep(660, 0.08, "triangle", 0.05, 0.08);
+          beep(880, 0.12, "triangle", 0.05, 0.16);
+        } else if (name === "gameover") {
+          beep(320, 0.12, "sawtooth", 0.055);
+          beep(220, 0.18, "sawtooth", 0.055, 0.12);
+          beep(130, 0.22, "sawtooth", 0.055, 0.28);
+        }
+      }
+
+      function updateHud() {
+        scoreEl.textContent = String(score);
+        livesEl.textContent = String(lives);
+        levelEl.textContent = String(level);
+        wideTimerEl.textContent = timers.wide.toFixed(1);
+        laserTimerEl.textContent = timers.laser.toFixed(1);
+        slowTimerEl.textContent = timers.slow.toFixed(1);
+      }
+
+      function showStart() {
+        state = "start";
+        startScreen.classList.remove("hidden");
+        pauseScreen.classList.add("hidden");
+       

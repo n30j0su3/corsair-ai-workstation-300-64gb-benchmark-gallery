@@ -1,0 +1,602 @@
+We need produce final only complete HTML file, no explanations. Need craft single-file FPS prototype local browser. Need ensure robust. Need think through implementation.
+
+Need use HTML canvas raycasting 2.5D. Need procedural level corridors/rooms. Collision. Minimap toggle. Enemies, pickups, exit. Controls. Pointer lock. Shooting with hit detection aiming direction. AI wall-aware movement.
+
+Need output HTML only.
+
+Let's design.
+
+Single HTML with canvas full screen. CSS. JS.
+
+Raycaster:
+- world grid map as 2D array of integers. Solid cells 1.
+- Wall texture drawn as vertical strips. Ceiling/floor with gradients maybe.
+- Entities: enemies, pickups, exit, projectiles. Need draw with 2.5D depth-aware. Use sprite sorting by distance from player. For each sprite, project to screen and draw. Need collision.
+
+Coordinate:
+player {x,y,dirX,dirY,planeX,planeY, speed, sprint, fov 60 deg}. Camera plane perpendicular to dir.
+Raycasting:
+for each x column, cameraX=2*x/w-1, rayDir=dir + plane*cameraX. DDA find cell. perpDist = if side0? (cellX-x)+(distX-sideX) : ...
+wallHeight = h / perpDist * scale. draw line from h/2 - wallHeight/2 + shake to h/2 + wallHeight/2. shade based perpDist and ray angle. Add vertical stripes.
+Ceiling/floor: Could draw solid with perspective? Need floor/ceiling. Draw rectangles gradient. Or draw simple perspective floor/ceiling strips with horizontal lines. Need "floor, ceiling". Use canvas fillRect top half gradient. Add texture via horizontal lines maybe.
+
+Weapon HUD: draw gun at bottom center procedurally. Health/ammo/weapon. Crosshair. UI.
+
+Input:
+keydown/up. W/S forward/back, A/D strafe, Shift sprint, Space/Left shoot, R reload. P/Esc pause toggle. Pointer lock on canvas click. Mousemove adjust yaw if locked and not paused? Need pointer lock API. If pointerlock element not canvas maybe. We'll request on mousedown or key Enter? We'll handle click.
+
+Movement collision:
+Axis separate. Try move x then y, check solid at position. Circle radius. Check cells. Need boundaries.
+
+Shooting:
+Weapon: maxAmmo 12, ammo 12, fireRate 350ms, reloadTime 1100ms, damage 35, range maybe 18, projectile? Requirement render projectiles. Need projectiles. We can create muzzle flash and projectile objects with x,y,z? For FPS raycaster, projectile as small 3D sphere/tracer. When shoot, if ammo >0 and cooldown <=0 and not reloading, decrement, set cooldown, add muzzleFlash timer, add projectile from player pos with dir aim, speed 45, life 0.15, damage maybe. It travels, if hits wall or enemy, damage enemy. Hit detection aiming direction: For enemies, compute relative vector, yaw error angle. If abs(angleDiff) < aiming cone 0.065 (3.7 deg) and distance < range, hit. Maybe if projectile. Need at least 3 enemies. Each enemy health 80, attack radius, cooldown, damage. Wall-aware movement: enemies chase player with steering and collision; if direct vector hits wall, try perpendicular directions. Also can strafe. Need spawn positions not in walls.
+
+Entities:
+- enemies: x,y,health,maxHealth, radius, attackCooldown, hitFlash, state. draw sprite: vertical rectangle with depth shading, legs maybe. Use drawSprite: project x,y. size = h/(2*tan(fov/2)*dist) maybe scale. If behind player skip. Draw at screenX = (0.5+dx/(dirX*x+dy*y))*w, size maybe h*0.5 / dist? Need robust. Use projection denom = dot(player.pos, sprite)-dot(player.ori, sprite). if denom<=0 skip. screenX = w/2 + (player.dirY * sprite.y - player.dirX * sprite.x) / denom * (w/2 * tan(fov/2))? Simpler: use raycaster projection formula:
+cameraX = (sprite.x - player.x)*dirX + (sprite.y - player.y)*dirY = denom.
+cameraY = (sprite.x - player.x)*(-player.planeY) + (sprite.y - player.y)*player.planeX.
+screenX = (w/2)*(1 + cameraY/(cameraX*tan(fov/2))). spriteSize = h / cameraX.
+Need player.dirX/Y and planeX/Y. For first person, dir = movement direction, plane perpendicular [ -dirY, dirX ]? If dirX=1,dirY=0, planeX=0,planeY=1. CameraY = (x-xp)*(-planeY)+(y-yp)*planeX = -(y-yp). If enemy to right? screenX = w/2*(1+cameraY/tan). If enemy at positive y, cameraY negative -> left? Hmm coordinate y down? Need choose.
+
+World coordinates: x right, y down? Movement: dirX = cos(angle), dirY = sin(angle). Canvas y down. Camera plane = [-sin(angle), cos(angle)] if y down? Then for angle 0 (right), dirX=1,dirY=0, planeX=0,planeY=1. Enemy at x+ (in front) denom positive. Enemy at y+ (right in screen? If angle 0, down is right? In screen, positive y is down, but world y positive maybe right? Actually canvas y down, if looking right screen, world x right, world y down corresponds down screen, which is right? Wait if angle 0 corresponds screen right? In standard raycaster with screen x horizontal, angle 0 often +x, camera plane y positive = up? But canvas y down, if planeY=+1 then screenX for y+ (world down) = right? Formula maybe. Let's not worry.
+
+Raycasting with y down means look right when dirX positive, camera plane y positive. Ray at column left has cameraX negative, rayDir = dir + plane*cameraX. For dirX=1, planeY=1, cameraX negative: rayDirY positive -> ray goes down screen, which is right? Screen column left should ray into upper-left? But if y down, positive y is down. To look right, rays should go down in world. So okay, screen right maps world y positive.
+
+Collision:
+solidAt(x,y) checks grid cell with margin.
+
+Minimap:
+toggle M? Requirement visible minimap toggle. We can toggle with M or key V. Draw mini canvas overlay top right with wall grid, player, enemies, exit, pickups maybe. Need "visible minimap toggle" maybe show button. Include key M. Maybe default hidden, toggle M. Draw in DOM overlay.
+
+Exit:
+Object {x,y,active}. Need maybe require all enemies defeated and ammo? Requirement exit intentional location. Need win loop. Exit active after all enemies defeated maybe and player near. Draw as glowing portal. If collision and all enemies dead -> win. If player health<=0 lose. Lose restart.
+
+Health/ammo pickups:
+Intentional locations. Add health pickups with radius 12, ammo pickups. Draw sprites.
+
+Procedurally generated level:
+Could define static map with rooms/corridors. "Procedurally generated" maybe static array generated by function. Need include corridors and rooms. We can define base map and fill with rooms. Better create function generateLevel:
+- map array 30x20 with 0.
+- carve rectangles: start room, central room, corridor, enemy room, exit room. Use random deterministic PRNG maybe seeded. Need fixed locations.
+Simpler: define map literal with walls and carve rooms. But requirement says procedurally generated. We can generate from seed with carved rectangles and random obstacles. Need ensure accessible.
+
+Let's design map 28x20. Use function makeLevel() with array of zeros, carveRoom(x,y,w,h) set 0. Carve corridors lines. Then add pillars/obstacles. Need not random? Could use deterministic PRNG to place pillars. But accessible.
+
+Example dimensions:
+WORLD_W=30, WORLD_H=22.
+Start at (1,1), startRoom room(1,1,8,6)
+Corridor from start to center: carve horizontal y=3 x=1..14, vertical x=14 y=3..10.
+Main room (14,10,10,7)
+Exit room (24,15,4,5)
+Enemy room (24,3,4,5)
+Storage room (5,14,8,5)
+Corridors:
+- from start room to main: carve (1,3)-(14,3), (14,3)-(14,10)
+- main to exit: carve (24? maybe) (24,10)-(24,15), (14,15)-(24,15)
+- main to enemy: carve (24,10)-(24,3), maybe.
+- main to storage: carve (14,14)-(5,14), (5,14)-(5,10).
+Need rooms not too big.
+
+Use solid walls around. Add pillars in rooms. Need avoid start/enemy/exit/pickups.
+
+Let's define rooms:
+carveRect(1,1,8,6)
+carveRect(14,10,10,7)
+carveRect(24,15,5,5)
+carveRect(24,3,5,5)
+carveRect(5,14,8,5)
+carveRect(1,14,4,4) maybe ammo room.
+Corridors:
+line(1,3,14,3); line(14,3,14,10)
+line(14,15,24,15); line(24,10,24,15)
+line(24,10,24,3)
+line(14,14,5,14); line(5,10,5,14)
+line(5,16,14,16)? maybe.
+
+Ensure cells around rooms not connected by boundary? Carve sets 0, surrounding walls remain.
+
+Pickups:
+ammo at (2,4), health at (16,12), ammo at (26,16), health at (26,4), maybe.
+
+Enemies:
+at (16,11), (25,16), (26,5), maybe one near exit. Need not spawn in walls.
+
+Exit at (26.5,17.5).
+
+Weapon:
+Pistol. maxAmmo 12, reload 1.2s. Maybe one-shot damage 35. Enemy health 100. 3 enemies.
+Projectile:
+shoot creates bullet object {x,y,z:1.2,vx:dirX*speed,vy:dirY*speed, life:0.18, radius:4, damage:1}. Draw as small glowing dot/tracer. On update: x+=vx*dt,y+=vy*dt,z maybe bob. Check collision at next pos: if solid or out -> hit wall, muzzle flash; remove. Else check enemies distance < enemy.radius+bullet.radius: damage; remove. Need hit detection accounting aiming direction perhaps bullet is aimed exactly. Also maybe for enemies outside bullet radius? But requirement "hit detection accounting for aiming direction"; we can implement aim cone and bullet only damages if within cone. For each enemy, compute yaw angle difference between player aim vector and enemy vector; if abs <= aimCone and distance < bullet.range. Since bullet travels along aim, this is natural. We'll show crosshair.
+
+Shooting can happen by key Space or mouse click. Need prevent default.
+
+Mouse aiming:
+mousemove if pointerLockElement===canvas and not paused? adjust yaw += movementX * sensitivity. Need clamp maybe no pitch. 2.5D no pitch, first-person horizontal.
+
+Pause:
+P/Esc toggles. If paused, pointer unlock? Maybe not. Need freeze update, draw overlay. Escape maybe release pointer lock. P. Need not use pointer lock if click.
+
+Rendering:
+Main loop requestAnimationFrame. dt capped 0.05. If not paused update.
+draw:
+- clear.
+- renderCeilingFloor:
+fill top half with gradient? canvas.createLinearGradient(0,0,0,h/2). Add color. Add subtle horizontal lines at intervals perspective maybe.
+floor similar.
+- raycast walls:
+for each x, DDA. Shade. Draw.
+Need performance okay. 800 width.
+
+DDA implementation:
+let mapX=Math.floor(player.x), mapY; deltaDistX = Math.abs(1/(rayDirX||tiny)); etc.
+stepX = rayDirX <0 ? -1 :1; sideDistX = (rayDirX<0)? (player.x-mapX)*deltaDistX : (mapX+1.0-player.x)*deltaDistX.
+while !hit and iter<100: if sideDistX<sideDistY {sideDistX+=deltaDistX; mapX+=stepX; side=0} else ...
+if mapX/y out? solidAt false maybe.
+perpWallDist = (side==0 ? (mapX-player.x+(1-stepX)/2)/rayDirX : (mapY-player.y+(1-stepY)/2)/rayDirY). clamp min.
+shade = max(0,1 - perpDist/18). If side shade*0.8. Add color.
+Draw wall column:
+screenX = x + 0.5. wallH = Math.min(h*2, h / perpDist * 1.2). baseLine = h/2. top=baseLine - wallH/2 + maybe sin. bottom=baseLine+wallH/2.
+Color based side, shade, maybe x coordinate for stripes. Use fillStyle `rgb(${r},${g},${b})`. Need not create gradients per column maybe.
+
+Wall texture:
+Could draw subtle horizontal/vertical stripes. For each column, choose base color based on cell. Draw if random? But deterministic per x? Need avoid flicker. Use Math.sin(x*0.17) for stripes. Use color functions.
+
+Ceiling/floor:
+Maybe draw grid lines perspective:
+ceiling: fill dark, draw horizontal lines y=h/2 - i*h/10000? Use for i 0..100: y = h/2 - h/2/(i+1)? That converges; draw.
+floor: y=h/2+i*h/(i+100), draw lines.
+
+Draw sprites:
+Need sort by distance. Entities: enemies, pickups, exit, projectiles. Project each. For exit maybe active only if all enemies dead? It can be visible glow. Draw sprite:
+function drawSprite(obj, drawFn, sortKey):
+dx=obj.x-player.x, dy=obj.y-player.y; cameraX=dx*dirX+dy*dirY; cameraY=dx*planeX+dy*planeY? Need derive. Standard:
+cameraX = (spriteX - posX)*dirX + (spriteY - posY)*dirY;
+cameraY = (spriteX - posX)*planeX + (spriteY - posY)*planeY;
+screenX = Math.round((w/2)*(1 + cameraY/cameraX));
+spriteHeight = Math.abs(Math.round(h / cameraX));
+transX = Math.round(screenX - spriteHeight/2)
+if cameraX <=0 or transX>=w or transX+height<=0 skip.
+But plane should be [-dirY,dirX] or [0,1]. Use planeX=-dirY, planeY=dirX. Then cameraY = dx*planeX+dy*planeY. With dirX=1,dirY=0, planeX=0,planeY=1: cameraY=dy. Enemy right (world y positive) cameraY positive -> screenX right. Good.
+
+Depth sort descending cameraX so far first.
+
+Enemy sprite:
+draw shadow ellipse at base. Height maybe 42/cameraX. Draw body rect, head circle, legs. Use shade. Draw health bar above. Use flash if hit. Need orient? Not necessary.
+
+Pickup sprite:
+ammo/health: draw small icons. Project size = 28/cameraX. Draw rectangle/circle, text? Use canvas text.
+
+Exit sprite:
+Draw portal rectangle or ring. Use cameraX, size = 50/cameraX. Draw glow, text EXIT. If all enemies dead maybe active; if not, draw as locked/dim maybe.
+
+Weapon HUD:
+Draw in 2D: crosshair at center with small lines. If reloading progress, draw reload bar. Ammo. Health. If paused overlay. Muzzle flash maybe draw orange overlay. Gun: draw base at bottom center: rectangles/triangles with shading. If muzzleFlash>0 draw muzzle flash polygon. Need update muzzleFlash timer.
+
+UI DOM:
+Maybe overlay instructions. But output only HTML. Use CSS.
+
+Collision:
+solidAt(x,y) with margin:
+let r=0.25;
+return solidAtPoint(x+r,y+r) || ... maybe 4 corners.
+solidAtPoint checks x<0 || y<0 || x>=WORLD_W || y>=WORLD_H || map[Math.floor(y)][Math.floor(x)].
+For entities pickup collision: distance < player.radius+pickup.radius.
+Enemy collision with player: if dist < sum, push player or damage. Need wall-aware enemy movement:
+updateEnemies(dt):
+for each enemy:
+dx=player.x-e.x, dy=player.y-e.y, d=...
+if d<1: damage player 5/s maybe.
+if e.attackCooldown>0 decrement.
+if d<e.attackRange && d<1.2 && attackCooldown<=0: damage player, set cooldown.
+else:
+compute desired = dx/d,dy/d.
+Check direct path: pathHit = hasWallBetween(e.x,e.y, player.x, player.y, e.radius+0.2)? If no wall and d>1, move desired*enemySpeed*dt. If hit, try alternatives: perpendicular, diagonal combos, or wander.
+Wall-aware movement:
+function enemyMove(e, dx,dy,dt):
+let speed = 1.2*dt;
+letNow produce the final answer. Be concrete and complete.</think>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Canvas FPS Prototype</title>
+<style>
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    background:#05070a;
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    color:#e8f1ff;
+    user-select:none;
+  }
+  canvas#game{
+    display:block;
+    width:100vw;
+    height:100vh;
+    cursor:none;
+    background:#05070a;
+  }
+  #hud{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+  }
+  #crosshair{
+    position:absolute;
+    left:50%;
+    top:50%;
+    width:28px;
+    height:28px;
+    margin:-14px 0 0 -14px;
+    pointer-events:none;
+  }
+  #crosshair:before,#crosshair:after{
+    content:"";
+    position:absolute;
+    background:rgba(225,245,255,.88);
+    box-shadow:0 0 4px #00111f;
+  }
+  #crosshair:before{
+    left:13px;
+    top:3px;
+    width:2px;
+    height:22px;
+  }
+  #crosshair:after{
+    left:3px;
+    top:13px;
+    width:22px;
+    height:2px;
+  }
+  #topInfo{
+    position:absolute;
+    left:14px;
+    top:10px;
+    padding:9px 12px;
+    border:1px solid rgba(120,190,255,.22);
+    background:rgba(4,10,18,.48);
+    backdrop-filter:blur(3px);
+    border-radius:10px;
+    font-size:14px;
+    line-height:1.45;
+    text-shadow:0 1px 2px #000;
+  }
+  #bottomInfo{
+    position:absolute;
+    left:14px;
+    bottom:12px;
+    color:#bfe8ff;
+    font-size:13px;
+    opacity:.9;
+  }
+  #centerMessage{
+    position:absolute;
+    left:50%;
+    top:44%;
+    transform:translate(-50%,-50%);
+    padding:14px 20px;
+    border-radius:14px;
+    border:1px solid rgba(130,210,255,.25);
+    background:rgba(4,8,14,.62);
+    backdrop-filter:blur(4px);
+    font-size:18px;
+    font-weight:700;
+    letter-spacing:.02em;
+    text-align:center;
+    text-shadow:0 2px 4px #000;
+    display:none;
+  }
+  #minimap{
+    position:absolute;
+    right:14px;
+    top:14px;
+    width:180px;
+    height:180px;
+    border:1px solid rgba(120,190,255,.28);
+    border-radius:10px;
+    background:rgba(3,8,13,.55);
+    box-shadow:0 6px 24px rgba(0,0,0,.35);
+    display:none;
+  }
+  #help{
+    position:absolute;
+    left:14px;
+    bottom:34px;
+    color:rgba(225,245,255,.75);
+    font-size:12px;
+    line-height:1.45;
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  <div id="topInfo">
+    <b>Canvas FPS Prototype</b><br>
+    Health: <span id="health">100</span> | Ammo: <span id="ammo">12</span>
+  </div>
+  <div id="help">
+    WASD move<br>
+    Mouse aim · Click shoot<br>
+    Shift sprint · R reload<br>
+    Space / Left click shoot<br>
+    P / Esc pause · M minimap
+  </div>
+  <div id="crosshair"></div>
+  <canvas id="minimap" width="180" height="180"></canvas>
+  <div id="centerMessage"></div>
+</div>
+<script>
+(() => {
+  "use strict";
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d", { alpha: false });
+  const minimapCanvas = document.getElementById("minimap");
+  const mctx = minimapCanvas.getContext("2d");
+  const healthEl = document.getElementById("health");
+  const ammoEl = document.getElementById("ammo");
+  const msgEl = document.getElementById("centerMessage");
+
+  const WORLD_W = 30;
+  const WORLD_H = 22;
+  const PLAYER_RADIUS = 0.28;
+  const FOV = Math.PI / 3;
+  const TAU = Math.PI * 2;
+
+  let W = 1;
+  let H = 1;
+  let DPR = 1;
+
+  function resize() {
+    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    W = Math.floor(window.innerWidth);
+    H = Math.floor(window.innerHeight);
+    canvas.width = Math.floor(W * DPR);
+    canvas.height = Math.floor(H * DPR);
+    canvas.style.width = W + "px";
+    canvas.style.height = H + "px";
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener("resize", resize);
+  resize();
+
+  function randSeed(seed) {
+    let s = seed >>> 0;
+    return () => {
+      s = (s * 1664525 + 1013904223) >>> 0;
+      return s / 4294967296;
+    };
+  }
+  const rnd = randSeed(7);
+
+  function generateLevel() {
+    const map = Array.from({ length: WORLD_H }, () => Array(WORLD_W).fill(1));
+    const carveRect = (x, y, w, h) => {
+      for (let yy = y; yy < y + h; yy++) {
+        for (let xx = x; xx < x + w; xx++) {
+          if (xx > 0 && yy > 0 && xx < WORLD_W - 1 && yy < WORLD_H - 1) map[yy][xx] = 0;
+        }
+      }
+    };
+    const line = (x0, y0, x1, y1) => {
+      let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
+      let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
+      let err = dx - dy;
+      let x = x0, y = y0;
+      while (true) {
+        if (x > 0 && y > 0 && x < WORLD_W - 1 && y < WORLD_H - 1) map[y][x] = 0;
+        if (x === x1 && y === y1) break;
+        let e2 = 2 * err;
+        if (e2 > -dy) { err -= dy; x += sx; }
+        if (e2 < dx) { err += dx; y += sy; }
+      }
+    };
+
+    carveRect(1, 1, 8, 6);
+    carveRect(14, 10, 10, 7);
+    carveRect(24, 15, 5, 5);
+    carveRect(24, 3, 5, 5);
+    carveRect(5, 14, 8, 5);
+    carveRect(1, 14, 4, 4);
+
+    line(1, 3, 14, 3);
+    line(14, 3, 14, 10);
+    line(14, 15, 24, 15);
+    line(24, 10, 24, 15);
+    line(24, 10, 24, 3);
+    line(14, 14, 5, 14);
+    line(5, 10, 5, 14);
+    line(5, 16, 14, 16);
+
+    const pillars = [
+      [8, 7, 2, 2], [9, 7, 2, 2],
+      [12, 12, 2, 2], [13, 12, 2, 2],
+      [16, 13, 2, 2], [17, 13, 2, 2],
+      [20, 11, 2, 2], [21, 11, 2, 2],
+      [26, 17, 2, 2], [27, 17, 2, 2],
+      [26, 5, 2, 2], [27, 5, 2, 2],
+      [7, 16, 2, 2], [8, 16, 2, 2],
+      [3, 17, 2, 2], [3, 18, 2, 2],
+      [19, 17, 2, 2], [20, 17, 2, 2]
+    ];
+    for (const p of pillars) {
+      if (rnd() < 0.72) carveRect(p[0], p[1], p[2], p[3]);
+    }
+
+    for (let y = 2; y < WORLD_H - 2; y += 3) {
+      for (let x = 2; x < WORLD_W - 2; x += 3) {
+        if (rnd() < 0.11 && map[y][x] === 0) map[y][x] = 1;
+      }
+    }
+
+    return map;
+  }
+
+  const map = generateLevel();
+
+  function solidAtPoint(px, py) {
+    const x = Math.floor(px);
+    const y = Math.floor(py);
+    return x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H || map[y][x] !== 0;
+  }
+
+  function solidAt(x, y, r = PLAYER_RADIUS) {
+    return solidAtPoint(x + r, y + r) ||
+      solidAtPoint(x - r, y + r) ||
+      solidAtPoint(x + r, y - r) ||
+      solidAtPoint(x - r, y - r);
+  }
+
+  function hasWallBetween(x0, y0, x1, y1, r = 0.25) {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const dist = Math.hypot(dx, dy);
+    const steps = Math.max(1, Math.floor(dist * 8));
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      if (solidAt(x0 + dx * t, y0 + dy * t, r)) return true;
+    }
+    return false;
+  }
+
+  function clamp(v, a, b) {
+    return Math.max(a, Math.min(b, v));
+  }
+
+  const player = {
+    x: 2.5,
+    y: 2.5,
+    angle: 0,
+    health: 100,
+    speed: 2.65,
+    sprintSpeed: 5.3,
+    radius: PLAYER_RADIUS,
+    recoil: 0,
+    hurtTimer: 0
+  };
+
+  const weapon = {
+    name: "Pistol",
+    maxAmmo: 12,
+    ammo: 12,
+    fireRate: 210,
+    reloadTime: 1150,
+    damage: 34,
+    bulletSpeed: 54,
+    bulletRange: 18,
+    cooldown: 0,
+    reloadTimer: 0,
+    muzzleFlash: 0
+  };
+
+  const enemies = [];
+  let nextEnemyId = 1;
+  function spawnEnemy(x, y, hp) {
+    enemies.push({
+      id: nextEnemyId++,
+      x, y,
+      hp, maxHp: hp,
+      radius: 0.34,
+      speed: 1.05 + rnd() * 0.25,
+      attackRange: 0.72,
+      attackDamage: 9,
+      attackCooldown: 0,
+      hitFlash: 0,
+      wander: 0
+    });
+  }
+  spawnEnemy(16.5, 11.2, 120);
+  spawnEnemy(25.5, 16.5, 125);
+  spawnEnemy(26.5, 4.8, 110);
+
+  const pickups = [
+    { type: "ammo", x: 2.3, y: 4.2, radius: 0.18 },
+    { type: "health", x: 16.4, y: 12.1, radius: 0.22 },
+    { type: "ammo", x: 26.4, y: 16.4, radius: 0.18 },
+    { type: "health", x: 26.4, y: 4.4, radius: 0.22 }
+  ];
+
+  const exit = {
+    x: 26.5,
+    y: 17.5
+  };
+
+  const keys = Object.create(null);
+  let paused = false;
+  let won = false;
+  let lost = false;
+  let showMinimap = false;
+  let projectiles = [];
+  let particles = [];
+  let muzzleFlash = 0;
+
+  function angleDiff(a, b) {
+    let d = Math.abs(a - b);
+    while (d > Math.PI) d = TAU - d;
+    return d;
+  }
+
+  function setMsg(text, sub = "", ms = 1800) {
+    msgEl.innerHTML = text + (sub ? "<br><span style='font-weight:400;font-size:13px'>" + sub + "</span>" : "");
+    msgEl.style.display = text ? "block" : "none";
+    clearTimeout(setMsg.t);
+    if (text) setMsg.t = setTimeout(() => msgEl.style.display = "none", ms);
+  }
+
+  function requestPointerLock() {
+    canvas.requestPointerLock && canvas.requestPointerLock();
+  }
+
+  window.addEventListener("keydown", (e) => {
+    if (["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space"].includes(e.code)) e.preventDefault();
+    keys[e.code] = true;
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      if (!paused) {
+        paused = true;
+        setMsg("PAUSED", "Press P or Esc to resume", 999999);
+        if (document.pointerLockElement === canvas) document.exitPointerLock && document.exitPointerLock();
+      } else {
+        paused = false;
+        msgEl.style.display = "none";
+        requestPointerLock();
+      }
+    }
+
+    if (e.code === "KeyM") showMinimap = !showMinimap;
+    if (e.code === "KeyR") reload();
+  }, { passive: false });
+
+  window.addEventListener("keyup", (e) => {
+    keys[e.code] = false;
+  });
+
+  canvas.addEventListener("mousedown", (e) => {
+    if (e.button === 0) {
+      requestPointerLock();
+      if (!paused) shoot();
+    }
+  });
+
+  canvas.addEventListener("mousemove", (e) => {
+    if (document.pointerLockElement === canvas && !paused) {
+      player.angle += e.movementX * 0.0022;
+    }
+  });
+
+  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  function reload() {
+    if (paused || lost || won) return;
+    if (weapon.reloadTimer > 0 || weapon.ammo === weapon.maxAmmo) return;
+    weapon.reloadTimer = weapon.reloadTime;
+    setMsg("RELOADING", "Hold still while the weapon chambers rounds", 900);
+  }
+
+  function shoot() {
+    if (

@@ -1,0 +1,377 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Spiral Galaxy</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #000;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+#ui-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 10;
+    padding: 30px 40px;
+    pointer-events: none;
+}
+
+#ui-overlay h1 {
+    font-size: 2.2em;
+    font-weight: 300;
+    color: #fff;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    text-shadow: 0 0 20px rgba(100, 150, 255, 0.6), 0 0 60px rgba(100, 150, 255, 0.3);
+}
+
+#ui-overlay .subtitle {
+    font-size: 0.85em;
+    color: rgba(180, 200, 255, 0.6);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+}
+
+#ui-overlay .stats {
+    margin-top: 16px;
+    font-size: 0.8em;
+    color: rgba(180, 200, 255, 0.45);
+    letter-spacing: 2px;
+}
+
+#ui-overlay .stats span {
+    color: rgba(140, 180, 255, 0.7);
+    font-weight: 500;
+}
+
+#vignette {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
+    z-index: 5;
+}
+</style>
+</head>
+<body>
+
+<div id="ui-overlay">
+    <h1>Andromeda</h1>
+    <div class="subtitle">Spiral Galaxy &middot; M31</div>
+    <div class="stats">
+        Particles: <span>50,000</span> &nbsp;|&nbsp; Arms: <span>6</span> &nbsp;|&nbsp; Type: <span>SAB(s)</span>
+    </div>
+</div>
+
+<div id="vignette"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+    // ── Scene Setup ──
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 80, 160);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    document.body.appendChild(renderer.domElement);
+
+    // ── Galaxy Parameters ──
+    const PARTICLE_COUNT = 50000;
+    const ARM_COUNT = 6;
+    const ARM_SPREAD = 12;
+    const GALAXY_RADIUS = 100;
+    const CENTER_BULK = 8;
+    const DISK_THICKNESS = 4;
+    const ROTATION_SPEED = 0.02;
+
+    // ── Generate Galaxy Particles ──
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+    const randoms = new Float32Array(PARTICLE_COUNT);
+
+    const colorCenter = new THREE.Color(0x6699ff);
+    const colorMid = new THREE.Color(0xccd9ff);
+    const colorEdge = new THREE.Color(0xffdd66);
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const armIndex = i % ARM_COUNT;
+        const armAngle = (armIndex / ARM_COUNT) * Math.PI * 2;
+
+        // Logarithmic spiral: radius determines angle
+        const baseRadius = Math.pow(i / PARTICLE_COUNT, 0.6) * GALAXY_RADIUS;
+        const spiralAngle = armAngle + baseRadius * 0.08 + (Math.random() - 0.5) * 0.3;
+
+        // Add spread perpendicular to arm
+        const spread = ARM_SPREAD * (0.5 + Math.random());
+        const perpendicularAngle = spiralAngle + Math.PI / 2;
+        const offsetX = Math.cos(perpendicularAngle) * spread * (0.3 + Math.random() * 0.7);
+        const offsetZ = Math.sin(perpendicularAngle) * spread * (0.3 + Math.random() * 0.7);
+
+        const x = Math.cos(spiralAngle) * baseRadius + offsetX;
+        const z = Math.sin(spiralAngle) * baseRadius + offsetZ;
+
+        // Height variation - denser near center plane
+        const heightFactor = 1 - (baseRadius / GALAXY_RADIUS) * 0.5;
+        const y = (Math.random() - 0.5) * DISK_THICKNESS * heightFactor * (1 + Math.random() * 2);
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // Color based on distance
+        const dist = baseRadius / GALAXY_RADIUS;
+        const clampedDist = Math.min(dist, 1.0);
+
+        let c;
+        if (clampedDist < 0.25) {
+            c = colorCenter.clone().lerp(colorMid, clampedDist / 0.25);
+        } else {
+            c = colorMid.clone().lerp(colorEdge, (clampedDist - 0.25) / 0.75);
+        }
+
+        // Add some color variation
+        const variation = 0.08 * Math.random();
+        c.r += (Math.random() - 0.5) * variation;
+        c.g += (Math.random() - 0.5) * variation;
+        c.b += (Math.random() - 0.5) * variation;
+
+        colors[i * 3] = Math.max(0, Math.min(1, c.r));
+        colors[i * 3 + 1] = Math.max(0, Math.min(1, c.g));
+        colors[i * 3 + 2] = Math.max(0, Math.min(1, c.b));
+
+        // Size: brighter/larger near center
+        const centerBoost = Math.pow(1 - clampedDist, 1.5);
+        const baseSize = 0.4 + Math.random() * 1.2;
+        sizes[i] = baseSize * (0.6 + centerBoost * 1.2);
+
+        randoms[i] = Math.random();
+    }
+
+    // ── Galaxy Geometry & Material ──
+    const galaxyGeometry = new THREE.BufferGeometry();
+    galaxyGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    galaxyGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    galaxyGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    galaxyGeometry.setAttribute('random', new THREE.BufferAttribute(randoms, 1));
+
+    const galaxyMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
+        },
+        vertexShader: `
+            attribute float size;
+            attribute float random;
+            varying vec3 vColor;
+            varying float vRandom;
+            uniform float uTime;
+            uniform float uPixelRatio;
+
+            void main() {
+                vColor = color;
+                vRandom = random;
+
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+
+                // Subtle twinkling
+                float twinkle = 0.7 + 0.3 * sin(uTime * (1.0 + random * 3.0) + random * 6.28);
+                float finalSize = size * twinkle * uPixelRatio;
+
+                gl_PointSize = max(finalSize, 1.0);
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vColor;
+            varying float vRandom;
+
+            void main() {
+                vec2 center = gl_PointCoord - 0.5;
+                float dist = length(center);
+
+                // Soft circle with glow
+                float alpha = 1.0 - smoothstep(0.1, 0.5, dist);
+                float glow = exp(-dist * 4.0) * 0.6;
+
+                // Core brightness
+                float core = exp(-dist * 12.0);
+
+                vec3 finalColor = vColor + vec3(core * 0.4);
+                float finalAlpha = (alpha + glow + core) * 0.85;
+
+                gl_FragColor = vec4(finalColor, finalAlpha);
+            }
+        `,
+        vertexColors: true,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: true
+    });
+
+    const galaxy = new THREE.Points(galaxyGeometry, galaxyMaterial);
+    scene.add(galaxy);
+
+    // ── Background Stars ──
+    const starCount = 8000;
+    const starPositions = new Float32Array(starCount * 3);
+    const starSizes = new Float32Array(starCount);
+
+    for (let i = 0; i < starCount; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const r = 400 + Math.random() * 600;
+
+        starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+        starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+        starPositions[i * 3 + 2] = r * Math.cos(phi);
+
+        starSizes[i] = 0.3 + Math.random() * 1.5;
+    }
+
+    const starGeometry = new THREE.BufferGeometry();
+    starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+
+    const starMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            uTime: { value: 0 },
+            uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
+        },
+        vertexShader: `
+            attribute float size;
+            varying float vBrightness;
+            uniform float uTime;
+            uniform float uPixelRatio;
+
+            void main() {
+                vBrightness = 0.5 + 0.5 * sin(uTime * 0.5 + position.x * 0.01);
+                vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                gl_PointSize = size * vBrightness * uPixelRatio;
+                gl_Position = projectionMatrix * mvPosition;
+            }
+        `,
+        fragmentShader: `
+            varying float vBrightness;
+
+            void main() {
+                vec2 center = gl_PointCoord - 0.5;
+                float dist = length(center);
+                float alpha = 1.0 - smoothstep(0.0, 0.5, dist);
+                alpha *= vBrightness * 0.7;
+                gl_FragColor = vec4(vec3(0.9, 0.92, 1.0), alpha);
+            }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        depthTest: true
+    });
+
+    const stars = new THREE.Points(starGeometry, starMaterial);
+    scene.add(stars);
+
+    // ── Central Glow Sprite ──
+    const glowCanvas = document.createElement('canvas');
+    glowCanvas.width = 256;
+    glowCanvas.height = 256;
+    const glowCtx = glowCanvas.getContext('2d');
+    const gradient = glowCtx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    gradient.addColorStop(0, 'rgba(150, 180, 255, 0.4)');
+    gradient.addColorStop(0.2, 'rgba(120, 150, 255, 0.2)');
+    gradient.addColorStop(0.5, 'rgba(80, 120, 255, 0.05)');
+    gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    glowCtx.fillStyle = gradient;
+    glowCtx.fillRect(0, 0, 256, 256);
+
+    const glowTexture = new THREE.CanvasTexture(glowCanvas);
+    const glowMaterial = new THREE.SpriteMaterial({
+        map: glowTexture,
+        blending: THREE.AdditiveBlending,
+        transparent: true,
+        opacity: 0.8,
+        depthWrite: false
+    });
+    const glowSprite = new THREE.Sprite(glowMaterial);
+    glowSprite.scale.set(40, 40, 1);
+    scene.add(glowSprite);
+
+    // ── Camera Orbit ──
+    let cameraAngle = 0;
+    let cameraAngleSpeed = 0.0008;
+    const cameraHeight = 80;
+    const cameraRadius = 160;
+    const cameraTilt = 0.35; // radians from horizontal
+
+    // ── Animation Loop ──
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        const elapsed = clock.getElapsedTime();
+
+        // Rotate galaxy
+        galaxy.rotation.y += ROTATION_SPEED * 0.016;
+
+        // Update uniforms
+        galaxyMaterial.uniforms.uTime.value = elapsed;
+        starMaterial.uniforms.uTime.value = elapsed;
+
+        // Orbit camera
+        cameraAngle += cameraAngleSpeed;
+        const tiltAngle = cameraTilt + Math.sin(elapsed * 0.05) * 0.1;
+        camera.position.x = Math.cos(cameraAngle) * cameraRadius * Math.cos(tiltAngle);
+        camera.position.y = Math.sin(tiltAngle) * cameraRadius + 20;
+        camera.position.z = Math.sin(cameraAngle) * cameraRadius * Math.cos(tiltAngle);
+        camera.lookAt(0, 0, 0);
+
+        // Subtle star rotation
+        stars.rotation.y = elapsed * 0.0001;
+
+        renderer.render(scene, camera);
+    }
+
+    animate();
+
+    // ── Resize Handler ──
+    window.addEventListener('resize', function() {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        const pixelRatio = Math.min(window.devicePixelRatio, 2);
+        renderer.setPixelRatio(pixelRatio);
+        galaxyMaterial.uniforms.uPixelRatio.value = pixelRatio;
+        starMaterial.uniforms.uPixelRatio.value = pixelRatio;
+    });
+})();
+</script>
+</body>
+</html>
+```

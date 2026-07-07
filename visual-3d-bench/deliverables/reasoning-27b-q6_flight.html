@@ -1,0 +1,402 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flight Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Courier New',monospace}
+canvas#gl{display:block;width:100vw;height:100vh}
+canvas#hud{position:absolute;top:0;left:0;width:100vw;height:100vh;pointer-events:none}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);color:#0f0;font-size:24px;flex-direction:column;pointer-events:auto;z-index:10}
+#overlay.hidden{display:none}
+#overlay h1{font-size:48px;margin-bottom:20px;color:#0ff;text-shadow:0 0 20px #0ff}
+#overlay p{margin:8px 0;color:#aaa}
+#overlay .key{color:#ff0;font-weight:bold}
+#msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ff0;font-size:36px;text-shadow:0 0 10px #ff0;pointer-events:none;z-index:5;opacity:0;transition:opacity 0.3s}
+#msg.show{opacity:1}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+<div id="overlay">
+<h1>✈ FLIGHT SIMULATOR</h1>
+<p><span class="key">W/S</span> Pitch &nbsp; <span class="key">A/D</span> Roll &nbsp; <span class="key">Q/E</span> Yaw</p>
+<p><span class="key">SHIFT</span> Throttle Up &nbsp; <span class="key">CTRL</span> Throttle Down</p>
+<p><span class="key">C</span> Toggle Camera &nbsp; <span class="key">R</span> Restart</p>
+<p style="margin-top:20px;color:#0ff">Fly through all 8 rings, avoid hazards, land on the runway!</p>
+<p style="margin-top:20px;color:#fff;font-size:28px">Press <span class="key">SPACE</span> to start</p>
+</div>
+<div id="msg"></div>
+<script>
+"use strict";
+
+// ===== MATH =====
+class V3{
+  constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}
+  set(x,y,z){this.x=x;this.y=y;this.z=z;return this}
+  copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this}
+  clone(){return new V3(this.x,this.y,this.z)}
+  add(v){return new V3(this.x+v.x,this.y+v.y,this.z+v.z)}
+  sub(v){return new V3(this.x-v.x,this.y-v.y,this.z-v.z)}
+  mul(s){return new V3(this.x*s,this.y*s,this.z*s)}
+  dot(v){return this.x*v.x+this.y*v.y+this.z*v.z}
+  cross(v){return new V3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x)}
+  len(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z)}
+  norm(){const l=this.len();return l>1e-10?this.mul(1/l):new V3()}
+  distTo(v){return this.sub(v).len()}
+  lerp(v,t){return new V3(this.x+(v.x-this.x)*t,this.y+(v.y-this.y)*t,this.z+(v.z-this.z)*t)}
+  addSelf(v){this.x+=v.x;this.y+=v.y;this.z+=v.z;return this}
+  mulSelf(s){this.x*=s;this.y*=s;this.z*=s;return this}
+}
+
+class M4{
+  constructor(){this.m=new Float32Array(16);this.identity()}
+  identity(){this.m.fill(0);this.m[0]=this.m[5]=this.m[10]=this.m[15]=1;return this}
+  clone(){const r=new M4();r.m.set(this.m);return r}
+  multiply(b){
+    const a=this.m,bm=b.m,r=new Float32Array(16);
+    for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+      r[i*4+j]=a[i*4]*bm[j]+a[i*4+1]*bm[4+j]+a[i*4+2]*bm[8+j]+a[i*4+3]*bm[12+j];
+    }
+    const m=new M4();m.m=r;return m;
+  }
+  static perspective(fov,asp,near,far){
+    const f=1/Math.tan(fov/2),nf=1/(near-far),m=new M4();
+    m.m[0]=f/asp;m.m[5]=f;m.m[10]=(far+near)*nf;m.m[11]=-1;m.m[14]=2*far*near*nf;m.m[15]=0;
+    return m;
+  }
+  static lookAt(eye,target,up){
+    const z=eye.sub(target).norm(),x=up.cross(z).norm(),y=z.cross(x);
+    const m=new M4();
+    m.m[0]=x.x;m.m[4]=x.y;m.m[8]=x.z;m.m[12]=-x.dot(eye);
+    m.m[1]=y.x;m.m[5]=y.y;m.m[9]=y.z;m.m[13]=-y.dot(eye);
+    m.m[2]=z.x;m.m[6]=z.y;m.m[10]=z.z;m.m[14]=-z.dot(eye);
+    return m;
+  }
+  static translation(x,y,z){const m=new M4();m.m[12]=x;m.m[13]=y;m.m[14]=z;return m}
+  static scale(x,y,z){const m=new M4();m.m[0]=x;m.m[5]=y;m.m[10]=z;return m}
+  static rotX(a){const m=new M4(),c=Math.cos(a),s=Math.sin(a);m.m[5]=c;m.m[6]=s;m.m[9]=-s;m.m[10]=c;return m}
+  static rotY(a){const m=new M4(),c=Math.cos(a),s=Math.sin(a);m.m[0]=c;m.m[2]=-s;m.m[8]=s;m.m[10]=c;return m}
+  static rotZ(a){const m=new M4(),c=Math.cos(a),s=Math.sin(a);m.m[0]=c;m.m[1]=s;m.m[4]=-s;m.m[5]=c;return m}
+  static frustum(l,r,b,t,n,f){
+    const m=new M4();
+    m.m[0]=2*n/(r-l);m.m[8]=(r+l)/(r-l);
+    m.m[5]=2*n/(t-b);m.m[9]=(t+b)/(t-b);
+    m.m[10]=-(f+n)/(f-n);m.m[11]=-1;m.m[14]=-2*f*n/(f-n);m.m[15]=0;
+    return m;
+  }
+  static ortho(l,r,b,t,n,f){
+    const m=new M4();
+    m.m[0]=2/(r-l);m.m[5]=2/(t-b);m.m[10]=-2/(f-n);
+    m.m[12]=-(r+l)/(r-l);m.m[13]=-(t+b)/(t-b);m.m[14]=-(f+n)/(f-n);
+    return m;
+  }
+}
+
+// ===== NOISE =====
+function hash(x,y){let h=(x*374761393+y*668265263)|0;h=((h^(h>>13))*1274126177)|0;return(h&0x7fffffff)/0x7fffffff}
+function smoothNoise(x,y){
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+  const sx=fx*fx*(3-2*fx),sy=fy*fy*(3-2*fy);
+  const a=hash(ix,iy),b=hash(ix+1,iy),c=hash(ix,iy+1),d=hash(ix+1,iy+1);
+  return a+(b-a)*sx+(c-a)*sy+(a-b-c+d)*sx*sy;
+}
+function fbm(x,y,oct=5){let v=0,a=1,f=1,t=0;for(let i=0;i<oct;i++){v+=smoothNoise(x*f,y*f)*a;t+=a;a*=0.5;f*=2}return v/t}
+
+function terrainHeight(x,z){
+  const scale=0.002;
+  let h=fbm(x*scale+50,z*scale+50,6)*120;
+  h=Math.pow(h/120,1.5)*120;
+  // Flat areas near checkpoints and runway
+  return h;
+}
+
+// ===== WEBGL SETUP =====
+const glCanvas=document.getElementById('gl');
+const gl=glCanvas.getContext('webgl',{antialias:true,alpha:false});
+if(!gl){document.body.innerHTML='<h1 style="color:red;text-align:center;margin-top:40vh">WebGL not supported</h1>';throw 0}
+
+glCanvas.width=window.innerWidth;glCanvas.height=window.innerHeight;
+gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.cullFace(gl.BACK);
+
+const hudCanvas=document.getElementById('hud');
+hudCanvas.width=window.innerWidth;hudCanvas.height=window.innerHeight;
+const ctx2d=hudCanvas.getContext('2d');
+
+window.addEventListener('resize',()=>{
+  glCanvas.width=window.innerWidth;glCanvas.height=window.innerHeight;
+  hudCanvas.width=window.innerWidth;hudCanvas.height=window.innerHeight;
+});
+
+// ===== SHADERS =====
+function createShader(src,type){
+  const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(s));return null}
+  return s;
+}
+function createProgram(vs,fs){
+  const p=gl.createProgram();
+  gl.attachShader(p,createShader(vs,gl.VERTEX_SHADER));
+  gl.attachShader(p,createShader(fs,gl.FRAGMENT_SHADER));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS)){console.error(gl.getProgramInfoLog(p));return null}
+  return p;
+}
+
+// Main terrain/objects shader
+const mainVS=`
+attribute vec3 aPos;
+attribute vec3 aNorm;
+attribute vec3 aColor;
+uniform mat4 uMVP;
+uniform mat4 uModel;
+uniform mat3 uNormMat;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+varying vec3 vColor;
+void main(){
+  vec4 wp=uModel*vec4(aPos,1.0);
+  vWorldPos=wp.xyz;
+  vNorm=normalize(uNormMat*aNorm);
+  vColor=aColor;
+  gl_Position=uMVP*vec4(aPos,1.0);
+}`;
+
+const mainFS=`
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+varying vec3 vColor;
+uniform vec3 uLightDir;
+uniform vec3 uCamPos;
+uniform float uFogDensity;
+void main(){
+  vec3 N=normalize(vNorm);
+  float diff=max(dot(N,uLightDir),0.0);
+  float amb=0.35;
+  vec3 V=normalize(uCamPos-vWorldPos);
+  vec3 H=normalize(uLightDir+V);
+  float spec=pow(max(dot(N,H),0.0),32.0)*0.4;
+  vec3 col=vColor*(amb+diff*0.65)+vec3(1.0,0.95,0.8)*spec;
+  // Fog
+  float dist=length(uCamPos-vWorldPos);
+  float fog=1.0-exp(-dist*uFogDensity*dist*uFogDensity);
+  vec3 fogCol=vec3(0.6,0.7,0.85);
+  col=mix(col,fogCol,fog);
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+// Sky shader
+const skyVS=`
+attribute vec3 aPos;
+varying vec3 vDir;
+uniform mat4 uVP;
+void main(){
+  vDir=aPos;
+  mat4 p=uVP;
+  p[3]=vec4(0,0,0,1);
+  gl_Position=p*vec4(aPos,1.0);
+  gl_Position.z=gl_Position.w;
+}`;
+
+const skyFS=`
+precision mediump float;
+varying vec3 vDir;
+uniform vec3 uLightDir;
+void main(){
+  vec3 d=normalize(vDir);
+  float y=d.y;
+  vec3 col;
+  if(y>0.0){
+    col=mix(vec3(0.35,0.55,0.9),vec3(0.15,0.3,0.7),smoothstep(0.0,0.8,y));
+    // Sun
+    float sunDot=max(dot(d,uLightDir),0.0);
+    col+=vec3(1.0,0.9,0.5)*pow(sunDot,256.0)*2.0;
+    col+=vec3(1.0,0.8,0.4)*pow(sunDot,8.0)*0.3;
+  } else {
+    col=mix(vec3(0.5,0.6,0.7),vec3(0.2,0.3,0.5),smoothstep(0.0,-0.5,y));
+  }
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+// HUD line shader (2D)
+const hudVS=`
+attribute vec2 aPos;
+uniform mat4 uProj;
+void main(){gl_Position=uProj*vec4(aPos,0,1);}`;
+
+const hudFS=`
+precision mediump float;
+uniform vec4 uColor;
+void main(){gl_FragColor=uColor;}`;
+
+const mainProg=createProgram(mainVS,mainFS);
+const skyProg=createProgram(skyVS,skyFS);
+const hudProg=createProgram(hudVS,hudFS);
+
+// Get locations
+const mLocs={
+  mvp:gl.getUniformLocation(mainProg,'uMVP'),
+  model:gl.getUniformLocation(mainProg,'uModel'),
+  normMat:gl.getUniformLocation(mainProg,'uNormMat'),
+  lightDir:gl.getUniformLocation(mainProg,'uLightDir'),
+  camPos:gl.getUniformLocation(mainProg,'uCamPos'),
+  fogDensity:gl.getUniformLocation(mainProg,'uFogDensity'),
+  aPos:gl.getAttribLocation(mainProg,'aPos'),
+  aNorm:gl.getAttribLocation(mainProg,'aNorm'),
+  aColor:gl.getAttribLocation(mainProg,'aColor'),
+};
+
+const sLocs={
+  vp:gl.getUniformLocation(skyProg,'uVP'),
+  lightDir:gl.getUniformLocation(skyProg,'uLightDir'),
+  aPos:gl.getAttribLocation(skyProg,'aPos'),
+};
+
+const hLocs={
+  proj:gl.getUniformLocation(hudProg,'uProj'),
+  color:gl.getUniformLocation(hudProg,'uColor'),
+  aPos:gl.getAttribLocation(hudProg,'aPos'),
+};
+
+// ===== GEOMETRY =====
+function createBuffer(data){
+  const b=gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER,b);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(data),gl.STATIC_DRAW);
+  return b;
+}
+function createIndexBuffer(data){
+  const b=gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,b);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(data),gl.STATIC_DRAW);
+  return b;
+}
+
+// Terrain mesh
+const TERRAIN_SIZE=2000,TERRAIN_RES=120;
+const terrainVerts=[],terrainIdx=[],terrainNorms=[],terrainCols=[];
+const TSTEP=TERRAIN_SIZE/TERRAIN_RES;
+for(let iz=0;iz<=TERRAIN_RES;iz++){
+  for(let ix=0;ix<=TERRAIN_RES;ix++){
+    const x=-TERRAIN_SIZE/2+ix*TSTEP,z=-TERRAIN_SIZE/2+iz*TSTEP;
+    const y=terrainHeight(x,z);
+    terrainVerts.push(x,y,z);
+    // Normal from height differences
+    const hL=terrainHeight(x-TSTEP,z),hR=terrainHeight(x+TSTEP,z);
+    const hD=terrainHeight(x,z-TSTEP),hU=terrainHeight(x,z+TSTEP);
+    const n=new V3(hL-hR,2*TSTEP,hD-hU).norm();
+    terrainNorms.push(n.x,n.y,n.z);
+    // Color based on height
+    const t=Math.max(0,Math.min(1,y/80));
+    if(t<0.3)terrainCols.push(0.2+t*2,0.4+t*0.5,0.15); // grass
+    else if(t<0.6)terrainCols.push(0.4+t*0.3,0.35+t*0.1,0.2); // dirt
+    else terrainCols.push(0.5+t*0.3,0.45+t*0.2,0.4); // rock
+  }
+}
+for(let iz=0;iz<TERRAIN_RES;iz++){
+  for(let ix=0;ix<TERRAIN_RES;ix++){
+    const a=iz*(TERRAIN_RES+1)+ix;
+    terrainIdx.push(a,a+1,a+TERRAIN_RES+1,a+1,a+TERRAIN_RES+2,a+TERRAIN_RES+1);
+  }
+}
+const terrainBuf={
+  pos:createBuffer(terrainVerts),
+  norm:createBuffer(terrainNorms),
+  col:createBuffer(terrainCols),
+  idx:createIndexBuffer(terrainIdx),
+  count:terrainIdx.length
+};
+
+// Sky dome
+const skyVerts=[];
+for(let i=0;i<32;i++){
+  const phi=i/32*Math.PI*2;
+  for(let j=0;j<16;j++){
+    const theta=j/16*Math.PI;
+    const r=500;
+    skyVerts.push(r*Math.sin(theta)*Math.cos(phi),r*Math.cos(theta),r*Math.sin(theta)*Math.sin(phi));
+  }
+}
+const skyIdx=[];
+for(let i=0;i<32;i++){
+  for(let j=0;j<15;j++){
+    const a=i*16+j,b=a+1,c=a+16,d=a+17;
+    skyIdx.push(a,b,c,b,d,c);
+  }
+}
+const skyBuf={pos:createBuffer(skyVerts),idx:createIndexBuffer(skyIdx),count:skyIdx.length};
+
+// ===== AIRCRAFT MODEL =====
+function buildAircraft(){
+  const verts=[],norms=[],cols=[],idx=[];
+  let vi=0;
+  function addV(x,y,z,nx,ny,nz,r,g,b){
+    verts.push(x,y,z);norms.push(nx,ny,nz);cols.push(r,g,b);return vi++;
+  }
+  function tri(a,b,c){idx.push(a,b,c)}
+
+  const ac=0.9,ag=0.75,ab=0.2; // aircraft colors
+
+  // Fuselage
+  const fl=3.0;
+  // Nose
+  tri(addV(0,0,0,0,0,1,ac,ag,ab),addV(-0.15,0.1,0.3,0,0,1,ac,ag,ab),addV(0.15,0.1,0.3,0,0,1,ac,ag,ab));
+  tri(addV(0,0,0,0,0,1,ac,ag,ab),addV(0.15,0.1,0.3,0,0,1,ac,ag,ab),addV(0.15,-0.1,0.3,0,0,1,ac,ag,ab));
+  tri(addV(0,0,0,0,0,1,ac,ag,ab),addV(0.15,-0.1,0.3,0,0,1,ac,ag,ab),addV(-0.15,-0.1,0.3,0,0,1,ac,ag,ab));
+  tri(addV(0,0,0,0,0,1,ac,ag,ab),addV(-0.15,-0.1,0.3,0,0,1,ac,ag,ab),addV(-0.15,0.1,0.3,0,0,1,ac,ag,ab));
+
+  // Body sides
+  const bodyZ=-fl;
+  tri(addV(0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(0.15,0.1,bodyZ,0,1,0,ac,ag,ab),addV(0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab));
+  tri(addV(0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab),addV(0.15,-0.1,0.3,0,-1,0,ac,ag,ab));
+
+  tri(addV(-0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(-0.15,-0.1,0.3,0,-1,0,ac,ag,ab),addV(-0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab));
+  tri(addV(-0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(-0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab),addV(-0.15,0.1,bodyZ,0,1,0,ac,ag,ab));
+
+  // Top
+  tri(addV(0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(-0.15,0.1,bodyZ,0,1,0,ac,ag,ab),addV(0.15,0.1,bodyZ,0,1,0,ac,ag,ab));
+  tri(addV(0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(-0.15,0.1,0.3,0,1,0,ac,ag,ab),addV(-0.15,0.1,bodyZ,0,1,0,ac,ag,ab));
+
+  // Bottom
+  tri(addV(0.15,-0.1,0.3,0,-1,0,ac,ag,ab),addV(0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab),addV(-0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab));
+  tri(addV(0.15,-0.1,0.3,0,-1,0,ac,ag,ab),addV(-0.15,-0.1,bodyZ,0,-1,0,ac,ag,ab),addV(-0.15,-0.1,0.3,0,-1,0,ac,ag,ab));
+
+  // Wings
+  const wSpan=4.0,wChord=0.6,wY=-0.05,wZ=-0.5;
+  // Top of right wing
+  tri(addV(0.15,wY,wZ,0,1,0,0.7,0.7,0.7),addV(0.15+wSpan,wY,wZ-wChord,0,1,0,0.7,0.7,0.7),addV(0.15+wSpan,wY,wZ,0,1,0,0.7,0.7,0.7));
+  tri(addV(0.15,wY,wZ,0,1,0,0.7,0.7,0.7),addV(0.15,wY,wZ-wChord,0,1,0,0.7,0.7,0.7),addV(0.15+wSpan,wY,wZ-wChord,0,1,0,0.7,0.7,0.7));
+  // Bottom of right wing
+  tri(addV(0.15,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6),addV(0.15+wSpan,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6),addV(0.15+wSpan,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6));
+  tri(addV(0.15,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6),addV(0.15+wSpan,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6),addV(0.15,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6));
+
+  // Top of left wing
+  tri(addV(-0.15,wY,wZ,0,1,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY,wZ,0,1,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY,wZ-wChord,0,1,0,0.7,0.7,0.7));
+  tri(addV(-0.15,wY,wZ,0,1,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY,wZ-wChord,0,1,0,0.7,0.7,0.7),addV(-0.15,wY,wZ-wChord,0,1,0,0.7,0.7,0.7));
+  // Bottom of left wing
+  tri(addV(-0.15,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6),addV(-0.15-wSpan,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6),addV(-0.15-wSpan,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6));
+  tri(addV(-0.15,wY-0.04,wZ,0,-1,0,0.6,0.6,0.6),addV(-0.15-wSpan,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6),addV(-0.15,wY-0.04,wZ-wChord,0,-1,0,0.6,0.6,0.6));
+
+  // Wing leading/trailing edges (right)
+  tri(addV(0.15,wY,wZ,1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY,wZ,1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY-0.04,wZ,1,0,0,0.7,0.7,0.7));
+  tri(addV(0.15,wY,wZ,1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY-0.04,wZ,1,0,0,0.7,0.7,0.7),addV(0.15,wY-0.04,wZ,1,0,0,0.7,0.7,0.7));
+
+  tri(addV(0.15,wY,wZ-wChord,-1,0,0,0.7,0.7,0.7),addV(0.15,wY-0.04,wZ-wChord,-1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY-0.04,wZ-wChord,-1,0,0,0.7,0.7,0.7));
+  tri(addV(0.15,wY,wZ-wChord,-1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY-0.04,wZ-wChord,-1,0,0,0.7,0.7,0.7),addV(0.15+wSpan,wY,wZ-wChord,-1,0,0,0.7,0.7,0.7));
+
+  // Wing leading/trailing edges (left)
+  tri(addV(-0.15,wY,wZ,-1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY-0.04,wZ,-1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY,wZ,-1,0,0,0.7,0.7,0.7));
+  tri(addV(-0.15,wY,wZ,-1,0,0,0.7,0.7,0.7),addV(-0.15,wY-0.04,wZ,-1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY-0.04,wZ,-1,0,0,0.7,0.7,0.7));
+
+  tri(addV(-0.15,wY,wZ-wChord,1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY,wZ-wChord,1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY-0.04,wZ-wChord,1,0,0,0.7,0.7,0.7));
+  tri(addV(-0.15,wY,wZ-wChord,1,0,0,0.7,0.7,0.7),addV(-0.15-wSpan,wY-0.04,wZ-wChord,1,0,0,0.7,0.7,0.7),addV(-0.15,wY-0.04,wZ-wChord,1,0,0,0.7,0.7,0.7));
+
+  // Wingtips
+  tri(addV(0.15+wSpan,wY,wZ,1,0,0,0.8,0.2,0.2),addV(0.15+wSpan,wY,wZ-wChord,1,0,0,0.8,0.2,0.2),addV(0.15+wSpan,wY-0.04,wZ-wChord,1,0,0,0.8,0.2,0.2));
+  tri(addV(0.15+wSpan,wY,wZ,1,0,0,0.8,0.2,0.2),addV(0.15+wSpan,wY-0.04,wZ-wChord,1,0,0,0.8,0.2,0.2),addV(0.15+wSpan,wY-0.04,wZ,1,0,0,0.8,0.2,0.2));
+
+  tri(addV(-0.15-wSpan,wY,wZ,-1,0,0,0.2,0.8,0.2),addV(-0.15-wSpan,wY-0.04,wZ,-1,0,0,0.2,0.8,0.2),addV(-0.15-wSpan,wY-0.04,wZ-wChord,-1,0,0,0.2,0.8,0.2

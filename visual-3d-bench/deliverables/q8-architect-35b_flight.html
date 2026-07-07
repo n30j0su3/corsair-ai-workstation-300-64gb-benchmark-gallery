@@ -1,0 +1,586 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>3D Flight Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+canvas { display: block; }
+#hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#message { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #0f0; font-size: 36px; text-align: center; text-shadow: 2px 2px 4px #000; display: none; pointer-events: none; }
+#minimap { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 200px; border: 2px solid #0f0; background: rgba(0,0,0,0.5); }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<canvas id="hud"></canvas>
+<canvas id="minimap"></canvas>
+<div id="message"></div>
+<script>
+// ============ MATH UTILITIES ============
+const PI = Math.PI, TAU = PI * 2;
+const DEG = PI / 180;
+const sin = Math.sin, cos = Math.cos, tan = Math.tan, sqrt = Math.sqrt, abs = Math.abs, min = Math.min, max = Math.max, floor = Math.floor, random = Math.random, atan2 = Math.atan2;
+
+function vec3(x,y,z){ return {x,y,z}; }
+function v3add(a,b){ return vec3(a.x+b.x,a.y+b.y,a.z+b.z); }
+function v3sub(a,b){ return vec3(a.x-b.x,a.y-b.y,a.z-b.z); }
+function v3scale(v,s){ return vec3(v.x*s,v.y*s,v.z*s); }
+function v3dot(a,b){ return a.x*b.x+a.y*b.y+a.z*b.z; }
+function v3cross(a,b){ return vec3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x); }
+function v3len(v){ return sqrt(v.x*v.x+v.y*v.y+v.z*v.z); }
+function v3norm(v){ const l=v3len(v); return l>0?vec3(v.x/l,v.y/l,v.z/l):vec3(0,0,0); }
+function v3lerp(a,b,t){ return vec3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t); }
+function v3dist(a,b){ return v3len(v3sub(a,b)); }
+
+function mat4(){ return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]; }
+function mat4rotX(a){ const c=cos(a),s=sin(a); return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]; }
+function mat4rotY(a){ const c=cos(a),s=sin(a); return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]; }
+function mat4rotZ(a){ const c=cos(a),s=sin(a); return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]; }
+function mat4mul(a,b){
+  const r=new Array(16);
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){r[i*4+j]=0;for(let k=0;k<4;k++)r[i*4+j]+=a[i*4+k]*b[k*4+j];}
+  return r;
+}
+function mat4mulV(m,v){
+  return vec3(m[0]*v.x+m[1]*v.y+m[2]*v.z+m[3],m[4]*v.x+m[5]*v.y+m[6]*v.z+m[7],m[8]*v.x+m[9]*v.y+m[10]*v.z+m[11]);
+}
+function mat4mulP(m,v){
+  const w=m[12]*v.x+m[13]*v.y+m[14]*v.z+m[15];
+  return vec3((m[0]*v.x+m[1]*v.y+m[2]*v.z+m[3])/w,(m[4]*v.x+m[5]*v.y+m[6]*v.z+m[7])/w,(m[8]*v.x+m[9]*v.y+m[10]*v.z+m[11])/w);
+}
+
+// ============ NOISE ============
+function hash(x,z){let h=x*374761393+z*668265263;h=(h^(h>>13))*1274126177;return((h^(h>>16))&0x7fffffff)/0x7fffffff;}
+function noise2d(x,z){
+  const ix=floor(x),iz=floor(z),fx=x-ix,fz=z-iz;
+  const sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);
+  const a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);
+  return a+(b-a)*sx+(c-a)*sz+(a-b-c+d)*sx*sz;
+}
+function fbm(x,z,oct){let v=0,a=1,f=1,t=0;for(let i=0;i<oct;i++){v+=noise2d(x*f,z*f)*a;t+=a;a*=0.5;f*=2;}return v/t;}
+
+// ============ CANVAS SETUP ============
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const hudCanvas = document.getElementById('hud');
+const hctx = hudCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap');
+const mctx = minimapCanvas.getContext('2d');
+
+function resize(){
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  hudCanvas.width = window.innerWidth; hudCanvas.height = window.innerHeight;
+  minimapCanvas.width = 200; minimapCanvas.height = 200;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ============ INPUT ============
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key.toLowerCase()==='c') toggleCamera(); e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+// ============ CAMERA ============
+let cameraMode = 0; // 0=chase, 1=cockpit
+function toggleCamera(){ cameraMode = 1 - cameraMode; }
+
+// ============ AIRCRAFT ============
+const aircraft = {
+  pos: vec3(0, 200, 0),
+  vel: vec3(0, 0, 200),
+  pitch: 0, roll: 0, yaw: 0,
+  throttle: 0.5,
+  fuel: 100,
+  alive: true,
+  crashed: false,
+  landed: false,
+  checkpoints: [],
+  checkpointCount: 0,
+  totalCheckpoints: 8,
+  contrails: [],
+  contrailTimer: 0,
+  spin: false,
+  spinTimer: 0,
+  spinAxis: vec3(0,0,0),
+  spinSpeed: 0
+};
+
+// ============ WORLD ============
+const WORLD_SIZE = 8000;
+const TERRAIN_RES = 120;
+const terrainData = [];
+const obstacles = [];
+const checkpoints = [];
+const runway = { pos: vec3(0, 0, -WORLD_SIZE/2 + 500), width: 60, length: 800 };
+const mountains = [];
+const towers = [];
+
+function generateWorld(){
+  // Terrain
+  for(let iz=0;iz<=TERRAIN_RES;iz++){
+    terrainData[iz]=[];
+    for(let ix=0;ix<=TERRAIN_RES;ix++){
+      const x=(ix/TERRAIN_RES-0.5)*WORLD_SIZE;
+      const z=(iz/TERRAIN_RES-0.5)*WORLD_SIZE;
+      const dist = sqrt(x*x+z*z);
+      let h = fbm(x*0.0008+100,z*0.0008+100,6)*200;
+      h += fbm(x*0.003,z*0.003,4)*40;
+      // Flatten near origin for takeoff
+      const flatDist = 2000;
+      if(dist < flatDist){
+        const t = dist/flatDist;
+        h = h*t + (1-t)*50;
+      }
+      // Mountains
+      const mx = sin(x*0.001)*cos(z*0.001)*200;
+      const mz = cos(x*0.0007)*sin(z*0.0009)*200;
+      const mDist = sqrt((x-mx)*(x-mx)+(z-mz)*(z-mz));
+      if(mDist < 800){
+        const mt = 1-mDist/800;
+        h += mt*mt*600;
+      }
+      if(dist < 500) h = 50; // takeoff area flat
+      terrainData[iz][ix] = h;
+    }
+  }
+
+  // Generate obstacles (towers, buildings)
+  for(let i=0;i<40;i++){
+    const ox = (random()-0.5)*WORLD_SIZE*0.8;
+    const oz = (random()-0.5)*WORLD_SIZE*0.8;
+    const dist = sqrt(ox*ox+oz*oz);
+    if(dist < 1500) continue;
+    const h = getTerrainHeight(ox,oz);
+    const height = 50+random()*150;
+    const width = 15+random()*30;
+    obstacles.push({pos:vec3(ox,h+height/2,oz),height,width,depth:width+random()*20});
+  }
+
+  // Generate checkpoints (rings)
+  const cpAngles = [0,45,90,135,180,225,270,315];
+  for(let i=0;i<8;i++){
+    const angle = cpAngles[i]*DEG;
+    const radius = 1500+random()*800;
+    const cx = cos(angle)*radius;
+    const cz = sin(angle)*radius;
+    const ch = 100+random()*100;
+    checkpoints.push({pos:vec3(cx,ch,cz),radius:60,active:true,passed:false});
+  }
+
+  // Generate hazards (lightning towers, storm zones)
+  for(let i=0;i<6;i++){
+    const hx = (random()-0.5)*WORLD_SIZE*0.6;
+    const hz = (random()-0.5)*WORLD_SIZE*0.6;
+    const hh = getTerrainHeight(hx,hz)+200;
+    obstacles.push({pos:vec3(hx,hh,hz),height:100,width:10,depth:10,hazard:true,lightning:random()>0.5});
+  }
+}
+
+function getTerrainHeight(x,z){
+  const ix = ((x/WORLD_SIZE)+0.5)*TERRAIN_RES;
+  const iz = ((z/WORLD_SIZE)+0.5)*TERRAIN_RES;
+  if(ix<0||ix>TERRAIN_RES||iz<0||iz>TERRAIN_RES) return 0;
+  const i1=floor(ix),j1=floor(iz);
+  const i2=min(i1+1,TERRAIN_RES),j2=min(j1+1,TERRAIN_RES);
+  const fx=ix-i1,fz=iz-j1;
+  const h1=terrainData[j1][i1]*(1-fx)+terrainData[j1][i2]*fx;
+  const h2=terrainData[j2][i1]*(1-fx)+terrainData[j2][i2]*fx;
+  return h1*(1-fz)+h2*fz;
+}
+
+// ============ AIRCRAFT PHYSICS ============
+function updateAircraft(dt){
+  if(!aircraft.alive) return;
+
+  const mass = 5000;
+  const grav = 9.81;
+  const airDensity = 1.225;
+
+  // Throttle response
+  const targetThrottle = aircraft.throttle;
+  const throttleRate = 0.8;
+  aircraft.throttle += (targetThrottle - aircraft.throttle) * throttleRate * dt;
+
+  // Control inputs
+  const pitchInput = -((keys['w']||keys['arrowup'])?1:0) + ((keys['s']||keys['arrowdown'])?1:0);
+  const rollInput = ((keys['a']||keys['arrowleft'])?1:0) - ((keys['d']||keys['arrowright'])?1:0);
+  const yawInput = ((keys['q'])?1:0) - ((keys['e'])?1:0);
+  const throttleUp = keys['r'];
+  const throttleDown = keys['f'];
+
+  if(throttleUp) aircraft.throttle = min(1, aircraft.throttle + 0.5*dt);
+  if(throttleDown) aircraft.throttle = max(0, aircraft.throttle - 0.5*dt);
+
+  // Fuel consumption
+  aircraft.fuel -= aircraft.throttle * 2 * dt;
+  if(aircraft.fuel <= 0){ aircraft.fuel = 0; aircraft.throttle = 0; }
+
+  // Rotation
+  const pitchRate = pitchInput * 1.5;
+  const rollRate = rollInput * 2.5;
+  const yawRate = yawInput * 0.5;
+
+  aircraft.pitch += pitchRate * dt;
+  aircraft.roll += rollRate * dt;
+  aircraft.yaw += yawRate * dt;
+
+  // Bank angle limits
+  aircraft.roll = max(-PI/2.5, min(PI/2.5, aircraft.roll));
+  aircraft.pitch = max(-PI/3, min(PI/3, aircraft.pitch));
+
+  // Auto-rudder for coordinated turns
+  const turnRate = rollRate * 0.3;
+  aircraft.yaw += turnRate * dt;
+
+  // Attitude recovery (slow auto-level when no input)
+  if(!rollInput) aircraft.roll *= (1 - 0.5*dt);
+  if(!pitchInput) aircraft.pitch *= (1 - 0.3*dt);
+
+  // Velocity direction (heading)
+  const heading = atan2(aircraft.vel.x, aircraft.vel.z);
+
+  // Thrust
+  const thrust = aircraft.throttle * 80000;
+
+  // Drag
+  const speed = v3len(aircraft.vel);
+  const dragCoeff = 0.02;
+  const dragArea = 15;
+  const dragForce = 0.5 * airDensity * dragCoeff * dragArea * speed * speed;
+  const dragVec = speed > 0 ? v3scale(v3norm(aircraft.vel), -dragForce) : vec3(0,0,0);
+
+  // Lift
+  const angleOfAttack = aircraft.pitch + (speed > 50 ? 0.15 : 0);
+  const liftCoeff = 0.8 * sin(angleOfAttack * 2) + 0.1;
+  const liftForce = 0.5 * airDensity * dragArea * liftCoeff * speed * speed;
+  const liftDir = v3norm(v3cross(vec3(1,0,0), aircraft.vel));
+  const liftVec = v3scale(liftDir, liftForce);
+
+  // Gravity
+  const gravForce = vec3(0, -grav * mass, 0);
+
+  // Net force
+  const thrustDir = v3norm(aircraft.vel);
+  const thrustVec = v3scale(thrustDir, thrust);
+
+  // Spin condition (stall)
+  if(speed < 80 && aircraft.pitch > 0.5){
+    if(!aircraft.spin){
+      aircraft.spin = true;
+      aircraft.spinAxis = v3norm(v3cross(aircraft.vel, vec3(0,1,0)));
+      aircraft.spinSpeed = 3 + random()*2;
+    }
+  }
+
+  if(aircraft.spin){
+    aircraft.spinTimer += dt;
+    const spinAngle = aircraft.spinSpeed * dt;
+    const spinQuat = mat4rotZ(spinAngle);
+    aircraft.vel = mat4mulV(spinQuat, aircraft.vel);
+    aircraft.pitch += spinAngle * 0.5;
+    if(aircraft.spinTimer > 3 || speed > 100){
+      aircraft.spin = false;
+      aircraft.spinTimer = 0;
+    }
+  }
+
+  const netForce = v3add(v3add(v3add(thrustVec, dragVec), liftVec), gravForce);
+  const accel = v3scale(netForce, 1/mass);
+
+  // Update velocity
+  aircraft.vel = v3add(aircraft.vel, v3scale(accel, dt));
+
+  // Clamp speed
+  const maxSpeed = 500;
+  const minSpeed = 30;
+  const newSpeed = v3len(aircraft.vel);
+  if(newSpeed > maxSpeed) aircraft.vel = v3scale(v3norm(aircraft.vel), maxSpeed);
+  if(newSpeed < minSpeed) aircraft.vel = v3scale(v3norm(aircraft.vel), minSpeed);
+
+  // Update position
+  aircraft.pos = v3add(aircraft.pos, v3scale(aircraft.vel, dt));
+
+  // Ground collision
+  const groundHeight = getTerrainHeight(aircraft.pos.x, aircraft.pos.z);
+  if(aircraft.pos.y < groundHeight + 5){
+    if(aircraft.pos.y < groundHeight + 100){
+      // Check if landing on runway
+      const runDist = v3dist(aircraft.pos, runway.pos);
+      if(runDist < 200 && abs(aircraft.pos.z - runway.pos.z) < 50 && speed < 100 && aircraft.pitch < 0.1){
+        aircraft.landed = true;
+        aircraft.alive = false;
+        showMessage("MISSION COMPLETE! You landed successfully!", "#0f0");
+        return;
+      }
+    }
+    // Crash
+    aircraft.alive = false;
+    aircraft.crashed = true;
+    showMessage("CRASHED! Press R to restart", "#f00");
+    return;
+  }
+
+  // Obstacle collision
+  for(const obs of obstacles){
+    const dx = abs(aircraft.pos.x - obs.pos.x);
+    const dy = abs(aircraft.pos.y - obs.pos.y);
+    const dz = abs(aircraft.pos.z - obs.pos.z);
+    if(dx < obs.width/2 + 5 && dy < obs.height/2 + 5 && dz < obs.depth/2 + 5){
+      aircraft.alive = false;
+      aircraft.crashed = true;
+      showMessage("HIT OBSTACLE! Press R to restart", "#f00");
+      return;
+    }
+  }
+
+  // Checkpoint collision
+  for(const cp of checkpoints){
+    if(!cp.passed){
+      const dist = v3dist(aircraft.pos, cp.pos);
+      if(dist < cp.radius + 20){
+        cp.passed = true;
+        aircraft.checkpointCount++;
+        if(aircraft.checkpointCount >= aircraft.totalCheckpoints){
+          // All checkpoints passed - fly to runway
+          const runDist = v3dist(aircraft.pos, runway.pos);
+          if(runDist < 500){
+            // Bonus for landing
+          }
+        }
+      }
+    }
+  }
+
+  // Contrails
+  aircraft.contrailTimer += dt;
+  if(aircraft.contrailTimer > 0.05 && speed > 100){
+    aircraft.contrailTimer = 0;
+    const contrailPos = v3add(aircraft.pos, v3scale(aircraft.vel, -2));
+    aircraft.contrails.push({pos: vec3(contrailPos.x, contrailPos.y, contrailPos.z), life: 3});
+  }
+  // Update contrails
+  for(let i=aircraft.contrails.length-1;i>=0;i--){
+    aircraft.contrails[i].life -= dt;
+    if(aircraft.contrails[i].life <= 0) aircraft.contrails.splice(i,1);
+  }
+  if(aircraft.contrails.length > 200) aircraft.contrails.splice(0, aircraft.contrails.length - 200);
+
+  // Speed indicator
+  const speedKnots = speed * 1.944;
+  const altFeet = aircraft.pos.y * 3.281;
+}
+
+// ============ RENDERING ============
+const FOV = 75 * DEG;
+const NEAR = 1;
+const FAR = 15000;
+const projMatrix = mat4();
+
+function project(point, camPos, camRot, camRoll){
+  // Camera transform
+  const camX = -camRot.x, camY = -camRot.y, camZ = -camRot.z;
+  const cx = cos(camX), sx = sin(camX);
+  const cy = cos(camY), sy = sin(camY);
+  const cz = cos(camZ), sz = sin(camZ);
+
+  // Translate point relative to camera
+  let dx = point.x - camPos.x;
+  let dy = point.y - camPos.y;
+  let dz = point.z - camPos.z;
+
+  // Rotate around Y (yaw)
+  const rx = dx*cz + dz*sz;
+  const rz = -dx*sz + dz*cz;
+  let px = rx, py = dy, pz = rz;
+
+  // Rotate around X (pitch)
+  const rpy = py*cx - pz*sx;
+  const rpz = py*sx + pz*cx;
+  px = px; py = rpy; pz = rpz;
+
+  // Rotate around Z (roll)
+  const rpx = px*cz - py*sz;
+  const rpy2 = px*sz + py*cz;
+  px = rpx; py = rpy2; pz = rpz;
+
+  if(pz < NEAR) return null;
+
+  const aspect = canvas.width / canvas.height;
+  const fovScale = 1 / tan(FOV/2);
+
+  const screenX = (rpx * fovScale / aspect) / pz;
+  const screenY = -(rpy * fovScale) / pz;
+
+  return {
+    x: canvas.width/2 + screenX * canvas.width/2,
+    y: canvas.height/2 + screenY * canvas.height/2,
+    depth: pz
+  };
+}
+
+function drawLine3D(p1, p2, camPos, camRot, camRoll, color, width){
+  const a = project(p1, camPos, camRot, camRoll);
+  const b = project(p2, camPos, camRot, camRoll);
+  if(!a || !b) return;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = width || 1;
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.stroke();
+}
+
+function drawTriangle3D(v1, v2, v3, camPos, camRot, camRoll, color, depth){
+  const a = project(v1, camPos, camRot, camRoll);
+  const b = project(v2, camPos, camRot, camRoll);
+  const c = project(v3, camPos, camRot, camRoll);
+  if(!a || !b || !c) return;
+
+  const avgDepth = (depth || (a.depth+b.depth+c.depth)/3);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(a.x, a.y);
+  ctx.lineTo(b.x, b.y);
+  ctx.lineTo(c.x, c.y);
+  ctx.closePath();
+  ctx.fill();
+  return avgDepth;
+}
+
+function drawFilledCircle3D(center, radius, normal, camPos, camRot, camRoll, color, segments){
+  const segs = segments || 32;
+  const points = [];
+  for(let i=0;i<=segs;i++){
+    const angle = i/segs * TAU;
+    const x = center.x + cos(angle)*radius*normal.z - sin(angle)*radius*normal.y;
+    const y = center.y + sin(angle)*radius*normal.x - cos(angle)*radius*normal.z;
+    const z = center.z + cos(angle)*radius*normal.y + sin(angle)*radius*normal.x;
+    points.push(vec3(x,y,z));
+  }
+
+  const projected = points.map(p => project(p, camPos, camRot, camRoll));
+  if(projected.some(p => !p)) return;
+
+  const avgDepth = projected.reduce((s,p)=>s+p.depth,0)/projected.length;
+
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(projected[0].x, projected[0].y);
+  for(let i=1;i<projected.length;i++){
+    ctx.lineTo(projected[i].x, projected[i].y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  return avgDepth;
+}
+
+function drawRing3D(center, radius, normal, camPos, camRot, camRoll, color, segments, lineWidth){
+  const segs = segments || 48;
+  const points = [];
+  for(let i=0;i<=segs;i++){
+    const angle = i/segs * TAU;
+    const x = center.x + cos(angle)*radius*normal.z - sin(angle)*radius*normal.y;
+    const y = center.y + sin(angle)*radius*normal.x - cos(angle)*radius*normal.z;
+    const z = center.z + cos(angle)*radius*normal.y + sin(angle)*radius*normal.x;
+    points.push(vec3(x,y,z));
+  }
+
+  const projected = points.map(p => project(p, camPos, camRot, camRoll));
+  if(projected.some(p => !p)) return;
+
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth || 2;
+  ctx.beginPath();
+  ctx.moveTo(projected[0].x, projected[0].y);
+  for(let i=1;i<projected.length;i++){
+    ctx.lineTo(projected[i].x, projected[i].y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+}
+
+// ============ RENDER AIRCRAFT ============
+function drawAircraft(camPos, camRot, camRoll){
+  if(!aircraft.alive) return;
+
+  // Aircraft body as simple shape
+  const fwd = v3norm(aircraft.vel);
+  const right = v3norm(v3cross(fwd, vec3(0,1,0)));
+  const up = v3cross(right, fwd);
+
+  // Transform local vertices to world space
+  function lvtx(x,y,z){ return v3add(aircraft.pos, v3add(v3add(v3scale(right,x), v3scale(up,y)), v3scale(fwd,z))); }
+
+  // Fuselage
+  const fuselage = [
+    lvtx(0,0,5), lvtx(0,0,-4), lvtx(0,0.5,-4), lvtx(0,0.5,5),
+    lvtx(0.3,0,-4), lvtx(-0.3,0,-4), lvtx(0.3,0.5,-4), lvtx(-0.3,0.5,-4),
+  ];
+
+  const faces = [
+    // Nose
+    [fuselage[0], fuselage[2], fuselage[4]],
+    [fuselage[0], fuselage[4], fuselage[6]],
+    [fuselage[0], fuselage[6], fuselage[7]],
+    [fuselage[0], fuselage[7], fuselage[3]],
+    // Tail
+    [fuselage[1], fuselage[3], fuselage[5]],
+    [fuselage[1], fuselage[5], fuselage[7]],
+    // Sides
+    [fuselage[2], fuselage[3], fuselage[5]],
+    [fuselage[2], fuselage[5], fuselage[7]],
+    [fuselage[0], fuselage[1], fuselage[4]],
+    [fuselage[0], fuselage[4], fuselage[5]],
+    // Top
+    [fuselage[2], fuselage[0], fuselage[6]],
+    [fuselage[2], fuselage[6], fuselage[4]],
+    [fuselage[3], fuselage[1], fuselage[5]],
+    [fuselage[3], fuselage[5], fuselage[7]],
+    // Bottom
+    [fuselage[0], fuselage[3], fuselage[5]],
+    [fuselage[0], fuselage[5], fuselage[1]],
+  ];
+
+  // Wings
+  const wingSpan = 4;
+  const wingChord = 2;
+  const wingPos = -1;
+  const wingL = [
+    lvtx(-wingSpan, 0, wingPos), lvtx(-wingChord, 0, wingPos), lvtx(-wingChord, 0.1, wingPos), lvtx(-wingSpan, 0.1, wingPos)
+  ];
+  const wingR = [
+    lvtx(wingSpan, 0, wingPos), lvtx(wingChord, 0, wingPos), lvtx(wingChord, 0.1, wingPos), lvtx(wingSpan, 0.1, wingPos)
+  ];
+
+  const wingFaces = [
+    [wingL[0], wingL[1], wingL[3]],
+    [wingL[1], wingL[2], wingL[3]],
+    [wingR[0], wingR[2], wingR[1]],
+    [wingR[0], wingR[3], wingR[2]],
+  ];
+
+  // Tail wings
+  const tailSpan = 1.5;
+  const tailChord = 0.8;
+  const tailPos = -3.5;
+  const tailL = [lvtx(-tailSpan, 0, tailPos), lvtx(-tailChord, 0, tailPos), lvtx(-tailChord, 0.1, tailPos), lvtx(-tailSpan, 0.1, tailPos)];
+  const tailR = [lvtx(tailSpan, 0, tailPos), lvtx(tailChord, 0, tailPos), lvtx(tailChord, 0.1, tailPos), lvtx(tailSpan, 0.1, tailPos)];
+
+  const tailFaces = [
+    [tailL[0], tailL[1], tailL[3]],
+    [tailL[1], tailL[2], tailL[3]],
+    [tailR[0], tailR[2], tailR[1]],
+    [tailR[0], tailR[3], tailR[2]],
+  ];
+
+  // Vertical stabilizer
+  const vsL = [lvtx(0, 1.5, tailPos), lvtx(0, 1.5, tailPos-0.3), lvtx(-0.8, 0, tailPos-0.3), lvtx(-0.8, 0, tailPos)];
+  const vsR = [lvtx(0, 1.5, tailPos), lvtx(0, 1.5, tailPos-0.3), lvtx(0.8, 0, tailPos-0.3), lvtx(0.8, 0, tailPos)];
+
+  const vsFaces = [
+    [vsL[0], vsL[1], vsL[2]],
+    [vsL[0], vsL[2], vsL[3]],
+    [vsR[0], vs

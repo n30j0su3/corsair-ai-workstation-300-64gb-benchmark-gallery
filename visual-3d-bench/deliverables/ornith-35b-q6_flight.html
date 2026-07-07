@@ -1,0 +1,565 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Flight Simulator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Courier New',monospace}
+canvas{display:block}
+#hud{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10}
+#msg{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);color:#fff;font-size:28px;text-align:center;z-index:20;text-shadow:0 0 10px #000;display:none}
+#startScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:30;color:#fff}
+#startScreen h1{font-size:48px;margin-bottom:10px;text-shadow:0 0 20px #0af}
+#startScreen p{font-size:16px;margin:4px 0;color:#aaa}
+#startScreen .key{color:#0f0;font-weight:bold}
+#startScreen button{margin-top:20px;padding:12px 40px;font-size:20px;background:#0a0;color:#fff;border:none;cursor:pointer;font-family:inherit}
+#startScreen button:hover{background:#0c0}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+<div id="msg"></div>
+<div id="startScreen">
+<h1>✈ FLIGHT SIMULATOR ✈</h1>
+<p>Pilot through checkpoint rings and reach the landing zone!</p>
+<br>
+<p><span class="key">W/S</span> - Pitch Down/Up &nbsp; <span class="key">A/D</span> - Roll Left/Right</p>
+<p><span class="key">Q/E</span> - Yaw Left/Right &nbsp; <span class="key">Shift/Ctrl</span> - Throttle Down/Up</p>
+<p><span class="key">C</span> - Toggle Camera &nbsp; <span class="key">R</span> - Restart</p>
+<p><span class="key">Space</span> - Brake</p>
+<br>
+<button onclick="startGame()">START MISSION</button>
+</div>
+
+<script>
+// ============================================================
+// MATH UTILITIES
+// ============================================================
+const PI=Math.PI,TAU=PI*2,DEG=PI/180;
+class V3{
+constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z}
+clone(){return new V3(this.x,this.y,this.z)}
+add(v){return new V3(this.x+v.x,this.y+v.y,this.z+v.z)}
+sub(v){return new V3(this.x-v.x,this.y-v.y,this.z-v.z)}
+scale(s){return new V3(this.x*s,this.y*s,this.z*s)}
+dot(v){return this.x*v.x+this.y*v.y+this.z*v.z}
+cross(v){return new V3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x)}
+len(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z)}
+norm(){let l=this.len();return l>1e-8?this.scale(1/l):new V3()}
+dist(v){return this.sub(v).len()}
+}
+
+class Mat4{
+constructor(){this.m=new Float32Array(16);this.identity()}
+identity(){this.m.fill(0);this.m[0]=this.m[5]=this.m[10]=this.m[15]=1;return this}
+copy(o){this.m.set(o.m);return this}
+static perspective(fov,asp,near,far){
+let m=new Mat4();m.m.fill(0);
+let t=1/Math.tan(fov/2);
+m.m[0]=t/asp;m.m[5]=t;m.m[10]=(far+near)/(near-far);m.m[11]=-1;m.m[14]=2*far*near/(near-far);
+return m;
+}
+static lookAt(eye,center,up){
+let m=new Mat4();
+let zx=eye.x-center.x,zy=eye.y-center.y,zz=eye.z-center.z;
+let zl=Math.sqrt(zx*zx+zy*zy+zz*zz);zx/=zl;zy/=zl;zz/=zl;
+let xx=up.y*zz-up.z*zy,xy=up.z*zx-up.x*zz,xz=up.x*zy-up.y*zx;
+let xl=Math.sqrt(xx*xx+xy*xy+xz*xz);xx/=xl;xy/=xl;xz/=xl;
+let yx=zy*xz-zz*xy,yy=zz*xx-zx*xz,yz=zx*xy-zy*xx;
+m.m[0]=xx;m.m[1]=yx;m.m[2]=zx;m.m[3]=0;
+m.m[4]=xy;m.m[5]=yy;m.m[6]=zy;m.m[7]=0;
+m.m[8]=xz;m.m[9]=yz;m.m[10]=zz;m.m[11]=0;
+m.m[12]=-(xx*eye.x+xy*eye.y+xz*eye.z);
+m.m[13]=-(yx*eye.x+yy*eye.y+yz*eye.z);
+m.m[14]=-(zx*eye.x+zy*eye.y+zz*eye.z);
+m.m[15]=1;
+return m;
+}
+static translation(x,y,z){let m=new Mat4();m.m[12]=x;m.m[13]=y;m.m[14]=z;return m}
+static sx(s){let m=new Mat4();m.m[0]=s;return m}
+static sy(s){let m=new Mat4();m.m[5]=s;return m}
+static sz(s){let m=new Mat4();m.m[10]=s;return m}
+static rotX(a){let m=new Mat4();let c=Math.cos(a),s=Math.sin(a);m.m[5]=c;m.m[6]=s;m.m[9]=-s;m.m[10]=c;return m}
+static rotY(a){let m=new Mat4();let c=Math.cos(a),s=Math.sin(a);m.m[0]=c;m.m[2]=-s;m.m[8]=s;m.m[10]=c;return m}
+static rotZ(a){let m=new Mat4();let c=Math.cos(a),s=Math.sin(a);m.m[0]=c;m.m[1]=s;m.m[4]=-s;m.m[5]=c;return m}
+static scale(sx,sy,sz){let m=new Mat4();m.m[0]=sx;m.m[5]=sy;m.m[10]=sz;return m}
+mul(b){
+let a=this.m,bm=b.m,r=new Float32Array(16);
+for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+r[j*4+i]=a[i]*bm[j*4]+a[4+i]*bm[j*4+1]+a[8+i]*bm[j*4+2]+a[12+i]*bm[j*4+3];
+}
+this.m=r;return this;
+}
+transformPoint(p){
+let m=this.m;
+let x=p.x,y=p.y,z=p.z;
+let w=m[3]*x+m[7]*y+m[11]*z+m[15];
+return new V3((m[0]*x+m[4]*y+m[8]*z+m[12])/w,(m[1]*x+m[5]*y+m[9]*z+m[13])/w,(m[2]*x+m[6]*y+m[10]*z+m[14])/w);
+}
+}
+
+// ============================================================
+// WEBGL SETUP
+// ============================================================
+const canvas=document.getElementById('gl');
+const hudCanvas=document.getElementById('hud');
+const gl=canvas.getContext('webgl',{antialias:true,alpha:false});
+
+function resize(){
+canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+hudCanvas.width=window.innerWidth;hudCanvas.height=window.innerHeight;
+gl.viewport(0,0,canvas.width,canvas.height);
+}
+window.addEventListener('resize',resize);resize();
+
+function compileShader(src,type){
+let s=gl.createShader(type);
+gl.shaderSource(s,src);gl.compileShader(s);
+if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));
+return s;
+}
+function createProgram(vs,fs){
+let p=gl.createProgram();
+gl.attachShader(p,compileShader(vs,gl.VERTEX_SHADER));
+gl.attachShader(p,compileShader(fs,gl.FRAGMENT_SHADER));
+gl.linkProgram(p);
+if(!gl.getProgramParameter(p,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(p));
+return p;
+}
+
+// Shaders
+const mainVS=`
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uMVP;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+void main(){
+vec4 wp=uModel*vec4(aPos,1.0);
+vWorldPos=wp.xyz;
+vNorm=mat3(uModel)*aNorm;
+gl_Position=uMVP*vec4(aPos,1.0);
+}`;
+
+const mainFS=`
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+uniform vec3 uColor;
+uniform vec3 uLightDir;
+uniform float uFog;
+uniform vec3 uFogColor;
+uniform float uEmissive;
+void main(){
+vec3 n=normalize(vNorm);
+float diff=max(dot(n,uLightDir),0.0)*0.7+0.3;
+vec3 col=uColor*diff+uColor*uEmissive;
+col=mix(col,uFogColor,uFog);
+gl_FragColor=vec4(col,1.0);
+}`;
+
+const lineVS=`
+attribute vec3 aPos;
+uniform mat4 uMVP;
+void main(){gl_Position=uMVP*vec4(aPos,1.0);}
+`;
+const lineFS=`
+precision mediump float;
+uniform vec3 uColor;
+void main(){gl_FragColor=vec4(uColor,1.0);}
+`;
+
+const mainProg=createProgram(mainVS,mainFS);
+const lineProg=createProgram(lineVS,lineFS);
+
+const uMVP=gl.getUniformLocation(mainProg,'uMVP');
+const uModel=gl.getUniformLocation(mainProg,'uModel');
+const uColor=gl.getUniformLocation(mainProg,'uColor');
+const uLightDir=gl.getUniformLocation(mainProg,'uLightDir');
+const uFog=gl.getUniformLocation(mainProg,'uFog');
+const uFogColor=gl.getUniformLocation(mainProg,'uFogColor');
+const uEmissive=gl.getUniformLocation(mainProg,'uEmissive');
+const aPos=gl.getAttribLocation(mainProg,'aPos');
+const aNorm=gl.getAttribLocation(mainProg,'aNorm');
+
+const luMVP=gl.getUniformLocation(lineProg,'uMVP');
+const luColor=gl.getUniformLocation(lineProg,'uColor');
+
+gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.CULL_FACE);
+gl.clearColor(0.5,0.7,0.95,1.0);
+
+// ============================================================
+// MESH GENERATION
+// ============================================================
+function createMesh(positions,normals){
+let vao={posBuf:gl.createBuffer(),normBuf:gl.createBuffer(),count:positions.length/3};
+gl.bindBuffer(gl.ARRAY_BUFFER,vao.posBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,vao.normBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(normals),gl.STATIC_DRAW);
+return vao;
+}
+function drawMesh(mesh,modelMat,viewProj,color,emissive=0){
+gl.useProgram(mainProg);
+let mvp=viewProj.mul(new Mat4().copy(modelMat));
+gl.uniformMatrix4fv(uMVP,false,mvp.m);
+gl.uniformMatrix4fv(uModel,false,modelMat.m);
+gl.uniform3fv(uColor,color);
+gl.uniform1f(uEmissive,emissive);
+let fog=Math.min(1.0,mesh.maxDist?0:0);
+gl.uniform1f(uFog,fog);
+let fc=[0.6,0.75,0.9];
+gl.uniform3fv(uFogColor,fc);
+gl.uniform3fv(uLightDir,[0.5,0.8,0.3]);
+gl.bindBuffer(gl.ARRAY_BUFFER,mesh.posBuf);
+gl.enableVertexAttribArray(aPos);
+gl.vertexAttribPointer(aPos,3,gl.FLOAT,false,0,0);
+gl.bindBuffer(gl.ARRAY_BUFFER,mesh.normBuf);
+gl.enableVertexAttribArray(aNorm);
+gl.vertexAttribPointer(aNorm,3,gl.FLOAT,false,0,0);
+gl.drawArrays(gl.TRIANGLES,0,mesh.count);
+}
+
+function createTerrainMesh(size,segments){
+let positions=[],normals=[],indices=[];
+let h=[];
+for(let i=0;i<=segments;i++)for(let j=0;j<=segments;j++){
+let x=(i/segments-0.5)*size,z=(j/segments-0.5)*size;
+let dist=Math.sqrt(x*x+z*z);
+let height=noise2D(x*0.003,z*0.003)*80+noise2D(x*0.01,z*0.01)*25+noise2D(x*0.05,z*0.05)*5;
+// Flatten near origin and runway
+let flatten=Math.max(0,1-dist/200);
+height*=1-flatten*0.9;
+// Runway area
+let runX=-500,runZ=0;
+let runDist=Math.max(Math.abs(z)-15,0)/200;
+if(x>runX&&x<runX+600&&Math.abs(z)<25){
+let t=(x-runX)/600;
+height=Math.max(height,noise2D(t*10,0)*2);
+}
+h.push(height);
+positions.push(x,height,z);
+}
+for(let i=0;i<segments;i++)for(let j=0;j<segments;j++){
+let a=i*(segments+1)+j,b=a+1,c=a+segments+1,d=c+1;
+indices.push(a,c,b,b,c,d);
+}
+// Compute normals
+for(let i=0;i<=segments;i++)for(let j=0;j<=segments;j++){
+let idx=(i*(segments+1)+j)*3;
+let li=i>0?h[(i-1)*(segments+1)+j]:h[i*(segments+1)+j];
+let ri=i<segments?h[(i+1)*(segments+1)+j]:h[i*(segments+1)+j];
+let dj=j>0?h[i*(segments+1)+j-1]:h[i*(segments+1)+j];
+let rj=j<segments?h[i*(segments+1)+j+1]:h[i*(segments+1)+j];
+let nx=li-ri,ny=2*segments/size,nz=dj-rj;
+let nl=Math.sqrt(nx*nx+ny*ny+nz*nz);
+for(let k=0;k<3;k++)normals.push(((k===0)?nx:0)+((k===1)?ny:0)+((k===2)?nz:0));
+}
+// Fix normals
+normals=[];
+for(let i=0;i<=segments;i++)for(let j=0;j<=segments;j++){
+let idx=i*(segments+1)+j;
+let li=i>0?h[(i-1)*(segments+1)+j]:h[idx];
+let ri=i<segments?h[(i+1)*(segments+1)+j]:h[idx];
+let dj=j>0?h[i*(segments+1)+j-1]:h[idx];
+let rj=j<segments?h[i*(segments+1)+j+1]:h[idx];
+let nx=li-ri,ny=2*segments/size,nz=dj-rj;
+normals.push(nx,ny,nz);
+normals.push(nx,ny,nz);
+normals.push(nx,ny,nz);
+}
+let vao={posBuf:gl.createBuffer(),normBuf:gl.createBuffer(),count:indices.length,maxDist:800};
+gl.bindBuffer(gl.ARRAY_BUFFER,vao.posBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(positions),gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,vao.normBuf);
+gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(normals),gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,vao.idxBuf=gl.createBuffer());
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint32Array(indices),gl.STATIC_DRAW);
+vao.indexed=true;
+return vao;
+}
+
+function createBoxMesh(w,h,d){
+let hw=w/2,hh=h/2,hd=d/2;
+let p=[
+-hw,-hh,-hd, hw,-hh,-hd, hw,hh,-hd, -hw,hh,-hd,
+-hw,-hh,hd, hw,-hh,hd, hw,hh,hd, -hw,hh,hd,
+-hw,-hh,-hd, -hw,hh,-hd, -hw,hh,hd, -hw,-hh,hd,
+hw,-hh,-hd, hw,hh,-hd, hw,hh,hd, hw,-hh,hd,
+-hw,-hh,-hd, -hw,-hh,hd, hw,-hh,hd, hw,-hh,-hd,
+-hw,hh,-hd, -hw,hh,hd, hw,hh,hd, hw,hh,-hd
+];
+let n=[
+0,0,-1,0,0,-1,0,0,-1,0,0,-1,
+0,0,1,0,0,1,0,0,1,0,0,1,
+0,-1,0,0,-1,0,0,-1,0,0,-1,0,
+0,1,0,0,1,0,0,1,0,0,1,0,
+-1,0,0,-1,0,0,-1,0,0,-1,0,0,
+1,0,0,1,0,0,1,0,0,1,0,0
+];
+let positions=[],normals=[];
+let faces=[[0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],[16,17,18,19],[20,21,22,23]];
+for(let f of faces){
+for(let i of f){positions.push(p[i*3],p[i*3+1],p[i*3+2]);normals.push(n[i*3],n[i*3+1],n[i*3+2]);}
+}
+return createMesh(positions,normals);
+}
+
+function createPlaneMesh(w,d){
+let hw=w/2,hd=d/2;
+return createMesh([
+-hw,0,-hd, hw,0,-hd, hw,0,hd, hw,0,-hd, hw,0,hd, -hw,0,hd
+],[0,1,0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0]);
+}
+
+function createRingMesh(radius,thickness,segments){
+let positions=[],normals=[];
+for(let i=0;i<segments;i++){
+let a1=i/segments*TAU,a2=(i+1)/segments*TAU;
+let c1x=Math.cos(a1),c1z=Math.sin(a1);
+let c2x=Math.cos(a2),c2z=Math.sin(a2);
+let v=[
+c1x*(radius-thickness/2),0,c1z*(radius-thickness/2),
+c2x*(radius-thickness/2),0,c2z*(radius-thickness/2),
+c2x*(radius+thickness/2),0,c2z*(radius+thickness/2),
+c1x*(radius-thickness/2),0,c1z*(radius-thickness/2),
+c2x*(radius+thickness/2),0,c2z*(radius+thickness/2),
+c1x*(radius+thickness/2),0,c1z*(radius+thickness/2)
+];
+for(let j=0;j<v.length/3;j++){
+let x=v[j*9],y=v[j*9+3],z=v[j*9+6];
+let x2=v[(j+1)*9],y2=v[(j+1)*9+3],z2=v[(j+1)*9+6];
+let nx=x2-x,ny=y2-y,nz=z2-z;
+positions.push(x,y,z,x2,y2,z2,x2+nx*0.3,y2+ny*0.3,z2+nz*0.3);
+positions.push(x,y,z,x2+nx*0.3,y2+ny*0.3,z2+nz*0.3,x+nx*0.3,y+ny*0.3,z+nz*0.3);
+let l=Math.sqrt(nx*nx+ny*ny+nz*nz)||1;
+for(let k=0;k<6;k++){
+let nxn=nx/l,nyy=ny/l,nzz=nz/l;
+normals.push(nxn,nyy,nzz,nxn,nyy,nzz,nxn,nyy,nzz);
+normals.push(nxn,nyy,nzz,nxn,nyy,nzz,nxn,nyy,nzz);
+}
+}
+}
+return createMesh(positions,normals);
+}
+
+// Simple 3D noise
+function noise2D(x,y){
+let n=Math.sin(x*12.9898+y*78.233)*43758.5453;
+return(n-Math.floor(n))*2-1;
+}
+function noise2D2(x,y){
+let ix=Math.floor(x),iy=Math.floor(y);
+let fx=x-ix,fy=y-iy;
+fx=fx*fx*(3-2*fx);fy=fy*fy*(3-2*fy);
+function s(a,b){return noise2D(a,b);}
+let a=s(ix,iy),b=s(ix+1,iy),c=s(ix,iy+1),d=s(ix+1,iy+1);
+return a*(1-fx)*(1-fy)+b*fx*(1-fy)+c*(1-fx)*fy+d*fx*fy;
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let gameRunning=false;
+let camMode=0; // 0=chase, 1=cockpit
+let keys={};
+let aircraft={
+pos:new V3(0,120,-300),
+quat:[1,0,0,0], // qw,qx,qy,qz
+throttle:0.5,
+speed:0,
+velocity:new V3()
+};
+let checkpoints=[];
+let currentCP=0;
+let hazards=[];
+let particles=[];
+let contrails=[];
+let landingZone=null;
+let gameTime=0;
+let missionState='flying'; // flying, won, crashed, fell
+let cameraShake=0;
+
+// ============================================================
+// WORLD GENERATION
+// ============================================================
+function generateWorld(){
+// Terrain
+let terrain=createTerrainMesh(3000,120);
+
+// Runway
+let runway=createPlaneMesh(600,40);
+
+// Checkpoint rings - 10 checkpoints in a course
+checkpoints=[];
+let coursePoints=[];
+for(let i=0;i<10;i++){
+let angle=i/10*TAU*2.5;
+let r=400+Math.sin(i*1.5)*100;
+let x=Math.cos(angle)*r;
+let z=Math.sin(angle)*r;
+let y=100+Math.sin(i*0.8)*40;
+coursePoints.push(new V3(x,y,z));
+}
+// Landing zone
+landingZone=coursePoints[coursePoints.length-1].add(new V3(0,-50,0));
+
+for(let i=0;i<coursePoints.length;i++){
+let cp={
+pos:coursePoints[i],
+radius:15,
+passed:false,
+color:i<3?[0,1,0]:i<7?[0,0.8,1]:[1,0.8,0]
+};
+checkpoints.push(cp);
+}
+
+// Hazards - 3 types
+hazards=[];
+// Towers
+for(let i=0;i<8;i++){
+let angle=Math.random()*TAU;
+let dist=200+Math.random()*600;
+hazards.push({
+type:'tower',
+pos:new V3(Math.cos(angle)*dist,0,Math.sin(angle)*dist),
+height:60+Math.random()*80,
+radius:5,
+color:[0.8,0.1,0.1]
+});
+}
+// Spikes on ground
+for(let i=0;i<15;i++){
+let angle=Math.random()*TAU;
+let dist=100+Math.random()*500;
+hazards.push({
+type:'spike',
+pos:new V3(Math.cos(angle)*dist,0,Math.sin(angle)*dist),
+height:15+Math.random()*20,
+radius:3,
+color:[0.6,0.1,0.1]
+});
+}
+// Flying mines
+for(let i=0;i<5;i++){
+hazards.push({
+type:'mine',
+pos:new V3((Math.random()-0.5)*1000,80+Math.random()*80,(Math.random()-0.5)*1000),
+radius:8,
+color:[1,0,0],
+phase:Math.random()*TAU,
+speed:0.5+Math.random()*1.5
+});
+}
+}
+
+// ============================================================
+// AIRCRAFT PHYSICS
+// ============================================================
+function quatMul(a,b){
+return[new V3(a[0],a[1],a[2],a[3]).x*b[0]+...]; // simplified
+}
+function quatMul(a,b){
+return[
+a[0]*b[0]-a[1]*b[1]-a[2]*b[2]-a[3]*b[3],
+a[0]*b[1]+a[1]*b[0]+a[2]*b[3]-a[3]*b[2],
+a[0]*b[2]-a[1]*b[3]+a[2]*b[0]+a[3]*b[1],
+a[0]*b[3]+a[1]*b[2]-a[2]*b[1]+a[3]*b[0]
+];
+}
+function quatRotate(q,v){
+let qx=q[1],qy=q[2],qz=q[3];
+let t2=qx*vx=qx*2,t3=qy*vy=qy*2,t4=qz*vz=qz*2;
+let t5=t2*qx,t6=t5*v[0],t7=t2*qy,t8=t7*v[0],t9=t2*qz;
+let t10=t9*v[0],t11=t3*qx,t12=t11*v[1],t13=t4*qy,n14=t13*v[1];
+let t14=t3*qy,t15=t14*v[1],t16=t4*qz,n17=t16*v[2];
+let t17=t4*qx,t18=t17*v[2],t19=t9*qx,n20=t19*v[0];
+let t20=t6+t8+t10,t21=t12+t15+n14;
+let t22=t18+n17+n20;
+return[new V3(t21+t21)*qz-q22*t3+q3*t15,
+new V3(t22+t22)*qx-q21*t4+q1*t10,
+new V3(t21+t22)*qy-q20*t9+q3*t6];
+}
+// Simpler quat rotate
+function qRotate(q,v){
+let x=q[1],y=q[2],z=q[3],w=q[0];
+let iX=w*x+iY=w*y+iZ=w*z;
+let xx=x*x,xy=x*y,xz=x*z;
+let yy=y*y,yz=y*z,zz=z*z;
+let s=2;
+return new V3(
+w*v[0]+y*(xz)-z*(yy)+w*v[1]+z*(xy)-y*(zz)+w*v[2]+x*(yy)-y*(xy)
+);
+}
+
+function updateAircraft(dt){
+if(missionState!=='flying')return;
+
+// Input
+let pitchInput=0,rollInput=0,yawInput=0;
+if(keys['KeyW']||keys['ArrowDown'])pitchInput-=1;
+if(keys['KeyS']||keys['ArrowUp'])pitchInput+=1;
+if(keys['KeyA']||keys['ArrowLeft'])rollInput-=1;
+if(keys['KeyD']||keys['ArrowRight'])rollInput+=1;
+if(keys['KeyQ'])yawInput-=1;
+if(keys['KeyE'])yawInput+=1;
+
+// Throttle
+if(keys['ShiftLeft']||keys['ShiftRight'])aircraft.throttle=Math.max(0,aircraft.throttle-2*dt);
+if(keys['ControlLeft']||keys['ControlRight'])aircraft.throttle=Math.min(1,aircraft.throttle+2*dt);
+if(keys['Space'])aircraft.throttle=Math.max(0,aircraft.throttle-3*dt);
+
+// Angular velocity targets
+let pitchRate=pitchInput*1.5;
+let rollRate=rollInput*2.5;
+let yawRate=yawInput*0.8;
+
+// Apply rotation via quaternions
+let pitchQuat=[Math.cos(pitchRate*dt/2),Math.sin(pitchRate*dt/2),0,0];
+let rollQuat=[Math.cos(rollRate*dt/2),0,Math.sin(rollRate*dt/2),0];
+let yawQuat=[Math.cos(yawRate*dt/2),0,0,Math.sin(yawRate*dt/2)];
+
+aircraft.quat=quatMul(quatMul(pitchQuat,aircraft.quat),quatMul(rollQuat,yawQuat));
+
+// Normalize
+let l=Math.sqrt(aircraft.quat[0]*aircraft.quat[0]+aircraft.quat[1]*aircraft.quat[1]+aircraft.quat[2]*aircraft.quat[2]+aircraft.quat[3]*aircraft.quat[3]);
+aircraft.quat=aircraft.quat.map(v=>v/l);
+
+// Forces
+let throttle=aircraft.throttle;
+let targetSpeed=throttle*250; // max 250 units/s
+let speed=aircraft.speed;
+
+// Lift
+let angleOfAttack=0.1; // simplified
+let lift=0.0003*speed*speed*(1+angleOfAttack*2);
+let gravity=9.8;
+let drag=0.001*speed*speed;
+
+// Speed control
+let speedDiff=targetSpeed-speed;
+speed+=speedDiff*2*dt;
+speed=Math.max(0,speed);
+aircraft.speed=speed;
+
+// Direction from quaternion
+let fwd=qRotate(aircraft.quat,[0,0,-1]);
+let up=qRotate(aircraft.quat,[0,1,0]);
+let right=qRotate(aircraft.quat,[1,0,0]);
+
+// Velocity
+let liftForce=lift*up;
+let gravForce=new V3(0,-gravity,0);
+let dragForce=fwd.scale(-drag/speed*speed);
+if(speed>0.1)dragForce=fwd.scale(-drag);
+
+aircraft.velocity=aircraft.velocity.add(liftForce.scale(dt)).add(gravForce.scale(dt)).add(dragForce.scale(dt));
+
+// Bank turning: roll creates yaw
+let rollAngle=Math.atan2(2*(aircraft.quat[0]*aircraft.quat[2]+aircraft.quat[1]*aircraft.quat[3]),
+aircraft.quat[0]*aircraft.quat[0]+aircraft.quat[1]*aircraft.quat[1]-aircraft.quat[2]*aircraft.quat

@@ -1,0 +1,594 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raycaster FPS</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+canvas { display: block; }
+#ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #0f0; font-size: 24px; text-shadow: 0 0 4px #0f0; }
+#hud { position: absolute; bottom: 20px; left: 20px; color: #0f0; font-size: 18px; text-shadow: 0 0 6px #0f0; line-height: 1.6; }
+#msg { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 36px; text-shadow: 0 0 10px #fff; display: none; text-align: center; }
+#minimap { position: absolute; top: 10px; right: 10px; border: 2px solid #0f0; display: none; }
+#pause { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 48px; text-shadow: 0 0 10px #fff; display: none; }
+#instructions { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #fff; font-size: 16px; text-align: center; line-height: 2; text-shadow: 0 0 6px #0f0; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="crosshair">+</div>
+<div id="hud"></div>
+<div id="msg"></div>
+<canvas id="minimap"></canvas>
+<div id="pause">PAUSED<br><span style="font-size:20px">Press P or ESC to resume</span></div>
+<div id="instructions">
+  <h2 style="font-size:32px;margin-bottom:10px;">RAYCASTER FPS</h2>
+  <p>Click to start</p>
+  <p>WASD - Move | Mouse - Aim | Click/Space - Shoot</p>
+  <p>R - Reload | Shift - Sprint | P/ESC - Pause</p>
+  <p>Kill all enemies and reach the exit!</p>
+</div>
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const miniCanvas = document.getElementById('minimap');
+const miniCtx = miniCanvas.getContext('2d');
+
+let W, H;
+function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+    miniCanvas.width = 160; miniCanvas.height = 160;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Constants
+const FOV = Math.PI / 3;
+const HALF_FOV = FOV / 2;
+const NUM_RAYS = Math.min(W, 960);
+const RAY_STEP = FOV / NUM_RAYS;
+const MAX_DEPTH = 30;
+const TILE = 1;
+const MOVE_SPEED = 3.0;
+const SPRINT_MULT = 1.6;
+const ROT_SPEED = 0.003;
+const WALL_HEIGHT = 1.0;
+
+// Game state
+let gameState = 'menu'; // menu, playing, paused, win, lose
+let player, enemies, pickups, projectiles, particles;
+let map, mapW, mapH;
+let keys = {};
+let mouse = { dx: 0, locked: false };
+let shootCooldown = 0;
+let reloadTimer = 0;
+let reloading = false;
+let recoil = 0;
+let screenShake = 0;
+let damageFlash = 0;
+let minimapVisible = true;
+let showMinimap = true;
+let zBuffer = [];
+
+// Weapon config
+const WEAPON = {
+    name: 'Pistol',
+    damage: 25,
+    fireRate: 0.35,
+    magSize: 12,
+    reserve: 60,
+    reloadTime: 1.5,
+    spread: 0.02
+};
+
+// Colors
+const WALL_COLORS = [
+    null,
+    { r: 160, g: 50, b: 40 },    // 1: red brick
+    { r: 50, g: 120, b: 50 },    // 2: green stone
+    { r: 40, g: 80, b: 160 },    // 3: blue ice
+    { r: 120, g: 100, b: 70 },   // 4: brown wood
+    { r: 80, g: 80, b: 90 },     // 5: dark stone
+    { r: 180, g: 160, b: 100 },  // 6: exit gold
+];
+
+function wallColor(type) { return WALL_COLORS[type] || { r: 100, g: 100, b: 100 }; }
+
+// Procedural map generation
+function generateMap() {
+    mapW = 24; mapH = 24;
+    map = [];
+    for (let y = 0; y < mapH; y++) {
+        map[y] = [];
+        for (let x = 0; x < mapW; x++) {
+            map[y][x] = 1;
+        }
+    }
+
+    // Generate rooms
+    const rooms = [];
+    const numRooms = 8 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < numRooms; i++) {
+        let attempts = 0;
+        while (attempts < 100) {
+            const rw = 3 + Math.floor(Math.random() * 5);
+            const rh = 3 + Math.floor(Math.random() * 5);
+            const rx = 2 + Math.floor(Math.random() * (mapW - rw - 4));
+            const ry = 2 + Math.floor(Math.random() * (mapH - rh - 4));
+            let overlap = false;
+            for (const r of rooms) {
+                if (rx < r.x + r.w + 2 && rx + rw + 2 > r.x && ry < r.y + r.h + 2 && ry + rh + 2 > r.y) {
+                    overlap = true; break;
+                }
+            }
+            if (!overlap) {
+                rooms.push({ x: rx, y: ry, w: rw, h: rh, cx: rx + rw/2, cy: ry + rh/2 });
+                for (let dy = 0; dy < rh; dy++)
+                    for (let dx = 0; dx < rw; dx++)
+                        map[ry + dy][rx + dx] = 0;
+                break;
+            }
+            attempts++;
+        }
+    }
+
+    // Connect rooms with corridors
+    for (let i = 1; i < rooms.length; i++) {
+        const a = rooms[i - 1], b = rooms[i];
+        let x = Math.round(a.cx), y = Math.round(a.cy);
+        const tx = Math.round(b.cx), ty = Math.round(b.cy);
+        while (x !== tx) {
+            if (x >= 0 && x < mapW && y >= 0 && y < mapH) map[y][x] = 0;
+            x += x < tx ? 1 : -1;
+        }
+        while (y !== ty) {
+            if (x >= 0 && x < mapW && y >= 0 && y < mapH) map[y][x] = 0;
+            y += y < ty ? 1 : -1;
+        }
+    }
+
+    // Vary wall types
+    for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+            if (map[y][x] === 1) {
+                const r = Math.random();
+                if (r < 0.35) map[y][x] = 1;
+                else if (r < 0.6) map[y][x] = 2;
+                else if (r < 0.8) map[y][x] = 3;
+                else if (r < 0.92) map[y][x] = 4;
+                else map[y][x] = 5;
+            }
+        }
+    }
+
+    // Place exit in last room
+    const lastRoom = rooms[rooms.length - 1];
+    const exitX = Math.floor(lastRoom.cx);
+    const exitY = Math.floor(lastRoom.cy);
+    map[exitY][exitX] = 6; // exit tile
+
+    // Place enemies
+    enemies = [];
+    const enemyTypes = [
+        { name: 'Grunt', color: '#ff4444', health: 60, speed: 1.5, damage: 10, attackRange: 1.5, attackRate: 1.0, size: 0.3 },
+        { name: 'Runner', color: '#44ff44', health: 35, speed: 2.8, damage: 8, attackRange: 1.3, attackRate: 0.8, size: 0.25 },
+        { name: 'Heavy', color: '#ff8800', health: 150, speed: 1.0, damage: 25, attackRange: 1.8, attackRate: 1.5, size: 0.4 },
+    ];
+    const numEnemies = 10 + Math.floor(Math.random() * 5);
+    for (let i = 0; i < numEnemies; i++) {
+        const typeIdx = i < 5 ? 0 : i < 8 ? 1 : 2;
+        const type = enemyTypes[typeIdx];
+        let placed = false;
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const ex = 2 + Math.floor(Math.random() * (mapW - 4));
+            const ey = 2 + Math.floor(Math.random() * (mapH - 4));
+            if (map[ey][ex] === 0) {
+                const dx = ex - rooms[0].cx, dy = ey - rooms[0].cy;
+                if (Math.sqrt(dx*dx + dy*dy) > 4) {
+                    enemies.push({
+                        x: ex + 0.5, y: ey + 0.5,
+                        health: type.health, maxHealth: type.health,
+                        speed: type.speed, damage: type.damage,
+                        attackRange: type.attackRange, attackRate: type.attackRate,
+                        attackCooldown: 0, type: typeIdx,
+                        color: type.color, size: type.size,
+                        state: 'idle', angle: Math.random() * Math.PI * 2,
+                        alertTimer: 0, lastSeen: null,
+                        hitFlash: 0, dead: false, deathTimer: 0
+                    });
+                    placed = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Place pickups
+    pickups = [];
+    const pickupTypes = ['health', 'ammo'];
+    for (let i = 0; i < 8; i++) {
+        const pt = pickupTypes[i % 2];
+        let placed = false;
+        for (let attempt = 0; attempt < 50; attempt++) {
+            const px = 2 + Math.floor(Math.random() * (mapW - 4));
+            const py = 2 + Math.floor(Math.random() * (mapH - 4));
+            if (map[py][px] === 0) {
+                pickups.push({ x: px + 0.5, y: py + 0.5, type: pt, active: true });
+                placed = true;
+                break;
+            }
+        }
+    }
+
+    // Player starts in first room
+    player = {
+        x: rooms[0].cx, y: rooms[0].cy,
+        angle: 0,
+        health: 100, maxHealth: 100,
+        ammo: WEAPON.magSize, reserveAmmo: WEAPON.reserve,
+        inMag: WEAPON.magSize,
+        speed: MOVE_SPEED,
+        bobPhase: 0,
+        bobAmount: 0
+    };
+
+    projectiles = [];
+    particles = [];
+}
+
+function isWall(x, y) {
+    const mx = Math.floor(x), my = Math.floor(y);
+    if (mx < 0 || mx >= mapW || my < 0 || my >= mapH) return true;
+    return map[my][mx] !== 0;
+}
+
+function isWalkable(x, y) {
+    const mx = Math.floor(x), my = Math.floor(y);
+    if (mx < 0 || mx >= mapW || my < 0 || my >= mapH) return false;
+    return map[my][mx] === 0;
+}
+
+function canSee(x1, y1, x2, y2) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const steps = Math.ceil(dist * 4);
+    for (let i = 0; i < steps; i++) {
+        const t = i / steps;
+        const cx = x1 + dx * t, cy = y1 + dy * t;
+        if (isWall(cx, cy)) return false;
+    }
+    return true;
+}
+
+// Raycasting
+function castRay(angle) {
+    const sin = Math.sin(angle), cos = Math.sin(angle);
+    let mapX = Math.floor(player.x), mapY = Math.floor(player.y);
+    const deltaDistX = Math.abs(1 / cos) || 1e30;
+    const deltaDistY = Math.abs(1 / sin) || 1e30;
+    let stepX, stepY, sideDistX, sideDistY;
+
+    if (cos < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+    else { stepX = 1; sideDistX = (mapX + 1 - player.x) * deltaDistX; }
+    if (sin < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
+    else { stepY = 1; sideDistY = (mapY + 1 - player.y) * deltaDistY; }
+
+    let side = 0, dist = 0, hit = false;
+    for (let i = 0; i < 100; i++) {
+        if (sideDistX < sideDistY) {
+            sideDistX += deltaDistX;
+            mapX += stepX;
+            side = 0;
+        } else {
+            sideDistY += deltaDistY;
+            mapY += stepY;
+            side = 1;
+        }
+        if (mapX < 0 || mapX >= mapW || mapY < 0 || mapY >= mapH) break;
+        if (map[mapY][mapX] > 0) {
+            hit = true;
+            break;
+        }
+    }
+
+    if (!hit) return { dist: MAX_DEPTH, wallType: 1, side: 0, texX: 0 };
+
+    if (side === 0) dist = (mapX - player.x + (1 - stepX) / 2) / cos;
+    else dist = (mapY - player.y + (1 - stepY) / 2) / sin;
+
+    let wallX;
+    if (side === 0) wallX = player.y + dist * sin;
+    else wallX = player.x + dist * cos;
+    wallX -= Math.floor(wallX);
+
+    const wallType = map[mapY][mapX];
+    return { dist: Math.max(dist, 0.01), wallType, side, texX: wallX };
+}
+
+// Rendering
+function render() {
+    const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake * 4 : 0;
+    const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake * 4 : 0;
+
+    ctx.save();
+    ctx.translate(shakeX, shakeY);
+
+    // Ceiling and floor
+    const gradient = ctx.createLinearGradient(0, 0, 0, H);
+    gradient.addColorStop(0, '#111');
+    gradient.addColorStop(0.5, '#222');
+    gradient.addColorStop(1, '#333');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, W, H);
+
+    // Floor gradient
+    const floorGrad = ctx.createLinearGradient(0, H/2, 0, H);
+    floorGrad.addColorStop(0, 'rgba(60,50,40,0.3)');
+    floorGrad.addColorStop(1, 'rgba(40,35,30,0.8)');
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, H/2, W, H/2);
+
+    const ceilingGrad = ctx.createLinearGradient(0, 0, 0, H/2);
+    ceilingGrad.addColorStop(0, 'rgba(20,20,30,0.8)');
+    ceilingGrad.addColorStop(1, 'rgba(40,40,50,0.3)');
+    ctx.fillStyle = ceilingGrad;
+    ctx.fillRect(0, 0, W, H/2);
+
+    // Cast rays and render walls
+    zBuffer = new Float32Array(NUM_RAYS);
+    const stripW = W / NUM_RAYS;
+
+    for (let i = 0; i < NUM_RAYS; i++) {
+        const rayAngle = player.angle - HALF_FOV + i * RAY_STEP;
+        const ray = castRay(rayAngle);
+        const perpDist = ray.dist * Math.cos(rayAngle - player.angle);
+        zBuffer[i] = perpDist;
+
+        const lineHeight = Math.min(H * 2, (WALL_HEIGHT / perpDist) * H * 0.8);
+        const drawStart = Math.max(0, (H - lineHeight) / 2);
+        const drawEnd = Math.min(H, drawStart + lineHeight);
+
+        const wc = wallColor(ray.wallType);
+        const shade = Math.max(0.15, 1 - perpDist / MAX_DEPTH);
+        const sideShade = ray.side === 1 ? 0.7 : 1.0;
+        const fogShade = Math.max(0.2, 1 - perpDist / (MAX_DEPTH * 0.7));
+
+        // Wall texture stripes
+        const texX = ray.texX;
+        const stripeShade = (Math.sin(texX * Math.PI * 6) * 0.1 + 0.9);
+
+        const r = Math.floor(wc.r * shade * sideShade * fogShade * stripeShade);
+        const g = Math.floor(wc.g * shade * sideShade * fogShade * stripeShade);
+        const b = Math.floor(wc.b * shade * sideShade * fogShade * stripeShade);
+
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fillRect(Math.floor(i * stripW), drawStart, Math.ceil(stripW) + 1, lineHeight);
+
+        // Wall edge highlight
+        if (texX < 0.02 || texX > 0.98) {
+            ctx.fillStyle = `rgba(255,255,255,${0.1 * fogShade})`;
+            ctx.fillRect(Math.floor(i * stripW), drawStart, Math.ceil(stripW) + 1, lineHeight);
+        }
+    }
+
+    // Collect and sort sprites
+    const sprites = [];
+
+    // Enemies
+    for (const e of enemies) {
+        if (e.dead && e.deathTimer > 2) continue;
+        const dx = e.x - player.x, dy = e.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx);
+        let relAngle = angle - player.angle;
+        while (relAngle > Math.PI) relAngle -= 2*Math.PI;
+        while (relAngle < -Math.PI) relAngle += 2*Math.PI;
+        if (Math.abs(relAngle) < HALF_FOV + 0.3) {
+            sprites.push({ type: 'enemy', obj: e, dist, relAngle, perpDist: dist * Math.cos(relAngle) });
+        }
+    }
+
+    // Pickups
+    for (const p of pickups) {
+        if (!p.active) continue;
+        const dx = p.x - player.x, dy = p.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx);
+        let relAngle = angle - player.angle;
+        while (relAngle > Math.PI) relAngle -= 2*Math.PI;
+        while (relAngle < -Math.PI) relAngle += 2*Math.PI;
+        if (Math.abs(relAngle) < HALF_FOV + 0.3) {
+            sprites.push({ type: 'pickup', obj: p, dist, relAngle, perpDist: dist * Math.cos(relAngle) });
+        }
+    }
+
+    // Projectiles
+    for (const proj of projectiles) {
+        const dx = proj.x - player.x, dy = proj.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx);
+        let relAngle = angle - player.angle;
+        while (relAngle > Math.PI) relAngle -= 2*Math.PI;
+        while (relAngle < -Math.PI) relAngle += 2*Math.PI;
+        if (Math.abs(relAngle) < HALF_FOV + 0.3) {
+            sprites.push({ type: 'projectile', obj: proj, dist, relAngle, perpDist: dist * Math.cos(relAngle) });
+        }
+    }
+
+    // Sort by distance (far first)
+    sprites.sort((a, b) => b.perpDist - a.perpDist);
+
+    // Render sprites
+    for (const s of sprites) {
+        const screenX = W/2 + (s.relAngle / HALF_FOV) * W/2;
+        const fog = Math.max(0.2, 1 - s.perpDist / (MAX_DEPTH * 0.7));
+
+        if (s.type === 'enemy') {
+            const e = s.obj;
+            const spriteHeight = Math.min(H, (e.size * 2 / s.perpDist) * H * 0.8);
+            const spriteWidth = spriteHeight * 0.6;
+            const drawY = H/2 - spriteHeight/2;
+
+            if (e.dead) {
+                const alpha = Math.max(0, 1 - e.deathTimer / 2);
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = e.color;
+                ctx.fillRect(screenX - spriteWidth/2, H - spriteHeight * 0.15, spriteWidth, spriteHeight * 0.3);
+                ctx.globalAlpha = 1;
+                continue;
+            }
+
+            // Draw enemy body
+            const baseColor = e.color;
+            const flash = e.hitFlash > 0;
+            ctx.globalAlpha = fog;
+
+            // Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(screenX, H/2 + spriteHeight*0.45, spriteWidth*0.5, spriteHeight*0.1, 0, 0, Math.PI*2);
+            ctx.fill();
+
+            // Body
+            const bodyColor = flash ? '#fff' : baseColor;
+            ctx.fillStyle = bodyColor;
+            ctx.fillRect(screenX - spriteWidth/2, drawY + spriteHeight*0.2, spriteWidth, spriteHeight*0.5);
+
+            // Head
+            ctx.fillStyle = flash ? '#fff' : (e.type === 0 ? '#ff6666' : e.type === 1 ? '#66ff66' : '#ffaa44');
+            ctx.beginPath();
+            ctx.arc(screenX, drawY + spriteHeight*0.15, spriteWidth*0.3, 0, Math.PI*2);
+            ctx.fill();
+
+            // Eyes
+            ctx.fillStyle = flash ? '#f00' : '#ff0';
+            ctx.beginPath();
+            ctx.arc(screenX - spriteWidth*0.1, drawY + spriteHeight*0.12, spriteWidth*0.06, 0, Math.PI*2);
+            ctx.arc(screenX + spriteWidth*0.1, drawY + spriteHeight*0.12, spriteWidth*0.06, 0, Math.PI*2);
+            ctx.fill();
+
+            // Health bar
+            if (e.health < e.maxHealth) {
+                const barW = spriteWidth * 0.8;
+                const barH = 4;
+                const barY = drawY - 8;
+                ctx.fillStyle = '#400';
+                ctx.fillRect(screenX - barW/2, barY, barW, barH);
+                ctx.fillStyle = '#f00';
+                ctx.fillRect(screenX - barW/2, barY, barW * (e.health / e.maxHealth), barH);
+            }
+
+            ctx.globalAlpha = 1;
+
+        } else if (s.type === 'pickup') {
+            const p = s.obj;
+            const size = Math.min(40, 120 / s.perpDist);
+            const screenY = H/2 + size;
+            const bob = Math.sin(Date.now() * 0.005) * size * 0.15;
+
+            ctx.globalAlpha = fog;
+            ctx.fillStyle = p.type === 'health' ? '#f44' : '#4af';
+            ctx.beginPath();
+            ctx.arc(screenX, screenY + bob, size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${Math.max(8, size*0.5)}px Courier New`;
+            ctx.textAlign = 'center';
+            ctx.fillText(p.type === 'health' ? '+' : 'A', screenX, screenY + bob + size*0.15);
+            ctx.globalAlpha = 1;
+
+        } else if (s.type === 'projectile') {
+            const proj = s.obj;
+            const size = Math.max(3, 60 / s.perpDist);
+            ctx.globalAlpha = fog;
+            ctx.fillStyle = proj.isEnemy ? '#f80' : '#ff0';
+            ctx.beginPath();
+            ctx.arc(screenX, H/2, size, 0, Math.PI*2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+    }
+
+    // Particles
+    for (const p of particles) {
+        const dx = p.x - player.x, dy = p.y - player.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        const angle = Math.atan2(dy, dx);
+        let relAngle = angle - player.angle;
+        while (relAngle > Math.PI) relAngle -= 2*Math.PI;
+        while (relAngle < -Math.PI) relAngle += 2*Math.PI;
+        if (Math.abs(relAngle) < HALF_FOV) {
+            const screenX = W/2 + (relAngle / HALF_FOV) * W/2;
+            const size = Math.max(1, 40 / dist);
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.fillRect(screenX - size/2, H/2 - size/2, size, size);
+        }
+    }
+    ctx.globalAlpha = 1;
+
+    // Damage flash
+    if (damageFlash > 0) {
+        ctx.fillStyle = `rgba(255,0,0,${damageFlash * 0.3})`;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // Weapon
+    drawWeapon();
+
+    ctx.restore();
+
+    // Minimap
+    if (showMinimap && minimapVisible && gameState === 'playing') {
+        drawMinimap();
+    }
+
+    // HUD
+    updateHUD();
+}
+
+function drawWeapon() {
+    const bobX = Math.sin(player.bobPhase) * player.bobAmount * 8;
+    const bobY = Math.abs(Math.cos(player.bobPhase)) * player.bobAmount * 5;
+    const recoilY = recoil * 40;
+
+    const gunX = W/2 + 120 + bobX;
+    const gunY = H - 180 + bobY + recoilY;
+
+    // Gun body
+    ctx.fillStyle = '#555';
+    ctx.fillRect(gunX - 15, gunY, 30, 100);
+    ctx.fillStyle = '#444';
+    ctx.fillRect(gunX - 10, gunY + 10, 20, 80);
+
+    // Barrel
+    ctx.fillStyle = '#666';
+    ctx.fillRect(gunX - 6, gunY - 30, 12, 40);
+
+    // Handle
+    ctx.fillStyle = '#3a2a1a';
+    ctx.fillRect(gunX - 12, gunY + 70, 24, 40);
+
+    // Muzzle flash
+    if (recoil > 0.5) {
+        ctx.fillStyle = `rgba(255,200,50,${recoil})`;
+        ctx.beginPath();
+        ctx.arc(gunX, gunY - 35, 15 + recoil * 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `rgba(255,255,200,${recoil * 0.8})`;
+        ctx.beginPath();
+        ctx.arc(gunX, gunY - 35, 8, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Reload indicator
+    if (reloading) {
+        ctx.fillStyle = '#ff0';
+        ctx.font = '16px Courier New';
+        ctx.textAlign = 'center';
+        ctx.fillText('RELOADING...', gunX, gunY + 14

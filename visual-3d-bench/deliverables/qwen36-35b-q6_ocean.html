@@ -1,0 +1,397 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Realistic Ocean</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── Scene, Camera, Renderer ──
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x88aacc, 0.0018);
+
+const camera = new THREE.PerspectiveCamera(60, innerWidth / innerHeight, 0.1, 2000);
+camera.position.set(0, 30, 80);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 0.8;
+document.body.appendChild(renderer.domElement);
+
+// ── Sky Dome ──
+const skyGeo = new THREE.SphereGeometry(900, 32, 32);
+const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide,
+    uniforms: {
+        uSunDir: { value: new THREE.Vector3() },
+        uTime: { value: 0 }
+    },
+    vertexShader: `
+        varying vec3 vWorldPos;
+        void main() {
+            vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        uniform vec3 uSunDir;
+        uniform float uTime;
+        varying vec3 vWorldPos;
+
+        vec3 skyColor(vec3 dir, vec3 sunDir) {
+            float sunAngle = sunDir.y;
+            float horizonFactor = smoothstep(-0.05, 0.15, dir.y);
+            float zenithFactor = smoothstep(0.0, 1.0, dir.y);
+
+            // Deep blue zenith
+            vec3 zenith = vec3(0.05, 0.12, 0.35);
+            // Horizon color shifts with sun
+            vec3 horizonDay = vec3(0.45, 0.65, 0.85);
+            vec3 horizonSunset = vec3(0.95, 0.45, 0.2);
+            vec3 horizonNight = vec3(0.02, 0.03, 0.08);
+
+            float sunsetFactor = smoothstep(-0.1, 0.15, sunAngle) * (1.0 - smoothstep(0.0, 0.2, sunAngle));
+            vec3 horizon = mix(horizonNight, horizonDay, smoothstep(-0.15, 0.05, sunAngle));
+            horizon = mix(horizon, horizonSunset, sunsetFactor * 0.7);
+
+            vec3 sky = mix(horizon, zenith, pow(zenithFactor, 0.6));
+
+            // Sun glow
+            float sunDot = max(dot(normalize(dir), normalize(sunDir)), 0.0);
+            float sunGlow = pow(sunDot, 8.0) * 1.5;
+            float sunDisk = pow(sunDot, 256.0) * 20.0;
+            vec3 sunColor = vec3(1.0, 0.95, 0.8);
+            vec3 sunsetSunColor = vec3(1.0, 0.5, 0.2);
+            sunColor = mix(sunColor, sunsetSunColor, sunsetFactor);
+
+            sky += sunColor * sunGlow * smoothstep(-0.1, 0.1, sunAngle);
+            sky += sunColor * sunDisk * smoothstep(0.0, 0.05, sunAngle);
+
+            // Subtle sun reflection on horizon
+            float horizonSunGlow = pow(sunDot, 3.0) * 0.3 * smoothstep(-0.1, 0.0, dir.y);
+            sky += sunColor * horizonSunGlow * smoothstep(-0.1, 0.1, sunAngle);
+
+            return sky;
+        }
+
+        void main() {
+            vec3 dir = normalize(vWorldPos);
+            vec3 col = skyColor(dir, uSunDir);
+            gl_FragColor = vec4(col, 1.0);
+        }
+    `
+});
+const sky = new THREE.Mesh(skyGeo, skyMat);
+scene.add(sky);
+
+// ── Ocean Shaders ──
+const oceanVertexShader = `
+    uniform float uTime;
+    uniform vec3 uSunDir;
+
+    varying vec3 vWorldPos;
+    varying float vWaveHeight;
+    varying vec3 vNormal;
+    varying float vFoam;
+
+    // Gerstner wave parameters: (steepness, amplitude, directionX, directionZ, speed)
+    #define WAVE_COUNT 6
+
+    struct Wave {
+        float steepness;
+        float amplitude;
+        vec2 direction;
+        float speed;
+    };
+
+    Wave waves[WAVE_COUNT] = Wave[](
+        Wave(0.35, 1.8,  vec2(0.92, 0.39), 0.75),
+        Wave(0.25, 1.2,  vec2(-0.45, 0.89), 0.62),
+        Wave(0.30, 0.8,  vec2(0.67, -0.74), 0.95),
+        Wave(0.20, 0.5,  vec2(-0.82, -0.57), 0.55),
+        Wave(0.15, 0.35, vec2(0.35, 0.94), 1.1),
+        Wave(0.10, 0.25, vec2(-0.55, 0.84), 0.85)
+    );
+
+    vec3 gerstnerWave(Wave w, vec2 pos, float t) {
+        float k = 2.0 * 3.14159265 / 60.0;
+        float c = w.speed;
+        vec2 d = normalize(w.direction);
+        float f = k * (dot(d, pos) * c - t);
+
+        float steepness = w.steepness;
+        float a = w.amplitude;
+
+        vec3 p;
+        p.x = a * d.x * steepness * sin(f);
+        p.z = a * d.y * steepness * sin(f);
+        p.y = a * cos(f);
+
+        return p;
+    }
+
+    vec3 calcNormal(vec2 pos, float t) {
+        float radius = 0.001;
+        vec2 e1 = vec2(radius, 0.0);
+        vec2 e2 = vec2(0.0, radius);
+
+        float hCenter = 0.0;
+        float hXp = 0.0, hXm = 0.0;
+        float hZp = 0.0, hZm = 0.0;
+
+        for (int i = 0; i < WAVE_COUNT; i++) {
+            Wave w = waves[i];
+            float k = 2.0 * 3.14159265 / 60.0;
+            float c = w.speed;
+            vec2 d = normalize(w.direction);
+            float steepness = w.steepness;
+            float a = w.amplitude;
+            float f;
+
+            f = k * (dot(d, pos) * c - t);
+            hCenter += a * cos(f);
+
+            f = k * (dot(d, pos + e1) * c - t);
+            hXp += a * cos(f);
+
+            f = k * (dot(d, pos - e1) * c - t);
+            hXm += a * cos(f);
+
+            f = k * (dot(d, pos + e2) * c - t);
+            hZp += a * cos(f);
+
+            f = k * (dot(d, pos - e2) * c - t);
+            hZm += a * cos(f);
+        }
+
+        vec2 Dx = (hXp - hXm) / (2.0 * radius);
+        vec2 Dz = (hZp - hZm) / (2.0 * radius);
+
+        return normalize(vec3(-Dx.x, 1.0, -Dx.y) * 0.5 + vec3(-Dz.x, 1.0, -Dz.y) * 0.5);
+    }
+
+    void main() {
+        vec3 pos = position;
+        vec2 p = pos.xz;
+        float t = uTime;
+
+        vec3 displaced = vec3(0.0);
+        for (int i = 0; i < WAVE_COUNT; i++) {
+            displaced += gerstnerWave(waves[i], p, t);
+        }
+
+        vec3 newPos = pos + displaced;
+        vWorldPos = (modelMatrix * vec4(newPos, 1.0)).xyz;
+        vWaveHeight = displaced.y;
+
+        vNormal = calcNormal(p, t);
+
+        // Foam calculation: high on steep wave crests
+        float heightNorm = smoothstep(0.5, 2.5, vWaveHeight);
+        float slope = length(vec2(
+            calcNormal(p + vec2(0.1, 0.0), t).x - calcNormal(p - vec2(0.1, 0.0), t).x,
+            calcNormal(p + vec2(0.0, 0.1), t).z - calcNormal(p - vec2(0.0, 0.1), t).z
+        ));
+        vFoam = smoothstep(0.4, 1.2, heightNorm) * smoothstep(0.3, 1.5, slope);
+        vFoam = clamp(vFoam, 0.0, 1.0);
+
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(newPos, 1.0);
+    }
+`;
+
+const oceanFragmentShader = `
+    uniform float uTime;
+    uniform vec3 uSunDir;
+    uniform vec3 uCameraPos;
+
+    varying vec3 vWorldPos;
+    varying float vWaveHeight;
+    varying vec3 vNormal;
+    varying float vFoam;
+
+    void main() {
+        vec3 viewDir = normalize(uCameraPos - vWorldPos);
+        vec3 norm = normalize(vNormal);
+
+        // Fresnel (Schlick approximation)
+        float fresnel = pow(1.0 - max(dot(viewDir, norm), 0.0), 3.5);
+        fresnel = clamp(fresnel, 0.0, 1.0);
+
+        // Deep water color vs shallow/surface color
+        vec3 deepColor = vec3(0.0, 0.02, 0.08);
+        vec3 shallowColor = vec3(0.0, 0.15, 0.3);
+        vec3 surfaceColor = vec3(0.1, 0.35, 0.55);
+
+        float depthFactor = smoothstep(-1.5, 2.0, vWaveHeight);
+        vec3 waterColor = mix(deepColor, shallowColor, depthFactor);
+        waterColor = mix(waterColor, surfaceColor, fresnel * 0.5);
+
+        // Sun reflection (Blinn-Phong specular)
+        vec3 halfDir = normalize(uSunDir + viewDir);
+        float spec = pow(max(dot(norm, halfDir), 0.0), 512.0);
+        float specBroad = pow(max(dot(norm, halfDir), 0.0), 64.0);
+        vec3 sunColor = vec3(1.0, 0.95, 0.8);
+        vec3 sunsetColor = vec3(1.0, 0.55, 0.2);
+        float sunsetFactor = smoothstep(-0.1, 0.15, uSunDir.y) * (1.0 - smoothstep(0.0, 0.2, uSunDir.y));
+        sunColor = mix(sunColor, sunsetColor, sunsetFactor);
+
+        vec3 specular = sunColor * spec * 3.0;
+        specular += sunColor * specBroad * 0.3;
+
+        // Subsurface scattering approximation
+        float sss = pow(max(dot(viewDir, -uSunDir), 0.0), 3.0) * 0.15;
+        vec3 sssColor = vec3(0.0, 0.4, 0.3) * sss;
+
+        // Foam
+        vec3 foamColor = vec3(0.85, 0.9, 0.95);
+        waterColor = mix(waterColor, foamColor, vFoam * 0.7);
+
+        // Combine
+        vec3 finalColor = waterColor + specular + sssColor;
+        finalColor = mix(finalColor, sunColor * 0.4, fresnel * 0.3);
+
+        // Tone mapping
+        finalColor = finalColor / (finalColor + vec3(1.0));
+
+        gl_FragColor = vec4(finalColor, 0.95);
+    }
+`;
+
+// ── Ocean Mesh ──
+const oceanGeo = new THREE.PlaneGeometry(600, 600, 200, 200);
+oceanGeo.rotateX(-Math.PI / 2);
+
+const oceanUniforms = {
+    uTime: { value: 0 },
+    uSunDir: { value: new THREE.Vector3(1, 0.3, 0.5).normalize() },
+    uCameraPos: { value: camera.position }
+};
+
+const oceanMat = new THREE.ShaderMaterial({
+    vertexShader: oceanVertexShader,
+    fragmentShader: oceanFragmentShader,
+    uniforms: oceanUniforms,
+    transparent: true,
+    side: THREE.DoubleSide
+});
+
+const ocean = new THREE.Mesh(oceanGeo, oceanMat);
+scene.add(ocean);
+
+// ── Sun Visual ──
+const sunGeo = new THREE.SphereGeometry(8, 16, 16);
+const sunMat = new THREE.ShaderMaterial({
+    uniforms: {},
+    vertexShader: `
+        varying vec3 vPos;
+        void main() {
+            vPos = position;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vPos;
+        void main() {
+            float glow = 1.0 - dot(normalize(vPos), normalize(vPos));
+            glow = pow(glow, 2.0);
+            vec3 col = mix(vec3(1.0, 0.9, 0.5), vec3(1.0, 0.6, 0.2), glow);
+            gl_FragColor = vec4(col * 2.0, 1.0);
+        }
+    `,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+});
+const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+scene.add(sunMesh);
+
+// ── Sun Glow Sprite ──
+const glowTex = (() => {
+    const c = document.createElement('canvas');
+    c.width = 256; c.height = 256;
+    const ctx = c.getContext('2d');
+    const g = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, 'rgba(255,220,150,0.6)');
+    g.addColorStop(0.3, 'rgba(255,180,100,0.2)');
+    g.addColorStop(1, 'rgba(255,150,80,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(c);
+})();
+const glowSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+    map: glowTex, blending: THREE.AdditiveBlending, transparent: true, depthWrite: false
+}));
+glowSprite.scale.set(200, 200, 1);
+scene.add(glowSprite);
+
+// ── Animation ──
+const clock = new THREE.Clock();
+const orbitRadius = 100;
+const orbitHeight = 35;
+
+function animate() {
+    requestAnimationFrame(animate);
+    const elapsed = clock.getElapsedTime();
+    const cycleTime = 60;
+    const t = elapsed % cycleTime;
+
+    // Sun position - arcs across the sky
+    const sunAngle = (t / cycleTime) * Math.PI * 2;
+    const sunDir = new THREE.Vector3(
+        Math.cos(sunAngle) * 0.8,
+        Math.sin(sunAngle),
+        Math.sin(sunAngle) * 0.3
+    ).normalize();
+
+    oceanUniforms.uTime.value = t;
+    oceanUniforms.uSunDir.value.copy(sunDir);
+    oceanUniforms.uCameraPos.value.copy(camera.position);
+
+    // Sun visual
+    const sunPos = sunDir.clone().multiplyScalar(400);
+    sunMesh.position.copy(sunPos);
+    glowSprite.position.copy(sunPos);
+    skyMat.uniforms.uSunDir.value.copy(sunDir);
+    skyMat.uniforms.uTime.value = t;
+
+    // Camera orbit
+    const camAngle = elapsed * 0.04;
+    camera.position.x = Math.sin(camAngle) * orbitRadius;
+    camera.position.z = Math.cos(camAngle) * orbitRadius;
+    camera.position.y = orbitHeight + Math.sin(elapsed * 0.07) * 8;
+    camera.lookAt(0, 2, 0);
+
+    // Fog color matches sky horizon
+    const sunsetFactor = smoothstep(-0.1, 0.15, sunDir.y) * (1.0 - smoothstep(0.0, 0.2, sunDir.y));
+    const fogR = mix(0.53, 0.97, sunsetFactor * 0.5);
+    const fogG = mix(0.67, 0.55, sunsetFactor * 0.5);
+    const fogB = mix(0.82, 0.35, sunsetFactor * 0.5);
+    scene.fog.color.setRGB(fogR, fogG, fogB);
+    renderer.setClearColor(new THREE.Color(fogR * 0.3, fogG * 0.3, fogB * 0.3));
+
+    renderer.render(scene, camera);
+}
+
+function mix(a, b, t) { return a + (b - a) * t; }
+animate();
+
+// ── Resize ──
+window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+});
+</script>
+</body>
+</html>
+```

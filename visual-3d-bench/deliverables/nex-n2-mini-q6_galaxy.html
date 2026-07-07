@@ -1,0 +1,553 @@
+We need answer final only complete HTML file no explanations. Need create single-file HTML page with Three.js CDN r128. Requirements. Need think implementation.
+
+We need output code only. Need include canvas full window, overlay, 50k particles spiral galaxy, color blue center to yellow edges, requestAnimationFrame rotation, auto-rotate camera, subtle bloom/glow additive blending, dark background stars, responsive.
+
+Three r128 has no postprocessing unless import from cdn extra? Requirement says using Three.js loaded from CDN https... Could include only three.min.js. Bloom/glow using PointsMaterial additive blending, transparent, canvas texture? Subtle glow effect using additive blending. We can implement glow with multiple point layers maybe. Need 50,000 particles arranged in spiral galaxy formation. Could use BufferGeometry positions/colors and PointsMaterial. Additive blending. Maybe use vertexColors true. Need background stars, maybe separate Points.
+
+Need ensure performance. 50k points okay. Need galaxy formation. Spiral arms formula:
+const arms = 5; for i in 0..49999:
+arm = i % arms? Better distribute evenly. radius = pow(rand,0.7)*maxRadius. theta = radius * 0.45 + arm/arms*2π + randomGaussian*spread. y = randomGaussian*thickness*(radius/maxRadius) + random small. x=cos(theta)*radius, z=sin(theta)*radius. Add central bulge. Color based distance normalized: Hue from blue to yellow. In three Color.setHSL. center blue, edge yellow. Could use Color.lerpColors maybe. Need particle count exactly 50000. UI overlay shows name and count.
+
+Need add subtle bloom/glow. PointsMaterial with size attenuation, additive blending, opacity, depthWrite false. But glow effect subtle. Could create two point systems: core with additive blending size 2.5 opacity .9, outer .75 size 1.2 opacity .65. But requirement 50k particles arranged in galaxy. If split, total 50k. Maybe 42k main + 8k halo? Or same geometry with larger size? Three r128 PointsMaterial supports vertexColors, sizeAttenuation true. Additive blending. To simulate bloom/glow, use transparent, additive blending, maybe CSS filter? Or use CanvasTexture with radial gradient for each point, but 50k textures maybe heavy. Use PointsMaterial with vertex colors. Glow not true bloom but subtle. Could include postprocessing EffectComposer? They loaded three.min.js only from CDN. Could include three examples modules via cdnjs? Requirement only says Three.js loaded from CDN URL. We can include additional scripts? "Create single-file HTML page that renders... using Three.js loaded from CDN (https://cdnjs...)" Could include only that. Bloom/glow using additive blending. Need maybe use "subtle bloom/glow effect using additive blending" not actual postprocessing.
+
+Need dark background with stars. Could create starfield Points with random sphere shell around. Need maybe separate BufferGeometry with positions. 1000 stars. Use PointsMaterial size 1.2.
+
+Need camera auto-rotate. OrbitControls not needed. We can implement simple camera orbit:
+camera.position.set(0, 18, 75), lookAt(0,0,0). Each frame camera.position.x = Math.sin(time*0.12)*10? or angle. Simpler camera.position.x +=? "auto-rotate camera slowly" use camera.rotation.y += 0.001; camera.lookAt. But if camera at (0,15,80), rotating around z-axis? camera position should orbit around center. Use angle = time*0.08; radius=90; camera.position.set(Math.sin(angle)*radius, 30, Math.cos(angle)*radius); camera.lookAt(0,0,0). Need maybe tilt.
+
+Need galaxy rotation animation: either rotate points.geometry or rotate object. If geometry rotated, positions? We can create group and rotate group slowly. But if star field separate, not rotate? Galaxy group rotation.x maybe 0.85? We'll create galaxyGroup with particles and rotate around y slowly, maybe z slight.
+
+Need responsive canvas full window. Use renderer.setSize, pixelRatio min(window.devicePixelRatio,2). Resize update camera aspect.
+
+Need include CSS overlay pointer-events none.
+
+Need maybe fallback if WebGL not available? Not required.
+
+Need output complete HTML. Need consider r128 API. Use THREE.Color.setHSL(h,s,l). Use THREE.BufferAttribute. For points material:
+const material = new THREE.PointsMaterial({
+size: 0.42,
+vertexColors: true,
+transparent: true,
+opacity: 0.95,
+blending: THREE.AdditiveBlending,
+depthWrite: false,
+sizeAttenuation: true
+});
+Maybe point size in world units. If camera at 90 and galaxy radius 45, size .45 okay. Maybe size 0.8.
+
+Need background stars. Use sphere radius 500? If camera inside sphere, positions random on sphere. But if camera orbits inside, okay. Use random directions, positions. star material additive blending maybe.
+
+Need maybe central glow sprite? Could create SpriteMaterial radial gradient texture, additive blending. This helps bloom/glow. But requirement particles colored; extra sprite not particle count? Fine. Need create radial gradient canvas texture. Use Sprite with size maybe 25, opacity .6. Or create multiple sprites? A central glow.
+
+Need "subtle bloom/glow effect using additive blending". We can create:
+- main galaxy points additive blending
+- core glow sprite additive blending with radial texture
+- maybe secondary "dust" particles larger and lower opacity.
+
+Need ensure no "OrbitControls not needed" not included.
+
+Need maybe "stunning 3D spiral galaxy" maybe include 5 arms, dust lanes? Could add translucent spiral dust? Not necessary. But can enhance:
+- main particles 45k
+- secondary halo 5k larger blue-white.
+Total 50k? If main+secondary = 50k. But requirement 50,000 particles arranged in formation. Both are particles. Colors based distance. Could do 50k main only and a few extra sprites. Simpler.
+
+Need maybe use "particle count" overlay 50,000.
+
+Need maybe "blue center to yellow edges" for every particle. Use color = new THREE.Color(); color.setHSL(0.58 - t*0.58? HSL hue blue 0.58, yellow 0.11. t=distance/max. hue = 0.58 - 0.47*t; saturation .95, lightness .55 + .25*t. At t=0 hue 0.58 cyan-blue; t=1 hue 0.11 yellow. Good. Could use color.lerpColors(new Color(0x4aa3ff), new Color(0xffd166), t). That maps center blue to yellow edge. Need maybe center not too white? Fine.
+Need maybe "based on distance" use normalized distance.
+
+Need 50k exactly. Implementation:
+const PARTICLE_COUNT = 50000;
+const positions = new Float32Array(PARTICLE_COUNT*3);
+const colors = new Float32Array(PARTICLE_COUNT*3);
+const bulgeCount = Math.floor(PARTICLE_COUNT*0.12); But if using arms formula for all, maybe central bulge. Simpler:
+for i=0..49999:
+const r = Math.pow(rand(), 0.72) * R;
+if (i < 6000) r = Math.pow(rand(), 3)*R*0.18; // central bulge
+else ...
+Need arms. Better distribute arms:
+const arm = Math.floor(i / (PARTICLE_COUNT / ARMS)); But i from 0 to 49999, arm = Math.floor(i * ARMS / PARTICLE_COUNT). This gives exactly 10k per arm. For each arm:
+radius = Math.pow(Math.random(), 0.75)*maxRadius;
+theta = radius*0.35 + arm*TAU/ARMS + randomGaussian()*0.35;
+y = randomGaussian()*0.25*(radius/maxRadius)+randomGaussian()*0.08 maybe.
+But if arm = i / count/arms, each arm has count/arms. Good.
+Need maybe spiral arms interleaving? 5 arms. Good.
+Need maybe random distribution with pow. Use gaussian function:
+function randomGaussian() {
+let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+}
+Need avoid central bulge? We can add bulge:
+if (Math.random() < 0.12) { const bulgeR = Math.pow(Math.random(), 2.3) * R*0.22; const bulgeTheta=...; x,z; y randomGaussian()*0.15; } else spiral.
+Then arm loop count/arms for rest.
+
+But if 12% bulge, color based distance works.
+
+Need maybe create geometry.computeBoundingSphere()? PointsMaterial size attenuation uses bounding sphere? It can auto compute? We can call geometry.computeBoundingSphere();.
+
+Need maybe rotate galaxyGroup.rotation.z = 0.15; galaxyGroup.rotation.x = 0.2? If galaxy plane roughly x-z with y vertical. Camera y=25, lookAt. Good.
+
+Need maybe use renderer.setClearColor(0x02040a). Use alpha? canvas.
+
+Need maybe "responsive canvas filling full window" CSS body margin 0 overflow hidden background #02040a; canvas display block. renderer.domElement.
+
+Need maybe add "starfield" with random positions within sphere radius 600. Need if camera at 100 and star radius 500, okay. Positions on shell or volume. Use points material.
+for i 0..2500:
+const r = 150 + Math.pow(rand(),3)*450;
+const theta = rand()*TAU; const phi = Math.acos(rand()*2-1); x...
+Need material size .8? PointsMaterial size in world units, sizeAttenuation true. At star distance ~500, size .8 maybe too small? Actually size in world units if sizeAttenuation true, point size = size * (scale / distance). Three's shader: point size = size * (scale / -mvPosition.z), scale = height*0.5*pixelRatio. At distance 500, size 1.5 maybe maybe visible. Use size 1.2, opacity .75. Starfield points.
+
+Need maybe "dark background with stars" enough.
+
+Need maybe "additive blending" for stars and galaxy. For stars, additive blending can make bright. Use depthWrite false.
+
+Need maybe "bloom/glow" can be done with central sprite. Create radial gradient:
+function createGlowTexture() {
+const size=256; const canvas=document.createElement('canvas'); canvas.width=canvas.height=size; const ctx=canvas.getContext('2d'); const gradient=ctx.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2); addColorStop(0,'rgba(120,200,255,0.95)'); .35 'rgba(80,120,255,0.35)'; .7 'rgba(255,220,120,0.12)'; 1 'rgba(0,0,0,0)'; fillRect. return new THREE.CanvasTexture(canvas);
+}
+const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map, transparent:true, blending: THREE.AdditiveBlending, depthWrite:false, opacity:0.75, color:0xffffff }));
+glow.scale.set(55,55,1); galaxyGroup.add(glow). But sprite faces camera by default. Good.
+
+Need maybe create "nebula" larger faint sprite. Maybe not.
+
+Need maybe "subtle bloom/glow effect" also use material.size = 0.75 and additive blending. Maybe central sprite.
+
+Need maybe "auto-rotate camera slowly" implement:
+const clock = new THREE.Clock();
+function animate() {
+const t = clock.getElapsedTime();
+galaxyGroup.rotation.y = t * 0.08;
+galaxyGroup.rotation.z = 0.08 + Math.sin(t*0.1)*0.02;
+camera.position.set(Math.sin(t*0.08)*70, 25 + Math.sin(t*0.05)*2, Math.cos(t*0.08)*70);
+camera.lookAt(0,0,0);
+renderer.render(scene,camera);
+requestAnimationFrame(animate);
+}
+Need maybe starfield not rotate.
+
+Need maybe "using requestAnimationFrame" explicit in animate.
+
+Need maybe "50,000 particles arranged in a spiral galaxy formation" if 50k in BufferGeometry. Good.
+
+Potential issue: If use i < bulgeCount, arm count remaining. But arm = Math.floor(i / (PARTICLE_COUNT / ARMS)) for all i; for bulge, no matter. Good.
+
+Need maybe "Particles colored from blue (center) to yellow (edges) based on distance" If central bulge blue, edges yellow. Good.
+
+Need maybe "single-file HTML page" no external CSS. CDN script okay. Need include defer? If script before inline JS. Use <script src=...></script> then <script> inline. Since script at body end, okay.
+
+Need maybe CDN URL exactly: https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js. Use that.
+
+Need maybe not use modules. Good.
+
+Need maybe "Output ONLY the complete HTML file with embedded CSS and JS. No explanations." Final code.
+
+Need consider if r128 includes THREE.MathUtils? It does. Could use. But no need.
+
+Need maybe "responsive canvas filling full window" set body width/height.
+
+Need maybe overlay with galaxy name and particle count. Example:
+<div id="ui">
+<div class="title">Andromeda Prime</div>
+<div class="subtitle">Particle Count: <span>50,000</span></div>
+</div>
+CSS.
+
+Need maybe "stunning" perhaps add CSS.
+
+Need maybe "auto-rotate camera slowly" if camera position orbit, galaxy also rotates. Good.
+
+Need maybe "dark background with stars": renderer clear color. Good.
+
+Need maybe "subtle bloom/glow effect using additive blending": central sprite and material. Good.
+
+Need maybe "50,000 particles" exactly. If we create starfield with additional points, overlay says galaxy particle count 50,000, starfield not galaxy. But "50,000 particles arranged in spiral galaxy formation" maybe okay. Starfield points extra. If strict, the page has more particles. But background stars are also particles. Requirement maybe not "exactly 50k particles total"; it says 50k particles arranged in spiral galaxy formation. Fine. But if someone counts all THREE.Points, starfield extra. Could be okay. If strict, maybe background stars can be CSS? But dark background with stars requires. We can create starfield as 1500 Points; total points >50k. But requirement says particles arranged in galaxy; background stars are separate. Fine.
+
+Could avoid extra particle count by using CSS pseudo background with radial gradients? But stars need dynamic maybe. Three starfield okay.
+
+Need maybe "single-file HTML page" with CDN. Good.
+
+Need maybe "bloom/glow effect using additive blending" if only additive points, no real bloom. Could include no postprocessing. The wording "Add subtle bloom/glow effect using additive blending" maybe expects additive blending. Good.
+
+Need maybe "Particles colored from blue (center) to yellow (edges) based on distance" We need maybe color attribute. Good.
+
+Need maybe "requestAnimationFrame" Use animate function calls requestAnimationFrame. Good.
+
+Need maybe "responsive canvas filling full window" Use window resize. Good.
+
+Potential issue with PointsMaterial vertexColors: in r128, material.vertexColors true expects BufferAttribute color with normalized? fine. Need material sizeAttenuation true. Need set material.needsUpdate? no.
+
+Need maybe "starfield points" use BufferGeometry and PointsMaterial. Need maybe color attribute? no.
+
+Need maybe "renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));" Good.
+
+Need maybe "renderer.outputEncoding = THREE.sRGBEncoding;" r128 supports. Could set. Not necessary. But colors.
+
+Need maybe "shadow?" no.
+
+Need maybe "glow texture" after createGlowTexture, need texture.needsUpdate = true? CanvasTexture constructor sets needsUpdate true. Good.
+
+Need maybe "createGlowTexture" if context unavailable? no.
+
+Need maybe "randomGaussian" while loops okay.
+
+Need maybe "generate galaxy" code. Let's design robust.
+
+Pseudo:
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Spiral Galaxy</title>
+<style>
+html, body { margin:0; width:100%; height:100%; overflow:hidden; background:#02040a; }
+canvas { display:block; width:100%; height:100%; }
+#ui { position: fixed; top: 20px; left:20px; color:#fff; text-shadow: ...; pointer-events:none; background: linear-gradient(...); padding:14px 18px; border:1px solid rgba(255,255,255,.15); border-radius:14px; backdrop-filter: blur(8px); box-shadow...}
+...
+</style>
+</head>
+<body>
+<div id=ui>...</div>
+<script src="..."></script>
+<script>
+(() => {
+const PARTICLE_COUNT = 50000;
+const ARMS = 5;
+const MAX_RADIUS = 45;
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x02040a, 0.001Now produce the final answer. Be concrete and complete.</think>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Spiral Galaxy</title>
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #02040a;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    #ui {
+      position: fixed;
+      left: 22px;
+      top: 22px;
+      z-index: 10;
+      color: #ffffff;
+      padding: 16px 18px;
+      border: 1px solid rgba(160, 210, 255, 0.22);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(8, 14, 32, 0.72), rgba(8, 10, 24, 0.38));
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.42), inset 0 0 28px rgba(90, 170, 255, 0.08);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    #ui .name {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px rgba(110, 190, 255, 0.95);
+    }
+
+    #ui .count {
+      margin-top: 7px;
+      color: rgba(230, 244, 255, 0.86);
+      font-size: 13px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+
+    #ui .count strong {
+      color: #ffe28a;
+      text-shadow: 0 0 12px rgba(255, 210, 92, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div class="name">Andromeda Prime</div>
+    <div class="count">Particle Count: <strong>50,000</strong></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    (() => {
+      const PARTICLE_COUNT = 50000;
+      const SPIN_ARMS = 5;
+      const MAX_RADIUS = 46;
+      const TAU = Math.PI * 2;
+
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.FogExp2(0x02040a, 0.0011);
+
+      const camera = new THREE.PerspectiveCamera(62, window.innerWidth / window.innerHeight, 0.1, 1200);
+      camera.position.set(0, 28, 92);
+
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        powerPreference: "high-performance"
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setClearColor(0x02040a, 1);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      document.body.appendChild(renderer.domElement);
+
+      function randomGaussian() {
+        let u = 0;
+        let v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v);
+      }
+
+      function createGlowTexture() {
+        const size = 256;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+
+        const ctx = canvas.getContext("2d");
+        const gradient = ctx.createRadialGradient(
+          size / 2,
+          size / 2,
+          0,
+          size / 2,
+          size / 2,
+          size / 2
+        );
+
+        gradient.addColorStop(0.0, "rgba(180, 230, 255, 0.95)");
+        gradient.addColorStop(0.18, "rgba(95, 180, 255, 0.42)");
+        gradient.addColorStop(0.42, "rgba(105, 120, 255, 0.18)");
+        gradient.addColorStop(0.72, "rgba(255, 215, 110, 0.08)");
+        gradient.addColorStop(1.0, "rgba(0, 0, 0, 0)");
+
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, size, size);
+
+        return new THREE.CanvasTexture(canvas);
+      }
+
+      const galaxyGroup = new THREE.Group();
+      galaxyGroup.rotation.z = 0.16;
+      scene.add(galaxyGroup);
+
+      const positions = new Float32Array(PARTICLE_COUNT * 3);
+      const colors = new Float32Array(PARTICLE_COUNT * 3);
+
+      const centerBlue = new THREE.Color(0x5aa7ff);
+      const edgeYellow = new THREE.Color(0xffd166);
+      const color = new THREE.Color();
+
+      const bulgeCount = Math.floor(PARTICLE_COUNT * 0.12);
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        let x;
+        let y;
+        let z;
+        let distance;
+
+        if (i < bulgeCount) {
+          const bulgeRadius = Math.pow(Math.random(), 2.35) * MAX_RADIUS * 0.24;
+          const bulgeAngle = Math.random() * TAU;
+          x = Math.cos(bulgeAngle) * bulgeRadius;
+          z = Math.sin(bulgeAngle) * bulgeRadius;
+          y = randomGaussian() * 1.15;
+          distance = Math.sqrt(x * x + z * z + y * y);
+        } else {
+          const armIndex = Math.floor(i / (PARTICLE_COUNT / SPIN_ARMS));
+          const radius = Math.pow(Math.random(), 0.72) * MAX_RADIUS;
+          const normalizedRadius = radius / MAX_RADIUS;
+          const armAngle = armIndex * (TAU / SPIN_ARMS);
+          const spiralTwist = radius * 0.38;
+          const spread = randomGaussian() * (0.18 + normalizedRadius * 0.42);
+          const theta = armAngle + spiralTwist + spread;
+
+          x = Math.cos(theta) * radius;
+          z = Math.sin(theta) * radius;
+          y = randomGaussian() * (0.28 + normalizedRadius * 0.72);
+
+          distance = radius;
+        }
+
+        const index = i * 3;
+        positions[index] = x;
+        positions[index + 1] = y;
+        positions[index + 2] = z;
+
+        const t = THREE.MathUtils.clamp(distance / MAX_RADIUS, 0, 1);
+        color.lerpColors(centerBlue, edgeYellow, t);
+        colors[index] = color.r;
+        colors[index + 1] = color.g;
+        colors[index + 2] = color.b;
+      }
+
+      const galaxyGeometry = new THREE.BufferGeometry();
+      galaxyGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      galaxyGeometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+      galaxyGeometry.computeBoundingSphere();
+
+      const galaxyMaterial = new THREE.PointsMaterial({
+        size: 0.62,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const galaxy = new THREE.Points(galaxyGeometry, galaxyMaterial);
+      galaxyGroup.add(galaxy);
+
+      const haloGeometry = new THREE.BufferGeometry();
+      const haloPositions = new Float32Array(PARTICLE_COUNT * 3);
+      const haloColors = new Float32Array(PARTICLE_COUNT * 3);
+      const haloBlue = new THREE.Color(0xaed7ff);
+      const haloWhite = new THREE.Color(0xffffff);
+
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const radius = Math.pow(Math.random(), 0.58) * MAX_RADIUS * 1.35;
+        const angle = Math.random() * TAU;
+        const wobble = randomGaussian() * 0.018;
+        const x = Math.cos(angle) * radius + wobble;
+        const z = Math.sin(angle) * radius + wobble;
+        const y = randomGaussian() * (0.45 + radius * 0.025);
+
+        const index = i * 3;
+        haloPositions[index] = x;
+        haloPositions[index + 1] = y;
+        haloPositions[index + 2] = z;
+
+        const t = THREE.MathUtils.clamp(radius / (MAX_RADIUS * 1.35), 0, 1);
+        haloWhite.lerpColors(haloBlue, haloWhite, t);
+        haloColors[index] = haloWhite.r;
+        haloColors[index + 1] = haloWhite.g;
+        haloColors[index + 2] = haloWhite.b;
+      }
+
+      haloGeometry.setAttribute("position", new THREE.BufferAttribute(haloPositions, 3));
+      haloGeometry.setAttribute("color", new THREE.BufferAttribute(haloColors, 3));
+
+      const haloMaterial = new THREE.PointsMaterial({
+        size: 1.18,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.38,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const halo = new THREE.Points(haloGeometry, haloMaterial);
+      galaxyGroup.add(halo);
+
+      const glow = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: createGlowTexture(),
+          transparent: true,
+          opacity: 0.72,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          color: 0xffffff
+        })
+      );
+      glow.scale.set(58, 58, 1);
+      galaxyGroup.add(glow);
+
+      const starCount = 2200;
+      const starPositions = new Float32Array(starCount * 3);
+      const starColors = new Float32Array(starCount * 3);
+
+      for (let i = 0; i < starCount; i++) {
+        const radius = 140 + Math.pow(Math.random(), 3.1) * 520;
+        const theta = Math.random() * TAU;
+        const phi = Math.acos(Math.random() * 2 - 1);
+
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.cos(phi);
+        const z = radius * Math.sin(phi) * Math.sin(theta);
+
+        const index = i * 3;
+        starPositions[index] = x;
+        starPositions[index + 1] = y;
+        starPositions[index + 2] = z;
+
+        const brightness = 0.55 + Math.random() * 0.45;
+        starColors[index] = brightness;
+        starColors[index + 1] = 0.78 + Math.random() * 0.22;
+        starColors[index + 2] = 1;
+      }
+
+      const starGeometry = new THREE.BufferGeometry();
+      starGeometry.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
+      starGeometry.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
+
+      const starMaterial = new THREE.PointsMaterial({
+        size: 1.15,
+        sizeAttenuation: true,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.82,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      const starField = new THREE.Points(starGeometry, starMaterial);
+      scene.add(starField);
+
+      const clock = new THREE.Clock();
+
+      function animate() {
+        requestAnimationFrame(animate);
+
+        const time = clock.getElapsedTime();
+
+        galaxyGroup.rotation.y = time * 0.055;
+        galaxyGroup.rotation.x = 0.08 + Math.sin(time * 0.12) * 0.015;
+        galaxyGroup.rotation.z = 0.16 + Math.sin(time * 0.09) * 0.018;
+
+        const orbitRadius = 92;
+        const orbitAngle = time * 0.075;
+        camera.position.set(
+          Math.sin(orbitAngle) * orbitRadius,
+          28 + Math.sin(time * 0.13) * 2.5,
+          Math.cos(orbitAngle) * orbitRadius
+        );
+        camera.lookAt(0, 0, 0);
+
+        starField.rotation.y = time * 0.006;
+        starField.rotation.x = time * 0.0015;
+
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      });
+
+      animate();
+    })();
+  </script>
+</body>
+</html>

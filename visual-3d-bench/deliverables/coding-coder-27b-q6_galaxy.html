@@ -1,0 +1,339 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spiral Galaxy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+canvas { display: block; }
+#ui {
+  position: fixed;
+  top: 24px;
+  left: 28px;
+  z-index: 10;
+  color: #fff;
+  pointer-events: none;
+}
+#ui h1 {
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  text-shadow: 0 0 20px rgba(100,150,255,0.6), 0 0 60px rgba(100,150,255,0.2);
+}
+#ui p {
+  font-size: 13px;
+  color: rgba(180,200,255,0.6);
+  letter-spacing: 2px;
+  font-weight: 300;
+}
+#ui .separator {
+  width: 60px;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(100,150,255,0.5), transparent);
+  margin: 10px 0;
+}
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <h1>Andromeda</h1>
+  <div class="separator"></div>
+  <p>50,000 particles</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+  const PARTICLE_COUNT = 50000;
+  const STAR_COUNT = 3000;
+  const ARM_COUNT = 4;
+  const ARM_SPREAD = 0.6;
+  const ARM_CURVE = 0.12;
+  const MAX_RADIUS = 80;
+  const CORE_RADIUS = 4;
+
+  // Scene
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x020208);
+
+  // Camera
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+  camera.position.set(0, 60, 90);
+  camera.lookAt(0, 0, 0);
+
+  // Renderer
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  document.body.appendChild(renderer.domElement);
+
+  // --- Background Stars ---
+  (function createStars() {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(STAR_COUNT * 3);
+    const colors = new Float32Array(STAR_COUNT * 3);
+    const sizes = new Float32Array(STAR_COUNT);
+
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = 500 + Math.random() * 500;
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = r * Math.cos(phi);
+
+      const brightness = 0.3 + Math.random() * 0.7;
+      const tint = Math.random();
+      colors[i * 3] = brightness * (0.8 + 0.2 * tint);
+      colors[i * 3 + 1] = brightness * (0.85 + 0.15 * tint);
+      colors[i * 3 + 2] = brightness;
+
+      sizes[i] = 0.5 + Math.random() * 1.5;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const mat = new THREE.PointsMaterial({
+      size: 1.5,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.8,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    scene.add(new THREE.Points(geo, mat));
+  })();
+
+  // --- Galaxy Particles ---
+  function createGalaxy() {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(PARTICLE_COUNT * 3);
+    const colors = new Float32Array(PARTICLE_COUNT * 3);
+    const sizes = new Float32Array(PARTICLE_COUNT);
+    const randoms = new Float32Array(PARTICLE_COUNT);
+
+    const colorCenter = new THREE.Color(0x4488ff);
+    const colorMid = new THREE.Color(0xffaa33);
+    const colorEdge = new THREE.Color(0xffdd55);
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      const armIndex = Math.floor(Math.random() * ARM_COUNT);
+      const armAngle = (armIndex / ARM_COUNT) * Math.PI * 2;
+
+      // Distribute particles: more in center, fewer at edges
+      const distFactor = Math.pow(Math.random(), 1.3);
+      const radius = CORE_RADIUS + distFactor * (MAX_RADIUS - CORE_RADIUS);
+
+      // Spiral angle
+      const spiralAngle = armAngle + radius * ARM_CURVE + (Math.random() - 0.5) * ARM_SPREAD;
+
+      // Add some spread perpendicular to arms
+      const spreadRadius = radius * (0.5 + Math.random() * 0.8);
+      const spreadAngle = spiralAngle + (Math.random() - 0.5) * 0.5;
+
+      // Core concentration
+      const coreBias = Math.exp(-radius / 8);
+      const coreRadius = Math.random() * CORE_RADIUS * 2;
+      const useCore = Math.random() < coreBias * 0.5;
+
+      let x, y, z;
+
+      if (useCore) {
+        const coreTheta = Math.random() * Math.PI * 2;
+        const corePhi = Math.acos(2 * Math.random() - 1);
+        x = coreRadius * Math.sin(corePhi) * Math.cos(coreTheta);
+        y = coreRadius * Math.cos(corePhi) * 0.3;
+        z = coreRadius * Math.sin(corePhi) * Math.sin(coreTheta);
+      } else {
+        x = spreadRadius * Math.cos(spreadAngle);
+        y = (Math.random() - 0.5) * 1.2 * (1 - distFactor * 0.5);
+        z = spreadRadius * Math.sin(spreadAngle);
+      }
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      // Color based on distance from center
+      const dist = Math.sqrt(x * x + z * z);
+      const t = Math.min(dist / MAX_RADIUS, 1);
+
+      let color;
+      if (t < 0.3) {
+        color = colorCenter.clone().lerp(colorMid, t / 0.3);
+      } else {
+        color = colorMid.clone().lerp(colorEdge, (t - 0.3) / 0.7);
+      }
+
+      // Add slight random variation
+      color.r += (Math.random() - 0.5) * 0.05;
+      color.g += (Math.random() - 0.5) * 0.05;
+      color.b += (Math.random() - 0.5) * 0.05;
+
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+
+      // Size: larger in center, smaller at edges
+      const baseSize = useCore ? (1.5 + Math.random() * 2.0) : (0.5 + Math.random() * 1.2);
+      sizes[i] = baseSize * (1 - t * 0.4);
+      randoms[i] = Math.random();
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    geo.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+    // Custom shader material for glow effect
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uPixelRatio: { value: renderer.getPixelRatio() }
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float aRandom;
+        varying vec3 vColor;
+        varying float vAlpha;
+        uniform float uTime;
+        uniform float uPixelRatio;
+
+        void main() {
+          vColor = color;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          float dist = length(mvPosition.xyz);
+
+          // Twinkle effect
+          float twinkle = 0.85 + 0.15 * sin(uTime * 1.5 + aRandom * 50.0);
+          vAlpha = twinkle * smoothstep(120.0, 20.0, dist);
+
+          gl_PointSize = size * uPixelRatio * (80.0 / -mvPosition.z);
+          gl_PointSize = max(gl_PointSize, 1.0);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        varying vec3 vColor;
+        varying float vAlpha;
+
+        void main() {
+          vec2 center = gl_PointCoord - 0.5;
+          float d = length(center);
+
+          // Soft glow circle
+          float alpha = smoothstep(0.5, 0.0, d);
+          alpha = pow(alpha, 1.5);
+
+          // Brighter core
+          float core = smoothstep(0.15, 0.0, d);
+          alpha = mix(alpha, 1.0, core * 0.5);
+
+          gl_FragColor = vec4(vColor * (1.0 + core * 0.8), alpha * vAlpha);
+        }
+      `,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+
+    return new THREE.Points(geo, mat);
+  }
+
+  const galaxy = createGalaxy();
+  scene.add(galaxy);
+
+  // --- Core Glow (extra layer) ---
+  (function createCoreGlow() {
+    const count = 2000;
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    const colors = new Float32Array(count * 3);
+    const sizes = new Float32Array(count);
+
+    for (let i = 0; i < count; i++) {
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(2 * Math.random() - 1);
+      const r = Math.random() * 6;
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.cos(phi) * 0.4;
+      positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+
+      const brightness = 0.8 + Math.random() * 0.2;
+      colors[i * 3] = brightness * 0.6;
+      colors[i * 3 + 1] = brightness * 0.7;
+      colors[i * 3 + 2] = brightness;
+
+      sizes[i] = 3 + Math.random() * 4;
+    }
+
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+
+    const mat = new THREE.PointsMaterial({
+      size: 4,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.3,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false
+    });
+
+    scene.add(new THREE.Points(geo, mat));
+  })();
+
+  // --- Animation ---
+  const clock = new THREE.Clock();
+  let cameraAngle = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    const elapsed = clock.getElapsedTime();
+    const delta = clock.getDelta();
+
+    // Rotate galaxy slowly
+    galaxy.rotation.y = elapsed * 0.03;
+
+    // Auto-rotate camera in a gentle orbit
+    cameraAngle += 0.0008;
+    const camRadius = 100;
+    const camHeight = 55 + Math.sin(elapsed * 0.15) * 10;
+    camera.position.x = Math.cos(cameraAngle) * camRadius;
+    camera.position.z = Math.sin(cameraAngle) * camRadius;
+    camera.position.y = camHeight;
+    camera.lookAt(0, 0, 0);
+
+    // Update shader time
+    galaxy.material.uniforms.uTime.value = elapsed;
+
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  // --- Resize ---
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    galaxy.material.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+  });
+})();
+</script>
+</body>
+</html>
+```

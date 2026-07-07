@@ -1,0 +1,687 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flight Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+canvas { display: block; }
+#hud { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+#hudCanvas { width: 100%; height: 100%; }
+#message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 24px; text-align: center; z-index: 20; text-shadow: 2px 2px 4px #000; display: none; }
+#message h1 { font-size: 48px; margin-bottom: 20px; }
+#message p { font-size: 18px; margin-bottom: 10px; }
+#message .key { color: #ff0; font-weight: bold; }
+#message .sub { color: #aaa; font-size: 14px; }
+#minimap { position: fixed; bottom: 20px; right: 20px; width: 200px; height: 200px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 15; }
+#minimapCanvas { width: 100%; height: 100%; border-radius: 50%; }
+</style>
+</head>
+<body>
+<canvas id="glCanvas"></canvas>
+<canvas id="hudCanvas"></canvas>
+<canvas id="minimapCanvas"></canvas>
+<div id="message"></div>
+<script>
+// ============================================================
+// VECTOR3
+// ============================================================
+class V3 {
+    constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}
+    add(v){return new V3(this.x+v.x,this.y+v.y,this.z+v.z);}
+    sub(v){return new V3(this.x-v.x,this.y-v.y,this.z-v.z);}
+    mul(s){return new V3(this.x*s,this.y*s,this.z*s);}
+    len(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);}
+    norm(){const l=this.len();return l>0?this.mul(1/l):new V3();}
+    dot(v){return this.x*v.x+this.y*v.y+this.z*v.z;}
+    cross(v){return new V3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x);}
+    clone(){return new V3(this.x,this.y,this.z);}
+}
+
+// ============================================================
+// MATRIX4
+// ============================================================
+class M4 {
+    constructor(){this.m=new Float32Array(16);this.identity();}
+    identity(){this.m.set([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);return this;}
+    multiply(b){
+        const a=this.m,c=b.m,r=new Float32Array(16);
+        for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+            r[j*4+i]=0;
+            for(let k=0;k<4;k++)r[j*4+i]+=a[k*4+i]*c[j*4+k];
+        }
+        this.m=r;return this;
+    }
+    static perspective(fov,aspect,near,far){
+        const r=new M4();const f=1/Math.tan(fov/2);const nf=1/(near-far);
+        r.m.set([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]);
+        return r;
+    }
+    static lookAt(eye,target,up){
+        const r=new M4();const z=eye.sub(target).norm();
+        const x=up.cross(z).norm();const y=z.cross(x).norm();
+        r.m.set([x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,
+            -x.dot(eye),-y.dot(eye),-z.dot(eye),1]);
+        return r;
+    }
+    static translate(x,y,z){
+        const r=new M4();r.m[12]=x;r.m[13]=y;r.m[14]=z;return r;
+    }
+    static scale(x,y,z){
+        const r=new M4();r.m[0]=x;r.m[5]=y;r.m[10]=z;return r;
+    }
+    static rotX(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[5]=c;r.m[6]=s;r.m[9]=-s;r.m[10]=c;return r;}
+    static rotY(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[0]=c;r.m[2]=-s;r.m[8]=s;r.m[10]=c;return r;}
+    static rotZ(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[0]=c;r.m[1]=s;r.m[4]=-s;r.m[5]=c;return r;}
+}
+
+// ============================================================
+// WEBGL SETUP
+// ============================================================
+const glCanvas = document.getElementById('glCanvas');
+const gl = glCanvas.getContext('webgl', {antialias: true, alpha: false});
+const hudCanvas = document.getElementById('hudCanvas');
+const hudCtx = hudCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimapCanvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+function resize(){
+    const w=window.innerWidth, h=window.innerHeight;
+    glCanvas.width=w;glCanvas.height=h;
+    hudCanvas.width=w;hudCanvas.height=h;
+    minimapCanvas.width=200;minimapCanvas.height=200;
+    gl.viewport(0,0,w,h);
+}
+window.addEventListener('resize',resize);
+resize();
+
+// ============================================================
+// SHADERS
+// ============================================================
+const vsTerrain = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+attribute vec3 aColor;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vColor;
+varying float vFog;
+void main(){
+    vec4 wp = uModel * vec4(aPos,1.0);
+    gl_Position = uProj * uView * wp;
+    vNorm = aNorm;
+    vColor = aColor;
+    vFog = length(uView * wp).xyz;
+}`;
+
+const fsTerrain = `
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vColor;
+varying float vFog;
+uniform vec3 uLightDir;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+void main(){
+    float diff = max(dot(normalize(vNorm), normalize(uLightDir)), 0.0);
+    float fog = clamp((vFog - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+    vec3 col = vColor * (0.3 + 0.7 * diff);
+    col = mix(col, uFogColor, fog);
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+const vsObj = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+attribute vec3 aColor;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vColor;
+varying float vFog;
+void main(){
+    vec4 wp = uModel * vec4(aPos,1.0);
+    gl_Position = uProj * uView * wp;
+    vNorm = aNorm;
+    vColor = aColor;
+    vFog = length(uView * wp).xyz;
+}`;
+
+const fsObj = `
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vColor;
+varying float vFog;
+uniform vec3 uLightDir;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+void main(){
+    float diff = max(dot(normalize(vNorm), normalize(uLightDir)), 0.0);
+    float fog = clamp((vFog - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+    vec3 col = vColor * (0.3 + 0.7 * diff);
+    col = mix(col, uFogColor, fog);
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+const vsSky = `
+attribute vec3 aPos;
+uniform mat4 uProj;
+uniform mat4 uView;
+varying float vFog;
+void main(){
+    vec4 pos = uView * vec4(aPos * 5000.0, 1.0);
+    pos.z = pos.w * 0.999;
+    gl_Position = uProj * pos;
+    vFog = 1.0;
+}`;
+
+const fsSky = `
+precision mediump float;
+varying float vFog;
+uniform float uTime;
+void main(){
+    float y = gl_FragCoord.y / 1000.0;
+    vec3 sky = mix(vec3(0.4,0.5,0.7), vec3(0.8,0.85,0.95), y);
+    float fog = vFog;
+    sky = mix(sky, vec3(0.7,0.75,0.85), fog);
+    gl_FragColor = vec4(sky, 1.0);
+}`;
+
+const vsContrail = `
+attribute vec3 aPos;
+attribute float aAlpha;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying float vAlpha;
+void main(){
+    gl_Position = uProj * uView * uModel * vec4(aPos,1.0);
+    vAlpha = aAlpha;
+}`;
+
+const fsContrail = `
+precision mediump float;
+varying float vAlpha;
+void main(){
+    gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha);
+}`;
+
+function compileShader(src, type){
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
+        console.error(gl.getShaderInfoLog(s));
+    }
+    return s;
+}
+
+function createProgram(vs, fs){
+    const p = gl.createProgram();
+    gl.attachShader(p, compileShader(vs, gl.VERTEX_SHADER));
+    gl.attachShader(p, compileShader(fs, gl.FRAGMENT_SHADER));
+    gl.linkProgram(p);
+    if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
+        console.error(gl.getProgramInfoLog(p));
+    }
+    return p;
+}
+
+const terrainProg = createProgram(vsTerrain, fsTerrain);
+const objProg = createProgram(vsObj, fsObj);
+const skyProg = createProgram(vsSky, fsSky);
+const contrailProg = createProgram(vsContrail, fsContrail);
+
+// ============================================================
+// GEOMETRY HELPERS
+// ============================================================
+function createBuffer(data){
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
+    return buf;
+}
+
+function createIndexBuffer(data){
+    const buf = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data), gl.STATIC_DRAW);
+    return buf;
+}
+
+// ============================================================
+// TERRAIN GENERATION
+// ============================================================
+const TERRAIN_SIZE = 4000;
+const TERRAIN_SEG = 100;
+const TERRAIN_HALF = TERRAIN_SIZE / 2;
+
+function noise2D(x, z){
+    const n = Math.sin(x*0.01 + z*0.013)*0.5 + Math.sin(x*0.023 - z*0.017)*0.3 + Math.sin(x*0.007 + z*0.019)*0.2;
+    return n;
+}
+
+function getTerrainHeight(x, z){
+    const nx = (x + TERRAIN_HALF) / TERRAIN_SIZE;
+    const nz = (z + TERRAIN_HALF) / TERRAIN_SIZE;
+    const h = noise2D(x, z) * 80;
+    // Flatten center area for runway
+    const cx = Math.abs(x); const cz = Math.abs(z);
+    if(cx < 30 && cz < 200) return -5;
+    // Mountain peaks
+    const peak = Math.exp(-((x*0.005)**2 + (z*0.005)**2)) * 120;
+    return Math.max(-10, h + peak);
+}
+
+function generateTerrain(){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    for(let iz = 0; iz <= TERRAIN_SEG; iz++){
+        for(let ix = 0; ix <= TERRAIN_SEG; ix++){
+            const x = -TERRAIN_HALF + (ix / TERRAIN_SEG) * TERRAIN_SIZE;
+            const z = -TERRAIN_HALF + (iz / TERRAIN_SEG) * TERRAIN_SIZE;
+            const y = getTerrainHeight(x, z);
+            verts.push(x, y, z);
+
+            // Normal approximation
+            const hx1 = getTerrainHeight(x+1, z);
+            const hx2 = getTerrainHeight(x-1, z);
+            const hz1 = getTerrainHeight(x, z+1);
+            const hz2 = getTerrainHeight(x, z-1);
+            const n = new V3(hx2-hx1, 2, hz2-hz1).norm();
+            norms.push(n.x, n.y, n.z);
+
+            // Color based on height
+            if(y < -2){
+                colors.push(0.2, 0.35, 0.6); // water
+            } else if(y < 5){
+                colors.push(0.25, 0.55, 0.15); // grass
+            } else if(y < 30){
+                colors.push(0.35, 0.5, 0.2); // dark grass
+            } else if(y < 60){
+                colors.push(0.5, 0.45, 0.35); // dirt
+            } else {
+                colors.push(0.7, 0.65, 0.6); // rock/snow
+            }
+        }
+    }
+
+    for(let iz = 0; iz < TERRAIN_SEG; iz++){
+        for(let ix = 0; ix < TERRAIN_SEG; ix++){
+            const a = iz * (TERRAIN_SEG+1) + ix;
+            const b = a + 1;
+            const c = a + TERRAIN_SEG + 1;
+            const d = c + 1;
+            indices.push(a,c,b, b,c,d);
+        }
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// RUNWAY
+// ============================================================
+function generateRunway(){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    // Main runway
+    const rw = 40, rl = 400;
+    const rw2 = 60, rl2 = 600;
+
+    // Runway surface
+    for(let i = 0; i < 20; i++){
+        const t = i / 19;
+        const x = -rl/2 + t * rl;
+        verts.push(x, -4.9, -rw/2);
+        verts.push(x, -4.9, rw/2);
+        verts.push(x, -5, -rw2/2);
+        verts.push(x, -5, rw2/2);
+    }
+
+    for(let i = 0; i < 19; i++){
+        const a = i*4, b = a+1, c = a+2, d = a+3;
+        const e = a+4, f = e+1, g = e+2, h = e+3;
+        indices.push(a,c,b, b,c,d, e,g,f, f,g,h, a,b,e, e,b,f, c,d,g, g,d,h);
+    }
+
+    for(let i = 0; i < 20; i++){
+        const t = i / 19;
+        const x = -rl/2 + t * rl;
+        const y = -4.8;
+        const z1 = -rw/2, z2 = rw/2;
+        // White stripes
+        if(i % 2 === 0){
+            colors.push(1,1,1); colors.push(1,1,1); colors.push(1,1,1); colors.push(1,1,1);
+        } else {
+            colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7);
+        }
+        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0);
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// CHECKPOINT RINGS
+// ============================================================
+function generateRing(radius, segments, color){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    for(let i = 0; i <= segments; i++){
+        const a = (i / segments) * Math.PI * 2;
+        const x = Math.cos(a) * radius;
+        const z = Math.sin(a) * radius;
+        verts.push(x, 0, z);
+        verts.push(x, 3, z);
+        const n = new V3(Math.cos(a), 0, Math.sin(a)).norm();
+        norms.push(n.x, n.y, n.z);
+        norms.push(n.x, n.y, n.z);
+        colors.push(color[0], color[1], color[2]);
+        colors.push(color[0], color[1], color[2]);
+    }
+
+    for(let i = 0; i < segments; i++){
+        const a = i*2, b = a+1, c = a+2, d = a+3;
+        indices.push(a,c,b, b,c,d);
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// OBSTACLES (towers, balloons)
+// ============================================================
+function generateTower(height, radius, segments){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    for(let i = 0; i <= segments; i++){
+        const a = (i / segments) * Math.PI * 2;
+        const x = Math.cos(a) * radius;
+        const z = Math.sin(a) * radius;
+        verts.push(x, 0, z);
+        verts.push(x, height, z);
+        const n = new V3(Math.cos(a), 0, Math.sin(a)).norm();
+        norms.push(n.x, n.y, n.z);
+        norms.push(n.x, n.y, n.z);
+        colors.push(0.6, 0.2, 0.2);
+        colors.push(0.6, 0.2, 0.2);
+    }
+
+    for(let i = 0; i < segments; i++){
+        const a = i*2, b = a+1, c = a+2, d = a+3;
+        indices.push(a,c,b, b,c,d);
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+function generateBalloon(radius, segments){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    for(let i = 0; i <= 12; i++){
+        const phi = (i / 12) * Math.PI;
+        const y = Math.cos(phi) * radius;
+        const r = Math.sin(phi) * radius;
+        for(let j = 0; j <= segments; j++){
+            const a = (j / segments) * Math.PI * 2;
+            const x = Math.cos(a) * r;
+            const z = Math.sin(a) * r;
+            verts.push(x, y, z);
+            const n = new V3(x, y, z).norm();
+            norms.push(n.x, n.y, n.z);
+            colors.push(1, 0.8, 0);
+            colors.push(1, 0.8, 0);
+        }
+    }
+
+    for(let i = 0; i < 12; i++){
+        for(let j = 0; j < segments; j++){
+            const a = i*(segments+1)+j;
+            const b = a+1;
+            const c = a+segments+1;
+            const d = c+1;
+            indices.push(a,c,b, b,c,d);
+        }
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// SKY DOME
+// ============================================================
+function generateSkyDome(){
+    const verts = [];
+    const normals = [];
+    const indices = [];
+    const seg = 16;
+
+    for(let i = 0; i <= seg; i++){
+        const phi = (i / seg) * Math.PI * 0.5;
+        const y = Math.cos(phi);
+        const r = Math.sin(phi);
+        for(let j = 0; j <= seg; j++){
+            const a = (j / seg) * Math.PI * 2;
+            const x = Math.cos(a) * r;
+            const z = Math.sin(a) * r;
+            verts.push(x, y, z);
+            normals.push(x, y, z);
+        }
+    }
+
+    for(let i = 0; i < seg; i++){
+        for(let j = 0; j < seg; j++){
+            const a = i*(seg+1)+j;
+            const b = a+1;
+            const c = a+seg+1;
+            const d = c+1;
+            indices.push(a,c,b, b,c,d);
+        }
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(normals),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// AIRCRAFT MODEL
+// ============================================================
+function generateAircraft(){
+    const verts = [];
+    const norms = [];
+    const colors = [];
+    const indices = [];
+
+    // Fuselage (cylinder)
+    const fusSeg = 12;
+    const fusLen = 6;
+    const fusR = 0.6;
+    for(let i = 0; i < fusSeg; i++){
+        const a = (i / fusSeg) * Math.PI * 2;
+        const x1 = Math.cos(a) * fusR;
+        const z1 = Math.sin(a) * fusR;
+        const x2 = Math.cos(a) * fusR * 0.7;
+        const z2 = Math.sin(a) * fusR * 0.7;
+        verts.push(x1, 0, -fusLen/2); verts.push(x2, 0, fusLen/2);
+        const n = new V3(x1, 0, z1).norm();
+        norms.push(n.x, n.y, n.z); norms.push(n.x, n.y, n.z);
+        colors.push(0.8, 0.85, 0.9); colors.push(0.8, 0.85, 0.9);
+    }
+    for(let i = 0; i < fusSeg; i++){
+        const a = i*fusSeg*2, b = a+1, c = a+2, d = a+3;
+        indices.push(a,c,b, b,c,d);
+    }
+
+    // Wings
+    const wingW = 8, wingH = 1.5;
+    for(let i = 0; i < 2; i++){
+        const side = i === 0 ? -1 : 1;
+        const ox = side * wingW * 0.5;
+        verts.push(ox - wingW*0.5, 0, 0);
+        verts.push(ox + wingW*0.5, 0, 0);
+        verts.push(ox - wingW*0.5, 0, wingH*0.3);
+        verts.push(ox + wingW*0.5, 0, wingH*0.3);
+        verts.push(ox - wingW*0.5, -0.1, 0);
+        verts.push(ox + wingW*0.5, -0.1, 0);
+        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,-1,0); norms.push(0,-1,0);
+        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
+        colors.push(0.6,0.65,0.7); colors.push(0.6,0.65,0.7);
+    }
+    // Wing indices
+    for(let i = 0; i < 2; i++){
+        const a = i*6, b = a+1, c = a+2, d = a+3, e = a+4, f = a+5;
+        indices.push(a,c,b, b,c,d, a,b,e, e,b,f, c,d,f, f,d,e);
+    }
+
+    // Tail wing
+    for(let i = 0; i < 2; i++){
+        const side = i === 0 ? -1 : 1;
+        const ox = side * 3;
+        verts.push(ox - 2, 0, fusLen/2);
+        verts.push(ox + 2, 0, fusLen/2);
+        verts.push(ox - 2, 0, 1.2);
+        verts.push(ox + 2, 0, 1.2);
+        verts.push(ox - 2, -0.1, fusLen/2);
+        verts.push(ox + 2, -0.1, fusLen/2);
+        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0);
+        norms.push(0,-1,0); norms.push(0,-1,0);
+        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
+        colors.push(0.6,0.65,0.7); colors.push(0.6,0.65,0.7);
+    }
+    for(let i = 0; i < 2; i++){
+        const a = 12+i*6, b = a+1, c = a+2, d = a+3, e = a+4, f = a+5;
+        indices.push(a,c,b, b,c,d, a,b,e, e,b,f, c,d,f, f,d,e);
+    }
+
+    // Vertical stabilizer
+    for(let i = 0; i < 2; i++){
+        const side = i === 0 ? -1 : 1;
+        verts.push(0, 0, fusLen/2);
+        verts.push(0, 2.5, fusLen/2);
+        verts.push(0, 0, fusLen/2 - 1);
+        verts.push(0, 2.5, fusLen/2 - 1);
+        norms.push(side,0,0); norms.push(side,0,0); norms.push(side,0,0); norms.push(side,0,0);
+        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
+    }
+    for(let i = 0; i < 2; i++){
+        const a = 24+i*4, b = a+1, c = a+2, d = a+3;
+        indices.push(a,c,b, b,c,d, a,b,c, c,b,d);
+    }
+
+    // Nose cone
+    for(let i = 0; i < 8; i++){
+        const a1 = (i/8)*Math.PI*2, a2 = ((i+1)/8)*Math.PI*2;
+        const r1 = fusR * 0.7, r2 = 0;
+        const z1 = fusLen/2 - 1, z2 = fusLen/2 + 1;
+        verts.push(Math.cos(a1)*r1, Math.sin(a1)*r1, z1);
+        verts.push(Math.cos(a2)*r1, Math.sin(a2)*r1, z1);
+        verts.push(Math.cos(a1)*r2, Math.sin(a1)*r2, z2);
+        verts.push(Math.cos(a2)*r2, Math.sin(a2)*r2, z2);
+        const n1 = new V3(Math.cos(a1), Math.sin(a1), 0).norm();
+        norms.push(n1.x, n1.y, n1.z); norms.push(n1.x, n1.y, n1.z);
+        norms.push(0,0,1); norms.push(0,0,1);
+        colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3);
+    }
+    for(let i = 0; i < 8; i++){
+        const a = i*4, b = a+1, c = a+2, d = a+3;
+        indices.push(a,c,b, b,c,d);
+    }
+
+    return {
+        vBuf: createBuffer(verts),
+        nBuf: createBuffer(norms),
+        cBuf: createBuffer(colors),
+        iBuf: createIndexBuffer(indices),
+        count: indices.length
+    };
+}
+
+// ============================================================
+// GAME STATE
+// ============================================================
+let gameState = 'menu'; // menu, playing, won, lost
+
+const keys = {};
+window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
+window.addEventListener('keyup', e => { keys[e.code] = false; e.preventDefault(); });
+
+const aircraft = {
+    pos: new V3(0, 50, -500),
+    vel: new V3(0, 0, 0),
+    heading: 0,
+    pitch: 0,
+    roll: 0,
+    throttle: 0.3,
+    yawRate: 0,
+    altitude: 50,
+    airspeed: 0,
+    vSpeed: 0,
+    engineOn: true
+};
+
+let cameraMode = 'chase'; // chase, cockpit
+let cameraOffset = new V3(0, 5, -20);
+let cameraLookAt = new V3(0, 0, -50);
+
+// Checkpoints
+const checkpoints = [];
+const checkpointPositions = [
+    new V3(0, 5

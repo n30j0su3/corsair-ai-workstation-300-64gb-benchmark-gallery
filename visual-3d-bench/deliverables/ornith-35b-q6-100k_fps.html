@@ -1,0 +1,643 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Raycast FPS</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; cursor: none; font-family: 'Courier New', monospace; }
+canvas { display: block; }
+#overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 10; flex-direction: column;
+}
+#overlay h1 { color: #f44; font-size: 48px; text-shadow: 0 0 20px #f00; margin-bottom: 20px; }
+#overlay p { color: #ccc; font-size: 18px; margin: 5px 0; }
+#overlay .start-btn {
+  margin-top: 30px; padding: 15px 40px; font-size: 24px;
+  background: #f44; color: #fff; border: none; cursor: pointer;
+  font-family: 'Courier New', monospace; text-transform: uppercase;
+  transition: background 0.2s;
+}
+#overlay .start-btn:hover { background: #f66; }
+#pause-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.7); z-index: 9; flex-direction: column;
+}
+#pause-screen h2 { color: #ff0; font-size: 42px; }
+#pause-screen p { color: #aaa; font-size: 18px; margin-top: 10px; }
+#win-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 11; flex-direction: column;
+}
+#win-screen h2 { font-size: 52px; text-shadow: 0 0 30px currentColor; }
+#lose-screen {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.85); z-index: 11; flex-direction: column;
+}
+#lose-screen h2 { font-size: 52px; text-shadow: 0 0 30px #f00; }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="overlay">
+  <h1>RAYCAST FPS</h1>
+  <p>WASD - Move | Mouse - Aim | Left Click - Shoot</p>
+  <p>R - Reload | Shift - Sprint | P/Esc - Pause</p>
+  <p>Find the EXIT to win. Kill enemies along the way.</p>
+  <button class="start-btn" id="start-btn">PLAY</button>
+</div>
+<div id="pause-screen"><h2>PAUSED</h2><p>Press ESC or P to resume</p></div>
+<div id="win-screen"><h2 style="color:#0f0;">YOU WIN!</h2><p style="color:#aaa;font-size:20px;">The exit is behind you.</p><button class="start-btn" onclick="location.reload()" style="margin-top:20px;">RESTART</button></div>
+<div id="lose-screen"><h2>YOU DIED</h2><p style="color:#aaa;font-size:20px;">The enemies got you.</p><button class="start-btn" onclick="location.reload()" style="margin-top:20px;">RESTART</button></div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width = window.innerWidth;
+const H = canvas.height = window.innerHeight;
+window.addEventListener('resize', () => { canvas.width = W = window.innerWidth; canvas.height = H = window.innerHeight; });
+
+// --- MAP GENERATION ---
+const MAP_W = 24, MAP_H = 24;
+let map = [];
+let entities = [];
+let exitPos = { x: 0, y: 0 };
+let particles = [];
+let projectiles = [];
+let damageFlash = 0;
+let gameStarted = false;
+let gameOver = false;
+
+function generateMap() {
+  map = [];
+  for (let y = 0; y < MAP_H; y++) {
+    map[y] = [];
+    for (let x = 0; x < MAP_W; x++) {
+      map[y][x] = 1;
+    }
+  }
+  // Recursive division for rooms and corridors
+  function carve(x1, y1, x2, y2, dir, depth) {
+    if (depth <= 0 || x2 - x1 < 4 || y2 - y1 < 4) return;
+    if (dir === 'h') {
+      const wy = y1 + 1 + Math.floor(Math.random() * (y2 - y1 - 3));
+      const wx = x1 + 2 + Math.floor(Math.random() * (x2 - x1 - 4));
+      const gap = wx + 1 + Math.floor(Math.random() * 2);
+      for (let x = x1; x <= x2; x++) {
+        if (x >= wx && x < gap) { map[wy][x] = 0; map[wy + 1][x] = 0; }
+      }
+      for (let y = y1; y <= y2; y++) {
+        if (y === wy || y === wy + 1) map[y][wx] = 0;
+      }
+      carve(x1, y1, wx - 1, wy - 2, 'h', depth - 1);
+      carve(wx + 2, y1, x2, wy - 2, 'h', depth - 1);
+      carve(wx + 2, wy + 2, x2, y2, 'h', depth - 1);
+      carve(x1, wy + 2, wx - 1, y2, 'h', depth - 1);
+    } else {
+      const wx = x1 + 1 + Math.floor(Math.random() * (x2 - x1 - 3));
+      const wy = y1 + 2 + Math.floor(Math.random() * (y2 - y1 - 4));
+      const gap = wy + 1 + Math.floor(Math.random() * 2);
+      for (let y = y1; y <= y2; y++) {
+        if (y >= wy && y < gap) { map[y][wx] = 0; map[y][wx + 1] = 0; }
+      }
+      for (let x = x1; x <= x2; x++) {
+        if (x === wx || x === wx + 1) map[wy][x] = 0;
+      }
+      carve(x1, y1, wx - 2, wy - 1, 'v', depth - 1);
+      carve(wx + 2, y1, x2, wy - 1, 'v', depth - 1);
+      carve(wx + 2, wy + 2, x2, y2, 'v', depth - 1);
+      carve(x1, wy + 2, wx - 2, y2, 'v', depth - 1);
+    }
+  }
+  carve(1, 1, MAP_W - 2, MAP_H - 2, 'h', 4);
+
+  // Ensure start area is clear
+  for (let y = 2; y <= 4; y++)
+    for (let x = 2; x <= 4; x++)
+      map[y][x] = 0;
+
+  // Find exit position (far from start)
+  for (let y = MAP_H - 5; y >= MAP_H - 1; y--) {
+    for (let x = MAP_W - 5; x >= MAP_W - 1; x--) {
+      if (map[y][x] === 0) { exitPos = { x: x + 0.5, y: y + 0.5 }; return; }
+    }
+  }
+  // Fallback
+  for (let y = MAP_H - 1; y >= 0; y--) {
+    for (let x = MAP_W - 1; x >= 0; x--) {
+      if (map[y][x] === 0) { exitPos = { x: x + 0.5, y: y + 0.5 }; return; }
+    }
+  }
+}
+
+function spawnEntities() {
+  entities = [];
+  particles = [];
+  projectiles = [];
+
+  const emptySpots = [];
+  for (let y = 1; y < MAP_H - 1; y++) {
+    for (let x = 1; x < MAP_W - 1; x++) {
+      if (map[y][x] === 0) {
+        const dist = Math.hypot(x - 3, y - 3);
+        if (dist > 5) emptySpots.push({ x: x + 0.5, y: y + 0.5 });
+      }
+    }
+  }
+  shuffle(emptySpots);
+
+  // Enemies
+  const enemyTypes = [
+    { name: 'grunt', hp: 30, speed: 0.015, damage: 5, color: '#f44', size: 0.3, range: 8, attackRate: 60, projSpeed: 0.08 },
+    { name: 'runner', hp: 20, speed: 0.03, damage: 8, color: '#ff0', size: 0.25, range: 2, attackRate: 30, projSpeed: 0 },
+    { name: 'shooter', hp: 25, speed: 0.01, damage: 10, color: '#f0f', size: 0.3, range: 12, attackRate: 90, projSpeed: 0.06 },
+    { name: 'tank', hp: 80, speed: 0.008, damage: 15, color: '#fa0', size: 0.4, range: 6, attackRate: 45, projSpeed: 0.05 },
+  ];
+
+  for (let i = 0; i < 12; i++) {
+    if (emptySpots.length === 0) break;
+    const pos = emptySpots.pop();
+    const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    entities.push({
+      ...type,
+      x: pos.x, y: pos.y,
+      maxHp: type.hp,
+      type: 'enemy',
+      state: 'idle',
+      alertTimer: 0,
+      attackCooldown: 0,
+      hitFlash: 0,
+      angle: Math.random() * Math.PI * 2,
+      moveTimer: 0,
+      dirX: 0, dirY: 0,
+    });
+  }
+
+  // Ammo pickups
+  for (let i = 0; i < 5; i++) {
+    if (emptySpots.length === 0) break;
+    const pos = emptySpots.pop();
+    entities.push({ x: pos.x, y: pos.y, type: 'ammo', size: 0.2, bobPhase: Math.random() * Math.PI * 2 });
+  }
+
+  // Health pickups
+  for (let i = 0; i < 4; i++) {
+    if (emptySpots.length === 0) break;
+    const pos = emptySpots.pop();
+    entities.push({ x: pos.x, y: pos.y, type: 'health', size: 0.2, bobPhase: Math.random() * Math.PI * 2 });
+  }
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+// --- PLAYER ---
+let player = {
+  x: 3.5, y: 3.5, angle: 0, pitch: 0,
+  hp: 100, maxHp: 100,
+  speed: 0.04, sprintSpeed: 0.07,
+  strafeSpeed: 0.035,
+  ammo: 12, maxAmmo: 12,
+  reserveAmmo: 36,
+  fireRate: 8, fireCooldown: 0,
+  reloading: false, reloadTimer: 0, reloadDuration: 90,
+  shooting: false,
+  bobPhase: 0, bobAmount: 0,
+  weaponRecoil: 0,
+  kills: 0,
+  score: 0,
+};
+
+// --- INPUT ---
+const keys = {};
+let mouseDX = 0;
+let locked = false;
+
+document.addEventListener('keydown', e => { keys[e.code] = true; if (e.code === 'KeyP' || e.code === 'Escape') togglePause(); });
+document.addEventListener('keyup', e => { keys[e.code] = false; });
+document.addEventListener('mousemove', e => { if (locked) { mouseDX += e.movementX; } });
+document.addEventListener('mousedown', e => { if (locked && e.button === 0) { player.shooting = true; shoot(); } });
+document.addEventListener('mouseup', e => { if (e.button === 0) player.shooting = false; });
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  document.getElementById('overlay').style.display = 'none';
+  canvas.requestPointerLock();
+  gameStarted = true;
+  initGame();
+});
+
+document.addEventListener('pointerlockchange', () => {
+  locked = !!document.pointerLockElement;
+});
+
+function togglePause() {
+  if (gameOver) return;
+  const ps = document.getElementById('pause-screen');
+  if (ps.style.display === 'flex') {
+    ps.style.display = 'none';
+    canvas.requestPointerLock();
+  } else {
+    ps.style.display = 'flex';
+    document.exitPointerLock();
+  }
+}
+
+// --- RAYCASTING ---
+const FOV = Math.PI / 3;
+const HALF_FOV = FOV / 2;
+const NUM_RAYS = Math.min(W, 960);
+const RAY_STEP = FOV / NUM_RAYS;
+const MAX_DEPTH = 20;
+const STRIP_W = W / W; // 1 pixel per column for full res
+
+function castRay(ox, oy, angle) {
+  const sin = Math.sin(angle), cos = Math.cos(angle);
+  const dx = cos, dy = sin;
+
+  // DDA algorithm
+  let mapX = Math.floor(ox), mapY = Math.floor(oy);
+  const stepX = dx > 0 ? 1 : -1;
+  const stepY = dy > 0 ? 1 : -1;
+  let sideDistX = dx > 0 ? (mapX + 1 - ox) / dx : (ox - mapX) / (-dx);
+  let sideDistY = dy > 0 ? (mapY + 1 - oy) / dy : (oy - mapY) / (-dy);
+  if (!isFinite(sideDistX)) sideDistX = 9999;
+  if (!isFinite(sideDistY)) sideDistY = 9999;
+
+  let side = 0, dist = 0;
+  for (let i = 0; i < 64; i++) {
+    if (sideDistX < sideDistY) {
+      sideDistX += 1 / (dx || 0.0001);
+      mapX += stepX; side = 0;
+    } else {
+      sideDistY += 1 / (dy || 0.0001);
+      mapY += stepY; side = 1;
+    }
+    if (mapY >= 0 && mapY < MAP_H && mapX >= 0 && mapX < MAP_W && map[mapY][mapX] > 0) {
+      dist = side === 0 ? (mapX - ox + (1 - stepX) / 2) / dx : (mapY - oy + (1 - stepY) / 2) / dy;
+      if (!isFinite(dist)) dist = 9999;
+      // Texture coordinate
+      let wallX;
+      if (side === 0) wallX = oy + dist * dy;
+      else wallX = ox + dist * dx;
+      wallX -= Math.floor(wallX);
+      return { dist: Math.max(dist, 0.01), side, wallX, mapX, mapY };
+    }
+  }
+  return { dist: 9999, side: 0, wallX: 0, mapX: 0, mapY: 0 };
+}
+
+// --- SHOOTING ---
+function shoot() {
+  if (player.ammo <= 0 || player.reloading || player.fireCooldown > 0 || gameOver) return;
+  player.ammo--;
+  player.fireCooldown = player.fireRate;
+  player.weaponRecoil = 8;
+  player.shooting = true;
+
+  // Muzzle flash particles
+  for (let i = 0; i < 5; i++) {
+    particles.push({
+      x: W * 0.5 + (Math.random() - 0.5) * 20,
+      y: H * 0.6 + (Math.random() - 0.5) * 10,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -Math.random() * 3 - 1,
+      life: 8, maxLife: 8,
+      color: `hsl(${30 + Math.random() * 20}, 100%, ${50 + Math.random() * 30}%)`,
+      size: 2 + Math.random() * 3,
+    });
+  }
+
+  // Hitscan
+  const hitDist = 20;
+  const rayAngle = player.angle;
+  const result = castRay(player.x, player.y, rayAngle);
+
+  // Check enemies
+  let closestHit = null, closestDist = result.dist;
+  for (const ent of entities) {
+    if (ent.type !== 'enemy') continue;
+    if (ent.hp <= 0) continue;
+    const dx = ent.x - player.x, dy = ent.y - player.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist >= closestDist) continue;
+    const angle = Math.atan2(dy, dx);
+    let diff = angle - rayAngle;
+    while (diff > Math.PI) diff -= 2 * Math.PI;
+    while (diff < -Math.PI) diff += 2 * Math.PI;
+    const hitWidth = ent.size / dist;
+    if (Math.abs(diff) < hitWidth && dist < hitDist) {
+      closestHit = ent;
+      closestDist = dist;
+    }
+  }
+
+  if (closestHit) {
+    const dmg = 10 + Math.random() * 5;
+    closestHit.hp -= dmg;
+    closestHit.hitFlash = 6;
+    closestHit.state = 'chase';
+    // Blood particles
+    for (let i = 0; i < 8; i++) {
+      particles.push({
+        x: W * 0.5 + (Math.random() - 0.5) * 40,
+        y: H * 0.5 + (Math.random() - 0.5) * 40,
+        vx: (Math.random() - 0.5) * 6,
+        vy: (Math.random() - 0.5) * 6,
+        life: 15 + Math.random() * 10, maxLife: 25,
+        color: `hsl(0, ${60 + Math.random() * 40}%, ${30 + Math.random() * 30}%)`,
+        size: 2 + Math.random() * 3,
+      });
+    }
+    if (closestHit.hp <= 0) {
+      player.kills++;
+      player.score += { grunt: 100, runner: 150, shooter: 200, tank: 300 }[closestHit.name] || 100;
+    }
+  }
+
+  // Check wall hits for sparks
+  if (result.dist < closestDist && result.dist < hitDist) {
+    for (let i = 0; i < 3; i++) {
+      particles.push({
+        x: result.mapX + 0.5, y: result.mapY + 0.5,
+        vx: (Math.random() - 0.5) * 0.02,
+        vy: (Math.random() - 0.5) * 0.02,
+        life: 10, maxLife: 10,
+        color: '#ff0', size: 0.05,
+      });
+    }
+  }
+
+  // Alert nearby enemies
+  for (const ent of entities) {
+    if (ent.type === 'enemy' && ent.hp > 0) {
+      const d = Math.hypot(ent.x - player.x, ent.y - player.y);
+      if (d < 15) ent.state = 'chase';
+    }
+  }
+
+  if (player.ammo <= 0 && player.reserveAmmo > 0) reload();
+}
+
+function reload() {
+  if (player.reloading || player.ammo === player.maxAmmo || player.reserveAmmo <= 0) return;
+  player.reloading = true;
+  player.reloadTimer = player.reloadDuration;
+}
+
+// --- ENEMY AI ---
+function updateEnemies() {
+  for (const ent of entities) {
+    if (ent.type !== 'enemy' || ent.hp <= 0) continue;
+    if (ent.hitFlash > 0) ent.hitFlash--;
+    if (ent.attackCooldown > 0) ent.attackCooldown--;
+
+    const dx = player.x - ent.x, dy = player.y - ent.y;
+    const dist = Math.hypot(dx, dy);
+    const angleToPlayer = Math.atan2(dy, dx);
+
+    // Line of sight check
+    const hasLOS = !wallBetween(ent.x, ent.y, player.x, player.y);
+
+    switch (ent.state) {
+      case 'idle':
+        ent.moveTimer--;
+        if (ent.moveTimer <= 0) {
+          ent.angle = Math.random() * Math.PI * 2;
+          ent.moveTimer = 60 + Math.random() * 120;
+        }
+        if (hasLOS && dist < 10) ent.state = 'chase';
+        break;
+      case 'chase':
+        if (!hasLOS && dist > 8) { ent.state = 'idle'; break; }
+        if (hasLOS) ent.alertTimer++;
+        else ent.alertTimer--;
+        if (ent.alertTimer > 30) {
+          // Move toward player
+          const moveAngle = angleToPlayer;
+          const spd = ent.speed;
+          const nx = ent.x + Math.cos(moveAngle) * spd;
+          const ny = ent.y + Math.sin(moveAngle) * spd;
+          if (!collidesWall(nx, ent.y, ent.size)) ent.x = nx;
+          if (!collidesWall(ent.x, ny, ent.size)) ent.y = ny;
+          ent.angle = moveAngle;
+
+          // Melee attack for runners
+          if (ent.name === 'runner' && dist < ent.size + 0.4 && ent.attackCooldown <= 0) {
+            player.hp -= ent.damage;
+            damageFlash = 10;
+            ent.attackCooldown = ent.attackRate;
+          }
+        }
+        break;
+      case 'attack':
+        if (dist > ent.range) { ent.state = 'chase'; break; }
+        // Shoot at player
+        if (ent.attackCooldown <= 0 && ent.projSpeed > 0) {
+          projectiles.push({
+            x: ent.x, y: ent.y,
+            vx: Math.cos(angleToPlayer) * ent.projSpeed,
+            vy: Math.sin(angleToPlayer) * ent.projSpeed,
+            damage: ent.damage, owner: 'enemy', life: 120,
+            color: ent.color,
+          });
+          ent.attackCooldown = ent.attackRate;
+        }
+        break;
+    }
+
+    // Shooter shoots when in range
+    if ((ent.name === 'shooter' || ent.name === 'tank') && hasLOS && dist < ent.range && ent.attackCooldown <= 0 && ent.projSpeed > 0) {
+      projectiles.push({
+        x: ent.x, y: ent.y,
+        vx: Math.cos(angleToPlayer) * ent.projSpeed,
+        vy: Math.sin(angleToPlayer) * ent.projSpeed,
+        damage: ent.damage, owner: 'enemy', life: 120,
+        color: ent.color,
+      });
+      ent.attackCooldown = ent.attackRate;
+    }
+
+    // State transitions
+    if (hasLOS && dist < ent.range && ent.name !== 'runner') ent.state = 'attack';
+    else if (hasLOS && dist < 10) ent.state = 'chase';
+    else if (ent.alertTimer <= 0) ent.state = 'idle';
+  }
+}
+
+function wallBetween(x1, y1, x2, y2) {
+  const dist = Math.hypot(x2 - x1, y2 - y1);
+  const steps = Math.ceil(dist * 10);
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const px = x1 + (x2 - x1) * t;
+    const py = y1 + (y2 - y1) * t;
+    const mx = Math.floor(px), my = Math.floor(py);
+    if (mx >= 0 && mx < MAP_W && my >= 0 && my < MAP_H && map[my][mx] > 0) return true;
+  }
+  return false;
+}
+
+function collidesWall(x, y, radius) {
+  const checks = [[-0.25, -0.25], [0.25, -0.25], [-0.25, 0.25], [0.25, 0.25]];
+  for (const [ox, oy] of checks) {
+    const mx = Math.floor(x + ox), my = Math.floor(y + oy);
+    if (mx >= 0 && mx < MAP_W && my >= 0 && my < MAP_H && map[my][mx] > 0) return true;
+  }
+  return false;
+}
+
+// --- UPDATE ---
+function update() {
+  if (!gameStarted || gameOver) return;
+
+  // Mouse look
+  player.angle += mouseDX * 0.002;
+  mouseDX = 0;
+
+  // Movement
+  const sprinting = keys['ShiftLeft'] || keys['ShiftRight'];
+  const moveSpeed = sprinting ? player.sprintSpeed : player.speed;
+  let moving = false;
+
+  let mx = 0, my = 0;
+  if (keys['KeyW'] || keys['ArrowUp']) { mx += Math.cos(player.angle) * moveSpeed; my += Math.sin(player.angle) * moveSpeed; moving = true; }
+  if (keys['KeyS'] || keys['ArrowDown']) { mx -= Math.cos(player.angle) * moveSpeed * 0.6; my -= Math.sin(player.angle) * moveSpeed * 0.6; moving = true; }
+  if (keys['KeyA'] || keys['ArrowLeft']) { mx += Math.cos(player.angle - Math.PI / 2) * player.strafeSpeed; my += Math.sin(player.angle - Math.PI / 2) * player.strafeSpeed; moving = true; }
+  if (keys['KeyD'] || keys['ArrowRight']) { mx += Math.cos(player.angle + Math.PI / 2) * player.strafeSpeed; my += Math.sin(player.angle + Math.PI / 2) * player.strafeSpeed; moving = true; }
+
+  // Collision with sliding
+  const radius = 0.2;
+  if (!collidesWall(player.x + mx, player.y, radius)) player.x += mx;
+  if (!collidesWall(player.x, player.y + my, radius)) player.y += my;
+
+  // Head bob
+  if (moving) {
+    player.bobPhase += sprinting ? 0.15 : 0.1;
+    player.bobAmount = Math.min(player.bobAmount + 0.02, sprinting ? 8 : 4);
+  } else {
+    player.bobAmount = Math.max(player.bobAmount - 0.3, 0);
+  }
+
+  // Weapon cooldowns
+  if (player.fireCooldown > 0) player.fireCooldown--;
+  if (player.weaponRecoil > 0) player.weaponRecoil *= 0.8;
+  if (player.reloading) {
+    player.reloadTimer--;
+    if (player.reloadTimer <= 0) {
+      const needed = player.maxAmmo - player.ammo;
+      const available = Math.min(needed, player.reserveAmmo);
+      player.ammo += available;
+      player.reserveAmmo -= available;
+      player.reloading = false;
+    }
+  }
+
+  // Pickups
+  for (let i = entities.length - 1; i >= 0; i--) {
+    const ent = entities[i];
+    if (ent.type === 'ammo' || ent.type === 'health') {
+      const d = Math.hypot(player.x - ent.x, player.y - ent.y);
+      if (d < 0.5) {
+        if (ent.type === 'ammo') {
+          player.reserveAmmo += 12;
+          ent.dead = true;
+        } else if (ent.type === 'health' && player.hp < player.maxHp) {
+          player.hp = Math.min(player.hp + 25, player.maxHp);
+          ent.dead = true;
+        }
+      }
+    }
+  }
+  entities = entities.filter(e => !e.dead);
+
+  // Enemy pickups
+  for (const ent of entities) {
+    if (ent.type === 'enemy' && ent.hp > 0) {
+      ent.bobPhase = (ent.bobPhase || 0) + 0.05;
+    }
+  }
+
+  // Projectiles
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    p.x += p.vx; p.y += p.vy; p.life--;
+    if (p.life <= 0 || collidesWall(p.x, p.y, 0.05)) {
+      // Wall hit particles
+      for (let j = 0; j < 4; j++) {
+        particles.push({
+          x: p.x, y: p.y,
+          vx: (Math.random() - 0.5) * 0.01,
+          vy: (Math.random() - 0.5) * 0.01,
+          life: 10, maxLife: 10, color: p.color, size: 0.04,
+        });
+      }
+      projectiles.splice(i, 1); continue;
+    }
+    // Hit player
+    if (p.owner === 'enemy') {
+      const d = Math.hypot(p.x - player.x, p.y - player.y);
+      if (d < 0.3) {
+        player.hp -= p.damage;
+        damageFlash = 10;
+        projectiles.splice(i, 1);
+        continue;
+      }
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx || 0; p.y += p.vy || 0;
+    if (p.vx) p.vx *= 0.95;
+    if (p.vy) p.vy *= 0.95;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  updateEnemies();
+
+  // Damage flash
+  if (damageFlash > 0) damageFlash--;
+
+  // Check death
+  if (player.hp <= 0) {
+    gameOver = true;
+    document.getElementById('lose-screen').style.display = 'flex';
+    document.exitPointerLock();
+  }
+
+  // Check exit
+  const exitDist = Math.hypot(player.x - exitPos.x, player.y - exitPos.y);
+  if (exitDist < 0.6) {
+    gameOver = true;
+    document.getElementById('win-screen').style.display = 'flex';
+    document.exitPointerLock();
+  }
+}
+
+// --- RENDER ---
+function render() {
+  const bobY = Math.sin(player.bobPhase) * player.bobAmount;
+  const pitchOffset = player.pitch * H + bobY;
+
+  // Sky gradient
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, H / 2 + pitchOffset);
+  skyGrad.addColorStop(0, '#112');
+  skyGrad.addColorStop(1, '#224');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Floor gradient
+  const floorGrad = ctx.createLinearGradient(

@@ -1,0 +1,526 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flight Simulator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+canvas { display: block; }
+#hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 30px; height: 30px; }
+#crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(0,255,100,0.6); }
+#crosshair::before { width: 2px; height: 100%; left: 50%; transform: translateX(-50%); }
+#crosshair::after { height: 2px; width: 100%; top: 50%; transform: translateY(-50%); }
+#hud-overlay { position: absolute; bottom: 20px; left: 20px; color: #0f0; font-size: 14px; text-shadow: 0 0 5px #0f0; }
+#hud-overlay div { margin: 4px 0; }
+#minimap { position: absolute; top: 20px; right: 20px; border: 1px solid #0f0; border-radius: 4px; }
+#message { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 36px; text-align: center; text-shadow: 0 0 20px #0f0; display: none; }
+#message .sub { font-size: 18px; margin-top: 10px; color: #aaa; }
+#throttle-bar { position: absolute; right: 30px; bottom: 100px; width: 20px; height: 200px; border: 1px solid #0f0; background: rgba(0,0,0,0.5); }
+#throttle-fill { position: absolute; bottom: 0; width: 100%; background: #0f0; transition: height 0.1s; }
+#throttle-label { position: absolute; right: 25px; bottom: 310px; color: #0f0; font-size: 12px; }
+#artificial-horizon { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); width: 160px; height: 160px; border: 2px solid rgba(0,255,100,0.4); border-radius: 50%; overflow: hidden; }
+#artificial-horizon canvas { width: 100%; height: 100%; }
+#checkpoint-info { position: absolute; top: 20px; left: 20px; color: #0f0; font-size: 16px; text-shadow: 0 0 5px #0f0; }
+#speed-bracket { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 120px; height: 200px; border-left: 2px solid rgba(0,255,100,0.3); }
+</style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+<canvas id="hud"></canvas>
+<div id="crosshair"></div>
+<div id="checkpoint-info">CHECKPOINT: 0 / 10</div>
+<div id="artificial-horizon"><canvas id="ahCanvas" width="160" height="160"></canvas></div>
+<div id="hud-overlay">
+<div id="hud-airspeed">AIRSPEED: 0 kts</div>
+<div id="hud-altitude">ALTITUDE: 0 ft</div>
+<div id="hud-heading">HEADING: 0°</div>
+<div id="hud-vsi">VSI: 0 ft/m</div>
+<div id="hud-gear">GEAR: DOWN</div>
+</div>
+<div id="throttle-bar"><div id="throttle-fill"></div></div>
+<div id="throttle-label">THR</div>
+<div id="message"><div id="msg-text"></div><div class="sub" id="msg-sub"></div></div>
+<canvas id="minimap" width="180" height="180"></canvas>
+
+<script>
+// ============ MATH UTILITIES ============
+const PI = Math.PI, TAU = PI * 2, DEG = PI / 180;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smoothstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+class Vec3 {
+    constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}
+    set(x,y,z){this.x=x;this.y=y;this.z=z;return this;}
+    copy(v){this.x=v.x;this.y=v.y;this.z=v.z;return this;}
+    add(v){return new Vec3(this.x+v.x,this.y+v.y,this.z+v.z);}
+    sub(v){return new Vec3(this.x-v.x,this.y-v.y,this.z-v.z);}
+    mul(s){return new Vec3(this.x*s,this.y*s,this.z*s);}
+    dot(v){return this.x*v.x+this.y*v.y+this.z*v.z;}
+    cross(v){return new Vec3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x);}
+    len(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);}
+    norm(){const l=this.len();return l>0?this.mul(1/l):new Vec3();}
+    distTo(v){return this.sub(v).len();}
+}
+
+class Mat4 {
+    constructor(){this.m=new Float32Array(16);this.identity();}
+    identity(){this.m.fill(0);this.m[0]=this.m[5]=this.m[10]=this.m[15]=1;return this;}
+    multiply(b){
+        const a=this.m,bm=b.m,r=new Float32Array(16);
+        for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+            r[j*4+i]=a[i]*bm[j*4]+a[4+i]*bm[j*4+1]+a[8+i]*bm[j*4+2]+a[12+i]*bm[j*4+3];
+        }
+        const m=new Mat4();m.m=r;return m;
+    }
+    static perspective(fov,aspect,near,far){
+        const m=new Mat4();const f=1/Math.tan(fov/2);
+        m.m.fill(0);m.m[0]=f/aspect;m.m[5]=f;m.m[10]=(far+near)/(near-far);m.m[11]=-1;m.m[14]=2*far*near/(near-far);
+        return m;
+    }
+    static lookAt(eye,target,up){
+        const z=eye.sub(target).norm(),x=up.cross(z).norm(),y=z.cross(x);
+        const m=new Mat4();
+        m.m[0]=x.x;m.m[1]=y.x;m.m[2]=z.x;m.m[3]=0;
+        m.m[4]=x.y;m.m[5]=y.y;m.m[6]=z.y;m.m[7]=0;
+        m.m[8]=x.z;m.m[9]=y.z;m.m[10]=z.z;m.m[11]=0;
+        m.m[12]=-x.dot(eye);m.m[13]=-y.dot(eye);m.m[14]=-z.dot(eye);m.m[15]=1;
+        return m;
+    }
+    static translation(x,y,z){
+        const m=new Mat4();m.m[12]=x;m.m[13]=y;m.m[14]=z;return m;
+    }
+    static rotationX(a){const m=new Mat4();m.m[5]=Math.cos(a);m.m[6]=Math.sin(a);m.m[9]=-Math.sin(a);m.m[10]=Math.cos(a);return m;}
+    static rotationY(a){const m=new Mat4();m.m[0]=Math.cos(a);m.m[2]=-Math.sin(a);m.m[8]=Math.sin(a);m.m[10]=Math.cos(a);return m;}
+    static rotationZ(a){const m=new Mat4();m.m[0]=Math.cos(a);m.m[1]=Math.sin(a);m.m[4]=-Math.sin(a);m.m[5]=Math.cos(a);return m;}
+    static scale(x,y,z){const m=new Mat4();m.m[0]=x;m.m[5]=y;m.m[10]=z;return m;}
+}
+
+// ============ WEBGL SETUP ============
+const glCanvas = document.getElementById('glcanvas');
+const hudCanvas = document.getElementById('hud');
+const hudCtx = hudCanvas.getContext('2d');
+const ahCanvas = document.getElementById('ahCanvas');
+const ahCtx = ahCanvas.getContext('2d');
+const minimapCanvas = document.getElementById('minimap');
+const minimapCtx = minimapCanvas.getContext('2d');
+
+function resize() {
+    glCanvas.width = window.innerWidth;
+    glCanvas.height = window.innerHeight;
+    hudCanvas.width = window.innerWidth;
+    hudCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+const gl = glCanvas.getContext('webgl', { antialias: true, alpha: false });
+if (!gl) alert('WebGL not supported');
+
+function createShader(src, type) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src);
+    gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+        console.error(gl.getShaderInfoLog(s));
+        return null;
+    }
+    return s;
+}
+
+function createProgram(vs, fs) {
+    const p = gl.createProgram();
+    gl.attachShader(p, createShader(vs, gl.VERTEX_SHADER));
+    gl.attachShader(p, createShader(fs, gl.FRAGMENT_SHADER));
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+        console.error(gl.getProgramInfoLog(p));
+        return null;
+    }
+    return p;
+}
+
+// Shaders
+const terrainVS = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+varying float vHeight;
+void main(){
+    vec4 wp = uModel * vec4(aPos, 1.0);
+    vWorldPos = wp.xyz;
+    vHeight = aPos.y;
+    vNorm = mat3(uModel) * aNorm;
+    gl_Position = uProj * uView * wp;
+}`;
+
+const terrainFS = `
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+varying float vHeight;
+uniform vec3 uLightDir;
+uniform vec3 uFogColor;
+uniform float uFogNear;
+uniform float uFogFar;
+void main(){
+    vec3 n = normalize(vNorm);
+    float diff = max(dot(n, normalize(uLightDir)), 0.0);
+    float amb = 0.35;
+    vec3 col = mix(vec3(0.2,0.5,0.15), vec3(0.6,0.55,0.45), smoothstep(0.0,80.0,vHeight));
+    col = col * (amb + diff * 0.65);
+    float fog = smoothstep(uFogNear, uFogFar, length(vWorldPos));
+    col = mix(col, uFogColor, fog);
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+const skyVS = `
+attribute vec3 aPos;
+uniform mat4 uProj;
+uniform mat4 uView;
+varying vec3 vDir;
+void main(){
+    vDir = aPos;
+    mat4 v = uView;
+    v[3] = vec4(0,0,0,1);
+    gl_Position = uProj * v * vec4(aPos * 500.0, 1.0);
+}`;
+
+const skyFS = `
+precision mediump float;
+varying vec3 vDir;
+uniform float uTime;
+void main(){
+    vec3 d = normalize(vDir);
+    float y = d.y * 0.5 + 0.5;
+    vec3 sky = mix(vec3(0.6,0.75,0.9), vec3(0.2,0.4,0.8), pow(y,0.5));
+    float sun = pow(max(dot(d, normalize(vec3(0.5,0.3,0.8))),0.0),32.0);
+    sky += vec3(1.0,0.9,0.7) * sun * 0.5;
+    gl_FragColor = vec4(sky, 1.0);
+}`;
+
+const ringVS = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+void main(){
+    vec4 wp = uModel * vec4(aPos, 1.0);
+    vWorldPos = wp.xyz;
+    vNorm = mat3(uModel) * aNorm;
+    gl_Position = uProj * uView * wp;
+}`;
+
+const ringFS = `
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+uniform vec3 uColor;
+uniform float uAlpha;
+void main(){
+    vec3 n = normalize(vNorm);
+    float diff = max(dot(n, normalize(vec3(0.5,0.8,0.3))), 0.0);
+    vec3 col = uColor * (0.4 + diff * 0.6);
+    col += uColor * 0.3;
+    gl_FragColor = vec4(col, uAlpha);
+}`;
+
+const aircraftVS = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+void main(){
+    vec4 wp = uModel * vec4(aPos, 1.0);
+    vWorldPos = wp.xyz;
+    vNorm = mat3(uModel) * aNorm;
+    gl_Position = uProj * uView * wp;
+}`;
+
+const aircraftFS = `
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+uniform vec3 uColor;
+uniform float uTime;
+void main(){
+    vec3 n = normalize(vNorm);
+    float diff = max(dot(n, normalize(vec3(0.3,0.5,0.2))), 0.0);
+    vec3 col = uColor * (0.3 + diff * 0.7);
+    gl_FragColor = vec4(col, 1.0);
+}`;
+
+const particleVS = `
+attribute vec3 aPos;
+attribute float aSize;
+attribute float aLife;
+uniform mat4 uProj;
+uniform mat4 uView;
+varying float vLife;
+void main(){
+    vLife = aLife;
+    gl_Position = uProj * uView * vec4(aPos, 1.0);
+    gl_PointSize = aSize * (300.0 / -gl_Position.z);
+}`;
+
+const particleFS = `
+precision mediump float;
+varying float vLife;
+void main(){
+    float d = length(gl_PointCoord - 0.5) * 2.0;
+    float a = smoothstep(1.0, 0.0, d) * vLife;
+    gl_FragColor = vec4(1.0, 1.0, 1.0, a * 0.4);
+}`;
+
+const runwayVS = `
+attribute vec3 aPos;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+void main(){
+    gl_Position = uProj * uView * uModel * vec4(aPos, 1.0);
+}`;
+
+const runwayFS = `
+precision mediump float;
+void main(){
+    gl_FragColor = vec4(0.3, 0.3, 0.3, 1.0);
+}`;
+
+const hazardVS = `
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vWorldPos;
+void main(){
+    vec4 wp = uModel * vec4(aPos, 1.0);
+    vWorldPos = wp.xyz;
+    vNorm = mat3(uModel) * aNorm;
+    gl_Position = uProj * uView * wp;
+}`;
+
+const hazardFS = `
+precision mediump float;
+varying vec3 vNorm;
+uniform vec3 uColor;
+uniform float uTime;
+void main(){
+    vec3 n = normalize(vNorm);
+    float diff = max(dot(n, normalize(vec3(0.5,0.8,0.3))), 0.0);
+    vec3 col = uColor * (0.3 + diff * 0.7);
+    col += uColor * 0.2 * (0.5 + 0.5 * sin(uTime * 3.0));
+    gl_FragColor = vec4(col, 0.8);
+}`;
+
+// Create programs
+const terrainProg = createProgram(terrainVS, terrainFS);
+const skyProg = createProgram(skyVS, skyFS);
+const ringProg = createProgram(ringVS, ringFS);
+const aircraftProg = createProgram(aircraftVS, aircraftFS);
+const particleProg = createProgram(particleVS, particleFS);
+const runwayProg = createProgram(runwayVS, runwayFS);
+const hazardProg = createProgram(hazardVS, hazardFS);
+
+// ============ GEOMETRY GENERATORS ============
+function createTerrainMesh(size, res) {
+    const verts = [], norms = [], indices = [];
+    const step = size / res;
+    for (let i = 0; i <= res; i++) {
+        for (let j = 0; j <= res; j++) {
+            const x = (i - res / 2) * step;
+            const z = (j - res / 2) * step;
+            const y = getTerrainHeight(x, z);
+            verts.push(x, y, z);
+            // Compute normal
+            const hL = getTerrainHeight(x - step, z);
+            const hR = getTerrainHeight(x + step, z);
+            const hD = getTerrainHeight(x, z - step);
+            const hU = getTerrainHeight(x, z + step);
+            const n = new Vec3(hL - hR, 2 * step, hD - hU).norm();
+            norms.push(n.x, n.y, n.z);
+        }
+    }
+    for (let i = 0; i < res; i++) {
+        for (let j = 0; j < res; j++) {
+            const a = i * (res + 1) + j;
+            const b = a + 1;
+            const c = a + res + 1;
+            const d = c + 1;
+            indices.push(a, c, b);
+            indices.push(b, c, d);
+        }
+    }
+    return { verts: new Float32Array(verts), norms: new Float32Array(norms), indices: new Uint16Array(indices) };
+}
+
+function createBoxMesh(sx, sy, sz) {
+    const s = [sx/2, sy/2, sz/2];
+    const v = [
+        -s[0],-s[1],-s[2], s[0],-s[1],-s[2], s[0], s[1],-s[2], -s[0], s[1],-s[2],
+        -s[0],-s[1], s[2], s[0],-s[1], s[2], s[0], s[1], s[2], -s[0], s[1], s[2],
+    ];
+    const n = [
+        0,0,-1, 0,0,-1, 0,0,-1, 0,0,-1,
+        0,0,1, 0,0,1, 0,0,1, 0,0,1,
+        0,-1,0, 0,-1,0, 0,-1,0, 0,-1,0,
+        0,1,0, 0,1,0, 0,1,0, 0,1,0,
+        -1,0,0, -1,0,0, -1,0,0, -1,0,0,
+        1,0,0, 1,0,0, 1,0,0, 1,0,0,
+    ];
+    const idx = [];
+    for (let i = 0; i < 6; i++) { const o = i*4; idx.push(o,o+1,o+2,o,o+2,o+3); }
+    return { verts: new Float32Array(v), norms: new Float32Array(n), indices: new Uint16Array(idx) };
+}
+
+function createCylinderMesh(r, h, segs) {
+    const v = [], n = [], idx = [];
+    for (let i = 0; i <= segs; i++) {
+        const a = (i / segs) * TAU;
+        const c = Math.cos(a), s = Math.sin(a);
+        v.push(c * r, -h/2, s * r);
+        n.push(c, 0, s);
+        v.push(c * r, h/2, s * r);
+        n.push(c, 0, s);
+    }
+    for (let i = 0; i < segs; i++) {
+        const a = i * 2, b = a + 1, c = a + 2, d = a + 3;
+        idx.push(a, c, b, b, c, d);
+    }
+    return { verts: new Float32Array(v), norms: new Float32Array(n), indices: new Uint16Array(idx) };
+}
+
+function createTorusMesh(R, r, segs, rings) {
+    const v = [], n = [], idx = [];
+    for (let i = 0; i <= rings; i++) {
+        const a = (i / rings) * TAU;
+        const ca = Math.cos(a), sa = Math.sin(a);
+        for (let j = 0; j <= segs; j++) {
+            const b = (j / segs) * TAU;
+            const cb = Math.cos(b), sb = Math.sin(b);
+            const x = (R + r * cb) * ca;
+            const y = r * sb;
+            const z = (R + r * cb) * sa;
+            v.push(x, y, z);
+            const nx = cb * ca, ny = sb, nz = cb * sa;
+            n.push(nx, ny, nz);
+        }
+    }
+    for (let i = 0; i < rings; i++) {
+        for (let j = 0; j < segs; j++) {
+            const a = i * (segs + 1) + j;
+            const b = a + segs + 1;
+            idx.push(a, a + 1, b, b, a + 1, b + 1);
+        }
+    }
+    return { verts: new Float32Array(v), norms: new Float32Array(n), indices: new Uint16Array(idx) };
+}
+
+function createAircraftMesh() {
+    const v = [], n = [], idx = [];
+    let vi = 0;
+    function addFace(verts, norm) {
+        for (const pt of verts) { v.push(...pt); n.push(...norm); }
+        const f = verts.length;
+        if (f === 4) { idx.push(vi, vi+1, vi+2, vi, vi+2, vi+3); vi += 4; }
+        else if (f === 3) { idx.push(vi, vi+1, vi+2); vi += 3; }
+    }
+
+    // Fuselage - elongated shape
+    const fuselage = [
+        [-0.3, 0, -2.5], [0.3, 0, -2.5], [0.3, 0.35, -2.5], [-0.3, 0.35, -2.5],
+        [-0.3, 0, 2.0], [0.3, 0, 2.0], [0.3, 0.35, 2.0], [-0.3, 0.35, 2.0],
+    ];
+    // Body sides
+    addFace([fuselage[0], fuselage[4], fuselage[5], fuselage[1]], [0,1,0]);
+    addFace([fuselage[2], fuselage[6], fuselage[7], fuselage[3]], [0,1,0]);
+    // Bottom
+    addFace([fuselage[0], fuselage[1], fuselage[5], fuselage[4]], [0,-1,0]);
+
+    // Nose cone
+    addFace([[-0.3,0,-2.5],[0.3,0,-2.5],[0,0.35,-2.5]], [0,0,-1]);
+    addFace([[-0.3,0,-2.5],[0,0.35,-2.5],[0,0,-2.5]], [0,0,-1]);
+    addFace([[0.3,0,-2.5],[0.3,0.35,-2.5],[0,0.35,-2.5]], [0,0,-1]);
+    addFace([[0.3,0,-2.5],[0,0,-2.5],[0.3,0.35,-2.5]], [0,0,-1]);
+
+    // Tail section
+    addFace([[-0.1,0,2.0],[0.1,0,2.0],[0.1,0.35,2.0],[-0.1,0.35,2.0]], [0,0,1]);
+    addFace([[-0.1,0,2.0],[0.1,0,2.0],[0,0,2.5]], [0,0,1]);
+
+    // Wings
+    const wl = [-1.8, 0, -0.2], wr = [1.8, 0, -0.2], wbl = [-1.8, -0.08, -0.2], wbr = [1.8, -0.08, -0.2];
+    const wtl = [-1.5, 0, 0.8], wtr = [1.5, 0, 0.8], wtbl = [-1.5, -0.08, 0.8], wtbrr = [1.5, -0.08, 0.8];
+    // Left wing top
+    addFace([wl, wbl, wbr, wr], [0,1,0]);
+    // Right wing top (same as left since it's one piece)
+    // Wing bottom
+    addFace([wbl, wl, wr, wbr], [0,-1,0]);
+    // Wing tips
+    addFace([wl, wtl, wtbl, wbl], [-1,0,0]);
+    addFace([wr, wtr, wtbrr, wbr], [1,0,0]);
+    // Wing front
+    addFace([wl, wr, wtr, wtl], [0,0,-1]);
+    // Wing back
+    addFace([wbl, wbr, wtbrr, wtbl], [0,0,1]);
+
+    // Vertical stabilizer
+    const vs = [[0, 0, 1.5], [0, 0, 2.2], [0, 1.0, 2.2], [0, 1.0, 1.5]];
+    addFace(vs, [1,0,0]);
+    addFace([[0,0,1.5],[0,1.0,1.5],[0,1.0,2.2],[0,0,2.2]], [-1,0,0]);
+    addFace([[0,0,1.5],[0,1.0,1.5],[0,0.5,2.2]], [1,0,0]);
+
+    // Horizontal stabilizer (tail wings)
+    const thl = [-0.8, 0, 1.8], thr = [0.8, 0, 1.8];
+    const thbl = [-0.8, -0.06, 1.8], thbr = [0.8, -0.06, 1.8];
+    const thtl = [-0.6, 0, 2.2], thtr = [0.6, 0, 2.2];
+    addFace([thl, thbl, thbr, thr], [0,1,0]);
+    addFace([thbl, thl, thr, thbr], [0,-1,0]);
+    addFace([thl, thr, thtr, thtl], [0,0,-1]);
+    addFace([thbl, thbr, thtr, thtl], [0,0,1]);
+
+    // Propeller
+    const propVerts = [[-0.15, 0, -2.6], [0.15, 0, -2.6], [0.15, 0.05, -2.6], [-0.15, 0.05, -2.6]];
+    addFace(propVerts, [0,0,-1]);
+
+    return { verts: new Float32Array(v), norms: new Float32Array(n), indices: new Uint16Array(idx) };
+}
+
+function createRunwayMesh() {
+    const v = [];
+    for (let i = -1; i <= 1; i += 2) {
+        v.push(-30, 0.05, i * 2);
+        v.push(30, 0.05, i * 2);
+        v.push(30, 0.15, i * 2);
+        v.push(-30, 0.15, i * 2);
+    }
+    const n = [];
+    for (let i = 0; i < 8; i++) n.push(0, 1, 0);
+    const idx = [0,1,2,0,2,3, 4,5,6,4,6,7];
+    return { verts: new Float32Array(v), norms: new Float32Array(n), indices: new Uint16Array(idx) };
+}
+
+// ============ TERRAIN HEIGHTMAP ============
+function getTerrainHeight(x, z) {
+    let h = 0;
+    h += Math.sin(x * 0.008) * Math.cos(z * 0.008) * 30;
+    h += Math.sin(x * 0.015 + 1.3) * Math.cos(z * 0.012 + 0.7) * 15;
+    h += Math.sin(x * 0.03 + z * 0.02) * 5;
+    h += Math.cos(x * 0.005 - z * 0.006) * 20;
+    // Mountains
+    const mx

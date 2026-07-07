@@ -1,0 +1,291 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spiral Galaxy</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; }
+canvas { display: block; }
+#ui {
+position: fixed; top: 20px; left: 20px; z-index: 10;
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+color: #fff; pointer-events: none;
+}
+#ui h1 {
+font-size: 28px; font-weight: 300; letter-spacing: 4px;
+text-transform: uppercase; margin-bottom: 6px;
+background: linear-gradient(90deg, #4a9eff, #ffd700);
+-webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#ui p {
+font-size: 13px; opacity: 0.5; letter-spacing: 2px;
+}
+</style>
+</head>
+<body>
+<div id="ui">
+<h1>NGC 1300</h1>
+<p id="particleCount">50,000 particles</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function() {
+const PARTICLE_COUNT = 50000;
+const ARM_COUNT = 3;
+const GALAXY_RADIUS = 80;
+const CENTER_GLOW = 8;
+const SPREAD = 0.4;
+const ARM_SPREAD = 1.8;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 60, 90);
+camera.lookAt(0, 0, 0);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// --- Background stars ---
+const bgStarsGeo = new THREE.BufferGeometry();
+const bgStarsCount = 5000;
+const bgStarsPos = new Float32Array(bgStarsCount * 3);
+const bgStarsSizes = new Float32Array(bgStarsCount);
+for (let i = 0; i < bgStarsCount; i++) {
+const theta = Math.random() * Math.PI * 2;
+const phi = Math.acos(2 * Math.random() - 1);
+const r = 200 + Math.random() * 300;
+bgStarsPos[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+bgStarsPos[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+bgStarsPos[i * 3 + 2] = r * Math.cos(phi);
+bgStarsSizes[i] = Math.random() * 1.5 + 0.3;
+}
+bgStarsGeo.setAttribute('position', new THREE.BufferAttribute(bgStarsPos, 3));
+bgStarsGeo.setAttribute('size', new THREE.BufferAttribute(bgStarsSizes, 1));
+
+const bgStarsMat = new THREE.PointsMaterial({
+color: 0xffffff,
+size: 0.5,
+transparent: true,
+opacity: 0.6,
+sizeAttenuation: true,
+blending: THREE.AdditiveBlending,
+depthWrite: false
+});
+const bgStars = new THREE.Points(bgStarsGeo, bgStarsMat);
+scene.add(bgStars);
+
+// --- Galaxy particles ---
+const galaxyGeo = new THREE.BufferGeometry();
+const positions = new Float32Array(PARTICLE_COUNT * 3);
+const colors = new Float32Array(PARTICLE_COUNT * 3);
+const sizes = new Float32Array(PARTICLE_COUNT);
+const randoms = new Float32Array(PARTICLE_COUNT);
+
+const colorCenter = new THREE.Color(0.3, 0.5, 1.0);   // blue
+const colorMid = new THREE.Color(0.8, 0.9, 1.0);        // white-blue
+const colorEdge = new THREE.Color(1.0, 0.85, 0.2);       // yellow
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+const arm = Math.floor(Math.random() * ARM_COUNT);
+const armAngle = (arm / ARM_COUNT) * Math.PI * 2;
+const distance = Math.pow(Math.random(), 0.6) * GALAXY_RADIUS;
+const armAngleLocal = armAngle + distance * ARM_SPREAD * 0.03;
+const angleOffset = (Math.random() - 0.5) * 0.6;
+
+const armWidth = (1 + distance / GALAXY_RADIUS * SPREAD) * 2.5;
+const spreadX = (Math.random() - 0.5) * armWidth;
+const spreadZ = (Math.random() - 0.5) * armWidth;
+
+const x = Math.cos(armAngleLocal + angleOffset) * distance + spreadX;
+const z = Math.sin(armAngleLocal + angleOffset) * distance + spreadZ;
+
+const verticalSpread = Math.exp(-distance / 20) * 3 + 0.5;
+const y = (Math.random() - 0.5) * verticalSpread;
+
+positions[i * 3] = x;
+positions[i * 3 + 1] = y;
+positions[i * 3 + 2] = z;
+
+// Color based on distance
+const t = Math.min(distance / GALAXY_RADIUS, 1);
+let color;
+if (t < 0.3) {
+const localT = t / 0.3;
+color = colorCenter.clone().lerp(colorMid, localT);
+} else if (t < 0.7) {
+const localT = (t - 0.3) / 0.4;
+color = colorMid.clone().lerp(colorEdge, localT);
+} else {
+const localT = (t - 0.7) / 0.3;
+color = colorEdge.clone().lerp(
+new THREE.Color(1.0, 0.6, 0.1), localT
+);
+}
+
+// Add slight variation
+const variation = (Math.random() - 0.5) * 0.15;
+colors[i * 3] = Math.max(0, Math.min(1, color.r + variation));
+colors[i * 3 + 1] = Math.max(0, Math.min(1, color.g + variation * 0.5));
+colors[i * 3 + 2] = Math.max(0, Math.min(1, color.b + variation * 0.3));
+
+sizes[i] = Math.random() * 2.0 + 0.5;
+if (t < 0.2) sizes[i] *= 1.5;
+
+randoms[i] = Math.random();
+}
+
+galaxyGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+galaxyGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+galaxyGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+galaxyGeo.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
+
+const galaxyMat = new THREE.ShaderMaterial({
+uniforms: {
+uTime: { value: 0 },
+uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) }
+},
+vertexShader: `
+attribute float size;
+attribute float aRandom;
+attribute vec3 color;
+varying vec3 vColor;
+uniform float uTime;
+uniform float uPixelRatio;
+
+void main() {
+vColor = color;
+vec3 pos = position;
+float angle = atan(pos.z, pos.x);
+float dist = length(pos.xz);
+
+// Slow orbital rotation
+float rotationSpeed = 0.15 / (1.0 + dist * 0.02);
+float currentAngle = angle + uTime * rotationSpeed;
+pos.x = cos(currentAngle) * dist;
+pos.z = sin(currentAngle) * dist;
+
+// Subtle vertical wobble
+pos.y += sin(uTime * 0.5 + aRandom * 6.28 + dist * 0.1) * 0.15;
+
+vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+float sizeAttenuation = (200.0 / -mvPosition.z);
+gl_PointSize = size * sizeAttenuation * uPixelRatio;
+gl_Position = projectionMatrix * mvPosition;
+}
+`,
+fragmentShader: `
+varying vec3 vColor;
+
+void main() {
+float d = length(gl_PointCoord - vec2(0.5));
+if (d > 0.5) discard;
+float alpha = smoothstep(0.5, 0.0, d);
+alpha = pow(alpha, 1.5);
+gl_FragColor = vec4(vColor, alpha);
+}
+`,
+transparent: true,
+blending: THREE.AdditiveBlending,
+depthWrite: false,
+vertexColors: true
+});
+
+const galaxy = new THREE.Points(galaxyGeo, galaxyMat);
+scene.add(galaxy);
+
+// --- Central glow sprite ---
+const glowTexture = createGlowTexture();
+const glowSpriteMat = new THREE.SpriteMaterial({
+map: glowTexture,
+color: 0x8899ff,
+transparent: true,
+opacity: 0.4,
+blending: THREE.AdditiveBlending,
+depthWrite: false
+});
+const glowSprite = new THREE.Sprite(glowSpriteMat);
+glowSprite.scale.set(CENTER_GLOW * 2, CENTER_GLOW * 2, 1);
+scene.add(glowSprite);
+
+// Inner warm glow
+const warmGlowMat = new THREE.SpriteMaterial({
+map: glowTexture,
+color: 0xffddaa,
+transparent: true,
+opacity: 0.5,
+blending: THREE.AdditiveBlending,
+depthWrite: false
+});
+const warmGlowSprite = new THREE.Sprite(warmGlowMat);
+warmGlowSprite.scale.set(8, 8, 1);
+scene.add(warmGlowSprite);
+
+function createGlowTexture() {
+const canvas = document.createElement('canvas');
+canvas.width = 256;
+canvas.height = 256;
+const ctx = canvas.getContext('2d');
+const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+gradient.addColorStop(0, 'rgba(255,255,255,1)');
+gradient.addColorStop(0.15, 'rgba(200,220,255,0.8)');
+gradient.addColorStop(0.4, 'rgba(100,150,255,0.3)');
+gradient.addColorStop(1, 'rgba(0,0,0,0)');
+ctx.fillStyle = gradient;
+ctx.fillRect(0, 0, 256, 256);
+return new THREE.CanvasTexture(canvas);
+}
+
+// --- Camera auto-rotation ---
+let cameraAngle = 0;
+const cameraRadius = 90;
+const cameraHeight = 60;
+
+// --- Animation loop ---
+const clock = new THREE.Clock();
+
+function animate() {
+requestAnimationFrame(animate);
+const elapsed = clock.getElapsedTime();
+
+// Camera orbit
+cameraAngle += 0.0008;
+camera.position.x = Math.cos(cameraAngle) * cameraRadius;
+camera.position.z = Math.sin(cameraAngle) * cameraRadius;
+camera.position.y = cameraHeight + Math.sin(elapsed * 0.1) * 5;
+camera.lookAt(0, 0, 0);
+
+// Update shader uniforms
+galaxyMat.uniforms.uTime.value = elapsed;
+
+// Pulse the central glow
+const pulse = 1 + Math.sin(elapsed * 0.8) * 0.08;
+glowSprite.scale.set(CENTER_GLOW * 2 * pulse, CENTER_GLOW * 2 * pulse, 1);
+warmGlowSprite.scale.set(8 * pulse, 8 * pulse, 1);
+warmGlowSprite.material.opacity = 0.45 + Math.sin(elapsed * 1.2) * 0.08;
+
+renderer.render(scene, camera);
+}
+
+// --- Resize handler ---
+window.addEventListener('resize', () => {
+camera.aspect = window.innerWidth / window.innerHeight;
+camera.updateProjectionMatrix();
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+galaxyMat.uniforms.uPixelRatio.value = Math.min(window.devicePixelRatio, 2);
+});
+
+animate();
+})();
+</script>
+</body>
+</html>
+```
