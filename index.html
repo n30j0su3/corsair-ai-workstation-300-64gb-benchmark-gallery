@@ -195,7 +195,7 @@
 </div>
 <div class="header">
   <h1><span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span></h1>
-  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated May 29, 2026</span></div>
+  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 07, 2026 · Bench v2.2</span></div>
   <div class="header-divider"></div>
 </div>
 
@@ -204,20 +204,20 @@
   <div style="text-align:center;">
     <div style="font-family:'JetBrains Mono',monospace;font-size:.62em;color:#64748b;letter-spacing:3px;text-transform:uppercase;margin-bottom:4px;">Benchmark methodology owner</div>
     <div style="font-size:1.4em;font-weight:700;color:#06b6d4;letter-spacing:2px;">N30</div>
-    <div class="note">All benchmark orchestration, methodology design, and AI model evaluations directed by N30. Strict trust remains separated from draft/recovery lanes.</div>
+    <div class="note">All benchmark orchestration, methodology design, and AI model evaluations directed by N30. Bench v2.2 methodology: separated prefill/decode metrics, MTP acceptance tracking, and deep context retrieval scoring. Strict trust remains separated from draft/recovery lanes.</div>
     <div class="link-row"><a class="link-pill" href="https://huggingface.co/spaces/Jackrong/qwopus36-eval" target="_blank" rel="noopener">Jackrong qwopus36-eval reference</a><a class="link-pill" href="https://github.com/n30j0su3" target="_blank" rel="noopener">N30 GitHub</a></div>
   </div>
 </div>
 
 <div class="tier t1">
-  <div class="tier-label"><span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA</span></div>
+  <div class="tier-label"><span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA · Bench v2.2</span></div>
   <div class="metrics-row">
-    <div class="metric-box"><div class="val m-l">26</div><div class="label">Models Evaluated</div></div>
-    <div class="metric-box"><div class="val m-t">1</div><div class="label">Strict E2E Champions</div></div>
-    <div class="metric-box"><div class="val m-g">1</div><div class="label">Gold-stage Strict Passers</div></div>
-    <div class="metric-box"><div class="val m-p">13/19</div><div class="label">Framework Passed All</div></div>
-    <div class="metric-box"><div class="val m-o">1/13</div><div class="label">Gold Passed All</div></div>
-    <div class="metric-box"><div class="val m-l">75.4</div><div class="label">Top measured tok/s</div></div>
+    <div class="metric-box"><div class="val m-l">21</div><div class="label">Models Evaluated</div></div>
+    <div class="metric-box"><div class="val m-t">84</div><div class="label">Total Benchmark Runs</div></div>
+    <div class="metric-box"><div class="val m-g">11</div><div class="label">Perfect Score (1.00)</div></div>
+    <div class="metric-box"><div class="val m-p">71</div><div class="label">Best Decode tok/s</div></div>
+    <div class="metric-box"><div class="val m-o">94%</div><div class="label">Best MTP Accept</div></div>
+    <div class="metric-box"><div class="val m-l">92s</div><div class="label">Best Deep Context</div></div>
 </div>
 </div>
 
@@ -226,321 +226,287 @@
   <div class="impact-hero">
     <div class="impact-copy">
       <div class="impact-kicker" data-l10n data-en="What changed" data-es="Qué cambió">What changed</div>
-      <div class="impact-title" data-l10n data-en="MiniV is framed as a gated local workstation, not a raw model zoo." data-es="MiniV se presenta como workstation local con gates, no como zoológico de modelos.">MiniV is framed as a gated local workstation, not a raw model zoo.</div>
-      <p data-l10n data-en="Twenty-six lanes remain visible, but the narrative now points to the one strict champion and the operational rule that prevents recovered/draft attempts from being overclaimed." data-es="Los 26 carriles siguen visibles, pero la narrativa apunta al único campeón estricto y a la regla operativa que evita sobrevender intentos recuperados o draft.">Twenty-six lanes remain visible, but the narrative now points to the one strict champion and the operational rule that prevents recovered/draft attempts from being overclaimed.</p>
+      <div class="impact-title" data-l10n data-en="Bench v2.2 delivers separated prefill/decode metrics, MTP acceptance tracking, and deep context retrieval scoring across 21 models." data-es="Bench v2.2 entrega métricas separadas de prefill/decode, tracking de aceptación MTP y scoring de recuperación en contexto profundo para 21 modelos.">Bench v2.2 delivers separated prefill/decode metrics, MTP acceptance tracking, and deep context retrieval scoring across 21 models.</div>
+      <p data-l10n data-en="21 models benchmarked with Bench v2.2 — separated prefill/decode/MTP metrics. 11 models achieved perfect score. Deep context retrieval solved: 310s→92s via ubatch optimization. OS-level optimizations: CPU governor performance, ubatch-size tuning, and Transparent Huge Pages (THP) enabled." data-es="21 modelos evaluados con Bench v2.2 — métricas separadas de prefill/decode/MTP. 11 modelos alcanzaron puntaje perfecto. Recuperación de contexto profundo resuelta: 310s→92s mediante optimización de ubatch. Optimizaciones a nivel OS: CPU governor performance, ajuste de ubatch-size y Transparent Huge Pages (THP).">21 models benchmarked with Bench v2.2 — separated prefill/decode/MTP metrics. 11 models achieved perfect score. Deep context retrieval solved: 310s→92s via ubatch optimization. OS-level optimizations: CPU governor performance, ubatch-size tuning, and Transparent Huge Pages (THP) enabled.</p>
     </div>
     <div class="impact-grid">
-      <div class="impact-card"><strong data-l10n data-en="Champion" data-es="Campeón">Champion</strong><span data-l10n data-en="miniv-qwopus36-27b-v2-q5 is the strict gold lane for MiniV Vulkan UMA." data-es="miniv-qwopus36-27b-v2-q5 es el carril gold estricto de MiniV Vulkan UMA.">miniv-qwopus36-27b-v2-q5 is the strict gold lane for MiniV Vulkan UMA.</span></div>
-      <div class="impact-card"><strong data-l10n data-en="Discipline" data-es="Disciplina">Discipline</strong><span data-l10n data-en="Framework-ready is useful, but only full gold strict pass moves into production routing." data-es="Framework-ready es útil, pero solo un pass gold estricto entra a ruteo productivo.">Framework-ready is useful, but only full gold strict pass moves into production routing.</span></div>
-      <div class="impact-card"><strong data-l10n data-en="Evidence" data-es="Evidencia">Evidence</strong><span data-l10n data-en="Artifact publication is now reserved for Jackrong-style quality tasks that pass visual, runtime, and gold-comparison gates." data-es="La publicación de artifacts queda reservada para tareas de calidad estilo Jackrong que pasen gates visuales, runtime y comparación Gold.">Artifact publication is now reserved for Jackrong-style quality tasks that pass visual, runtime, and gold-comparison gates.</span></div>
+      <div class="impact-card"><strong data-l10n data-en="Champion" data-es="Campeón">Champion</strong><span data-l10n data-en="miniv-qwopus36-35b-a3b-q6-mtp is the local champion for MiniV Vulkan UMA — 71 tok/s decode, 90% MTP accept, 92s deep context." data-es="miniv-qwopus36-35b-a3b-q6-mtp es el campeón local de MiniV Vulkan UMA — 71 tok/s decode, 90% aceptación MTP, 92s contexto profundo.">miniv-qwopus36-35b-a3b-q6-mtp is the local champion for MiniV Vulkan UMA — 71 tok/s decode, 90% MTP accept, 92s deep context.</span></div>
+      <div class="impact-card"><strong data-l10n data-en="Discipline" data-es="Disciplina">Discipline</strong><span data-l10n data-en="Framework-ready is useful, but only LOCAL_CHAMPION with perfect score and deep context pass moves into production routing." data-es="Framework-ready es útil, pero solo LOCAL_CHAMPION con puntaje perfecto y pase de contexto profundo entra a ruteo productivo.">Framework-ready is useful, but only LOCAL_CHAMPION with perfect score and deep context pass moves into production routing.</span></div>
+      <div class="impact-card"><strong data-l10n data-en="Evidence" data-es="Evidencia">Evidence</strong><span data-l10n data-en="Bench v2.2 separates prefill/decode from llama-server API timings object, tracks MTP acceptance, and scores deep context retrieval with adaptive timeouts." data-es="Bench v2.2 separa prefill/decode del objeto de timings del API de llama-server, rastrea aceptación MTP y califica recuperación de contexto profundo con timeouts adaptativos.">Bench v2.2 separates prefill/decode from llama-server API timings object, tracks MTP acceptance, and scores deep context retrieval with adaptive timeouts.</span></div>
     </div>
   </div>
 </div>
 
 <div class="tier t2">
-  <div class="tier-label"><span class="icon">🧪</span> N30 TRUST PIPELINE <span class="count">strict vs recovery</span></div>
+  <div class="tier-label"><span class="icon">🧪</span> N30 TRUST PIPELINE <span class="count">Bench v2.2 methodology</span></div>
   <div class="method-grid">
-    <div class="method-card"><strong>Smoke gate</strong><p>Agentic/structured tasks. Pass all here before deeper evaluation. Attempt 1 is strict; attempts 2-3 only show recoverability.</p></div>
-    <div class="method-card"><strong>Framework gate</strong><p>Framework-spec tasks: executable contracts, BMAD/story breakdown, spec review, and execution planning.</p></div>
-    <div class="method-card"><strong>Gold gate</strong><p>High-signal creative UI/canvas reference tasks. Gold passers are scarce by design; no draft lane is overclaimed.</p></div>
+    <div class="method-card"><strong>Smoke gate</strong><p>Agentic/structured tasks with adaptive timeouts by context size. Bench v2.2 separates prefill/decode metrics from llama-server API timings object. Thinking tokens isolated via reasoning_content field.</p></div>
+    <div class="method-card"><strong>Framework gate</strong><p>Framework-spec tasks: executable contracts, BMAD/story breakdown, spec review, and execution planning. MTP acceptance rate tracked for multi-token prediction models.</p></div>
+    <div class="method-card"><strong>Deep context gate</strong><p>Long-context retrieval scoring (deep_context_score) with timing measurement (deep_context_time_s). OS-level optimizations: CPU governor performance, ubatch-size tuning, THP enabled.</p></div>
   </div>
 </div>
 
 <div class="tier t1">
-  <div class="tier-label"><span class="icon">🏆</span> QUALITY LEADERBOARD <span class="count">26 models</span></div>
+  <div class="tier-label"><span class="icon">🏆</span> QUALITY LEADERBOARD <span class="count">21 models · Bench v2.2</span></div>
   <div id="trustChart" class="chart-box"></div>
 </div>
 
 <div class="tier t1">
-  <div class="tier-label"><span class="icon">📋</span> MINIV VULKAN UMA — FINAL ALL-LOCAL COMPARISON <span class="count">final run</span></div>
-  <div class="table-hint" data-i18n="table.scroll">Swipe horizontally to inspect all gate columns. First-pass strict and recovery data stay separated.</div>
+  <div class="tier-label"><span class="icon">📋</span> MINIV VULKAN UMA — FINAL ALL-LOCAL COMPARISON <span class="count">Bench v2.2 final run</span></div>
+  <div class="table-hint" data-i18n="table.scroll">Swipe horizontally to inspect all gate columns. Prefill/decode separated, MTP and deep context shown.</div>
   <div class="table-wrap" tabindex="0" role="region" aria-label="Benchmark comparison table">
   <table class="data-table">
-    <thead><tr><th>#</th><th>Model</th><th>Class</th><th>Smoke</th><th>Framework</th><th>Gold</th><th class="num">tok/s</th><th>Status</th></tr></thead>
+    <thead><tr><th>#</th><th>Model</th><th>Class</th><th>Pass</th><th class="num">Decode</th><th class="num">Prefill</th><th class="num">MTP</th><th class="num">Deep ctx</th><th>Status</th></tr></thead>
     <tbody>
 <tr>
   <td class="num">1</td>
-  <td><code>miniv-qwopus36-35b-a3b-q4</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>3/4 <span class="muted">strict 3/4</span></td>
-  <td>—</td>
-  <td class="num">70.2</td>
+  <td><code>miniv-qwopus36-35b-a3b-q6-mtp</code></td>
+  <td><span class="badge badge-best">LOCAL_CHAMPION</span></td>
+  <td>4/4</td>
+  <td class="num">71.2</td>
+  <td class="num">320.3</td>
+  <td class="num">90%</td>
+  <td class="num">92s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">2</td>
-  <td><code>miniv-qwopus36-35b-a3b-q8</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>3/4 <span class="muted">strict 3/4</span></td>
-  <td>—</td>
-  <td class="num">56.5</td>
+  <td><code>miniv-qwen36-35b-a3b-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">63.8</td>
+  <td class="num">332.7</td>
+  <td class="num">91%</td>
+  <td class="num">99s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">3</td>
-  <td><code>miniv-qwopus36-35b-a3b-q6</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">71.5</td>
+  <td><code>miniv-qwopus36-35b-a3b-q8-mtp</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">62.5</td>
+  <td class="num">361.8</td>
+  <td class="num">92%</td>
+  <td class="num">93s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">4</td>
-  <td><code>miniv-qwopus36-35b-a3b-q5</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">75.4</td>
+  <td><code>miniv-qwen36-35b-a3b-q8</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">54.4</td>
+  <td class="num">338.6</td>
+  <td class="num">89%</td>
+  <td class="num">105s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">5</td>
-  <td><code>miniv-qwopus36-27b-v2-q6</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">19.9</td>
+  <td><code>miniv-ornith1-35b-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">52.8</td>
+  <td class="num">328.2</td>
+  <td class="num">—</td>
+  <td class="num">97s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">6</td>
-  <td><code>miniv-qwopus36-27b-v2-q8</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">15.4</td>
+  <td><code>miniv-ornith1-35b-q6-100k</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">52.6</td>
+  <td class="num">328.1</td>
+  <td class="num">—</td>
+  <td class="num">97s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">7</td>
-  <td><code>miniv-qwopus36-27b-v2-q5</code></td>
-  <td><span class="badge badge-best">LOCAL_CHAMPION_STRICT_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>2/2 <span class="muted">strict 2/2</span></td>
-  <td class="num">21.9</td>
+  <td><code>miniv-nex-n2-mini-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">49.5</td>
+  <td class="num">336.1</td>
+  <td class="num">—</td>
+  <td class="num">88s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">8</td>
-  <td><code>miniv-qwopus36-27b-v2-q4</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">23.5</td>
+  <td><code>miniv-qwen3-coder-next-q4</code></td>
+  <td><span class="badge badge-warn">SMOKE_PROMOTED</span></td>
+  <td>3/4</td>
+  <td class="num">50.0</td>
+  <td class="num">228.7</td>
+  <td class="num">—</td>
+  <td class="num">106s · 1.00</td>
+  <td>MODEL_DONE</td>
+</tr>
+
+<tr>
+  <td class="num">9</td>
+  <td><code>miniv-qwopus35-9b-coder-q6-mtp</code></td>
+  <td><span class="badge badge-warn">SMOKE_PROMOTED</span></td>
+  <td>3/4</td>
+  <td class="num">48.1</td>
+  <td class="num">439.7</td>
+  <td class="num">89%</td>
+  <td class="num">110s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">10</td>
-  <td><code>miniv-qwen3-coder-next-q4</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 3/3</span></td>
-  <td>3/4 <span class="muted">strict 1/4</span></td>
-  <td>—</td>
-  <td class="num">45.1</td>
+  <td><code>miniv-agentworld-35b-a3b-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">46.5</td>
+  <td class="num">343.6</td>
+  <td class="num">—</td>
+  <td class="num">120s · 0.67</td>
+  <td>MODEL_DONE</td>
+</tr>
+
+<tr>
+  <td class="num">11</td>
+  <td><code>miniv-ornith1-35b-q8</code></td>
+  <td><span class="badge badge-warn">SMOKE_PROMOTED</span></td>
+  <td>3/4</td>
+  <td class="num">45.3</td>
+  <td class="num">372.5</td>
+  <td class="num">—</td>
+  <td class="num">103s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">12</td>
-  <td><code>miniv-qwopus35-9b-coder-bf16</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>3/4 <span class="muted">strict 3/4</span></td>
-  <td>—</td>
-  <td class="num">18.9</td>
+  <td><code>miniv-gemma4-26b-a4b-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">39.7</td>
+  <td class="num">404.8</td>
+  <td class="num">—</td>
+  <td class="num">84s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">13</td>
-  <td><code>miniv-qwopus35-9b-coder-q8</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>4/4 <span class="muted">strict 3/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">41.0</td>
+  <td><code>miniv-gemma4-26b-a4b-q8</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">36.7</td>
+  <td class="num">421.9</td>
+  <td class="num">—</td>
+  <td class="num">83s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">14</td>
-  <td><code>miniv-qwopus35-9b-coder-q6</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>3/4 <span class="muted">strict 3/4</span></td>
-  <td>—</td>
-  <td class="num">49.0</td>
+  <td><code>miniv-agentworld-35b-a3b-q8</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">32.6</td>
+  <td class="num">329.3</td>
+  <td class="num">—</td>
+  <td class="num">114s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">15</td>
-  <td><code>miniv-qwopus35-9b-coder-q5</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>4/4 <span class="muted">strict 3/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">52.8</td>
+  <td><code>miniv-ornith1-9b-q8</code></td>
+  <td><span class="badge badge-warn">SMOKE_PROMOTED</span></td>
+  <td>3/4</td>
+  <td class="num">22.6</td>
+  <td class="num">489.7</td>
+  <td class="num">—</td>
+  <td class="num">94s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">16</td>
-  <td><code>miniv-qwopus35-9b-coder-q4</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>2/3 <span class="muted">strict 1/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">56.3</td>
+  <td><code>miniv-qwopus36-27b-v2-q6-mtp</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">19.1</td>
+  <td class="num">127.2</td>
+  <td class="num">94%</td>
+  <td class="num">301s · 1.00</td>
+  <td>MODEL_DONE</td>
+</tr>
+
+<tr>
+  <td class="num">17</td>
+  <td><code>miniv-qwopus36-27b-coder-q6-mtp</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">19.0</td>
+  <td class="num">128.6</td>
+  <td class="num">93%</td>
+  <td class="num">310s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">18</td>
-  <td><code>miniv-qwen35-9b-flash-q4</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>4/4 <span class="muted">strict 3/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">57.7</td>
+  <td><code>miniv-gemma4-12b-q6</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">16.6</td>
+  <td class="num">279.5</td>
+  <td class="num">—</td>
+  <td class="num">166s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">19</td>
-  <td><code>miniv-qwen35-9b-flash-q6</code></td>
-  <td><span class="badge badge-warn">SMOKE_PROMOTED_NEEDS_FRAMEWORK</span></td>
-  <td>3/3 <span class="muted">strict 1/3</span></td>
-  <td>3/4 <span class="muted">strict 3/4</span></td>
-  <td>—</td>
-  <td class="num">49.8</td>
+  <td><code>miniv-qwopus36-27b-coder-q8-mtp</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">14.7</td>
+  <td class="num">135.7</td>
+  <td class="num">93%</td>
+  <td class="num">293s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">20</td>
-  <td><code>miniv-qwen35-9b-flash-q5</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 2/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">53.2</td>
+  <td><code>miniv-gemma4-12b-q8</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">13.2</td>
+  <td class="num">286.2</td>
+  <td class="num">—</td>
+  <td class="num">159s · 0.67</td>
   <td>MODEL_DONE</td>
 </tr>
 
 <tr>
   <td class="num">21</td>
-  <td><code>miniv-qwen35-9b-flash-q8</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 1/3</span></td>
-  <td>4/4 <span class="muted">strict 3/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">40.8</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">25</td>
-  <td><code>miniv-darwin28b-opus-i1-q5</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 0/3</span></td>
-  <td>4/4 <span class="muted">strict 4/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">10.7</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">26</td>
-  <td><code>miniv-darwin28b-opus-i1-iq4xs</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>2/3 <span class="muted">strict 1/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">12.0</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">27</td>
-  <td><code>miniv-darwin28b-opus-i1-iq3m</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>2/3 <span class="muted">strict 1/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">15.1</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">28</td>
-  <td><code>miniv-darwin28b-coder-q5</code></td>
-  <td><span class="badge badge-warn">FRAMEWORK_READY_NO_GOLD</span></td>
-  <td>3/3 <span class="muted">strict 1/3</span></td>
-  <td>4/4 <span class="muted">strict 3/4</span></td>
-  <td>1/2 <span class="muted">strict 1/2</span></td>
-  <td class="num">10.6</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">29</td>
-  <td><code>miniv-darwin28b-coder-iq4xs</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>2/3 <span class="muted">strict 0/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">11.4</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">30</td>
-  <td><code>miniv-darwin28b-coder-i1-q4ks</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>2/3 <span class="muted">strict 0/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">12.4</td>
-  <td>MODEL_DONE</td>
-</tr>
-
-<tr>
-  <td class="num">31</td>
-  <td><code>miniv-darwin28b-coder-legacy-iq4xs</code></td>
-  <td><span class="badge badge-crit">LOAD_FAIL_QUARANTINE</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td>—</td>
+  <td><code>miniv-qwopus36-27b-v2-q8</code></td>
+  <td><span class="badge badge-done">FRAMEWORK_READY</span></td>
+  <td>4/4</td>
+  <td class="num">7.4</td>
+  <td class="num">139.0</td>
   <td class="num">—</td>
-  <td>LOAD_FAIL</td>
-</tr>
-
-<tr>
-  <td class="num">32</td>
-  <td><code>miniv-darwin28b-coder-i1-iq3m</code></td>
-  <td><span class="badge badge-crit">REPAIR_OR_DRAFT_ONLY</span></td>
-  <td>1/3 <span class="muted">strict 0/3</span></td>
-  <td>—</td>
-  <td>—</td>
-  <td class="num">14.6</td>
+  <td class="num">300s · 1.00</td>
   <td>MODEL_DONE</td>
 </tr></tbody>
   </table>
@@ -555,15 +521,15 @@
     <div class="chart-box">
       <div class="chart-title">Public reference frame</div>
       <p class="note"><b>Jackrong/Kyle Hessling Space:</b> Qwopus3.6-27B v1-preview Q4_K_M on RTX 5090, 16-prompt suite: 5 agentic, 5 web-design, 6 canvas/WebGL. Published copy reports 62.3 tok/s average, 87.4k generated tokens, 23.4 min runtime.</p>
-      <p class="note" style="margin-top:10px;">We reuse the comparison vocabulary — agentic reasoning, production UI, and canvas/WebGL — while showing N30's stricter local multi-pass trust gates.</p>
+      <p class="note" style="margin-top:10px;">We reuse the comparison vocabulary — agentic reasoning, production UI, and canvas/WebGL — while showing N30's stricter local multi-pass trust gates with Bench v2.2 metrics.</p>
     </div>
     <div class="chart-box">
       <div class="chart-title">Local gate mapping</div>
       <ul class="mini-list">
-        <li><b>Smoke</b> → agentic trust probes and structured output reliability.</li>
-        <li><b>Framework</b> → spec/framework planning and review tasks.</li>
-        <li><b>Gold</b> → creative UI/canvas-style gold references.</li>
-        <li><b>Policy</b> → attempt 1 strict; retries are recovery signal only.</li>
+        <li><b>Smoke</b> → agentic trust probes with adaptive timeouts by context size.</li>
+        <li><b>Framework</b> → spec/framework tasks with MTP acceptance rate tracking.</li>
+        <li><b>Deep context</b> → long-context retrieval scoring and timing.</li>
+        <li><b>Policy</b> → prefill/decode separated from llama-server API timings object; thinking tokens isolated via reasoning_content.</li>
       </ul>
     </div>
   </div>
@@ -574,13 +540,13 @@
 
 <div class="tier t4">
   <div class="tier-label"><span class="icon">🔗</span> PROVENANCE & OFFICIAL LINKS <span class="count">public evidence</span></div>
-  <div class="note"><b>Source run:</b> <code>all-local-model-eval-20260528-231052</code> · <b>Summary SHA256:</b> <code>4fd13586827e78a8…</code> · <b>State SHA256:</b> <code>f8baa63f755c2887…</code></div>
+  <div class="note"><b>Source run:</b> Bench v2.2 · 21 models · 84 runs · 2026-07-07 · <b>Methodology:</b> separated prefill/decode metrics, MTP acceptance tracking, deep context retrieval scoring, thinking tokens via reasoning_content, adaptive timeouts by context size.</div>
   <div class="link-row"><a class="link-pill" href="https://linktr.ee/freakingjson" target="_blank" rel="noopener">FreakingJSON Linktree</a><a class="link-pill" href="https://www.youtube.com/@freakingjson" target="_blank" rel="noopener">YouTube</a></div>
 </div>
 
 <div class="footer">
   <div class="mq">⬡ · ⬡ · ⬡</div>
-  © 2026 FreakingJSON Agencia · AI Operations Center · Corsair AI Workstation 300 64GB Benchmark Gallery
+  © 2026 FreakingJSON Agencia · AI Operations Center · Corsair AI Workstation 300 64GB Benchmark Gallery<br>Bench v2.2 · 21 models · 84 runs · 2026-07-07
 </div>
 </div>
 <script>
@@ -589,7 +555,7 @@ function initMatrix(){ width=window.innerWidth; height=window.innerHeight; canva
 function drawMatrix(){ const light=document.body&&document.body.dataset.theme==='light'; ctx.fillStyle=light?'rgba(246,251,255,.08)':'rgba(1,4,3,.06)'; ctx.fillRect(0,0,width,height); ctx.fillStyle=light?'#0e7490':'#06b6d4'; ctx.font=`${charSize}px JetBrains Mono`; for(let i=0;i<drops.length;i++){ const char=chars[Math.floor(Math.random()*chars.length)]; const x=i*charSize; const y=drops[i]*charSize; ctx.globalAlpha=light?(.045+Math.random()*.08):(.1+Math.random()*.2); ctx.fillText(char,x,y); if(y>height && Math.random()>.975)drops[i]=0; drops[i]++; } } setInterval(drawMatrix,50);
 </script>
 <script>
-const DASH={"models": [{"rank": 1, "model_id": "miniv-qwopus36-35b-a3b-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "champion_gold_seed", "prior_decision": "DEFAULT_DRAFT_WITH_BROWSER_RUNTIME_PASS", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 80.448, "min_tok_s": 73.956, "max_tok_s": 84.36, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 0, "avg_tok_s": 70.171, "min_tok_s": 61.924, "max_tok_s": 81.297, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 70.171, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 2, "model_id": "miniv-qwopus36-35b-a3b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "conditional_candidate", "prior_decision": "CONDITIONAL_PROMOTE_AGENTIC_CANVAS__DESIGN_REVIEW_NEEDED", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 60.942, "min_tok_s": 58.607, "max_tok_s": 62.762, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 0, "avg_tok_s": 56.514, "min_tok_s": 51.658, "max_tok_s": 62.654, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 56.514, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 3, "model_id": "miniv-qwopus36-35b-a3b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 72.382, "min_tok_s": 68.547, "max_tok_s": 74.896, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 66.464, "min_tok_s": 60.875, "max_tok_s": 72.396, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 71.5, "min_tok_s": 68.585, "max_tok_s": 74.416, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 71.5, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 4, "model_id": "miniv-qwopus36-35b-a3b-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 77.068, "min_tok_s": 71.145, "max_tok_s": 80.115, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 71.475, "min_tok_s": 65.573, "max_tok_s": 77.127, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 75.366, "min_tok_s": 72.035, "max_tok_s": 78.697, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 75.366, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 5, "model_id": "miniv-qwopus36-27b-v2-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "promote_candidate", "prior_decision": "PROMOTE_CANDIDATE", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 18.932, "min_tok_s": 17.99, "max_tok_s": 19.638, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 17.197, "min_tok_s": 16.263, "max_tok_s": 18.895, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 19.866, "min_tok_s": 19.573, "max_tok_s": 20.159, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 19.866, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 6, "model_id": "miniv-qwopus36-27b-v2-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 14.692, "min_tok_s": 14.303, "max_tok_s": 15.341, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 13.363, "min_tok_s": 12.649, "max_tok_s": 14.86, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 15.384, "min_tok_s": 15.301, "max_tok_s": 15.467, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 15.384, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 7, "model_id": "miniv-qwopus36-27b-v2-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "LOCAL_CHAMPION_STRICT_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 20.591, "min_tok_s": 19.52, "max_tok_s": 21.242, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 18.765, "min_tok_s": 17.65, "max_tok_s": 20.576, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 2, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 21.861, "min_tok_s": 21.788, "max_tok_s": 21.935, "avg_attempts_per_task": 1.0, "attempts_total": 2}}, "last_stage": "gold", "best_avg_tok_s": 21.861, "gold_stage_strict": true, "strict_end_to_end": true}, {"rank": 8, "model_id": "miniv-qwopus36-27b-v2-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "promote_candidate", "prior_decision": "BACKUP_DRAFT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 22.201, "min_tok_s": 20.87, "max_tok_s": 23.007, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 21.006, "min_tok_s": 19.991, "max_tok_s": 21.936, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 23.495, "min_tok_s": 23.017, "max_tok_s": 23.972, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 23.495, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 10, "model_id": "miniv-qwen3-coder-next-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "promote_candidate", "prior_decision": "PROMOTE_CANDIDATE", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 44.573, "min_tok_s": 40.257, "max_tok_s": 49.143, "avg_attempts_per_task": 1.0, "attempts_total": 3}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.25, "strict_pct": 25.0, "recovered_by_retry": 2, "avg_tok_s": 45.072, "min_tok_s": 41.977, "max_tok_s": 47.146, "avg_attempts_per_task": 2.25, "attempts_total": 9}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 45.072, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 12, "model_id": "miniv-qwopus35-9b-coder-bf16", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 19.383, "min_tok_s": 18.58, "max_tok_s": 20.892, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 0, "avg_tok_s": 18.924, "min_tok_s": 18.072, "max_tok_s": 19.478, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 18.924, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 13, "model_id": "miniv-qwopus35-9b-coder-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "repair_draft_candidate", "prior_decision": "DRAFT_ONLY_OR_REPAIR_REQUIRED", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 40.991, "min_tok_s": 38.718, "max_tok_s": 42.889, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 1, "avg_tok_s": 38.669, "min_tok_s": 34.533, "max_tok_s": 42.092, "avg_attempts_per_task": 1.25, "attempts_total": 5}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 41.025, "min_tok_s": 40.639, "max_tok_s": 41.41, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 41.025, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 14, "model_id": "miniv-qwopus35-9b-coder-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "repair_draft_candidate", "prior_decision": "DRAFT_ONLY_OR_REPAIR_REQUIRED", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 50.691, "min_tok_s": 48.977, "max_tok_s": 53.426, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 0, "avg_tok_s": 48.986, "min_tok_s": 46.59, "max_tok_s": 51.41, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 48.986, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 15, "model_id": "miniv-qwopus35-9b-coder-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 53.559, "min_tok_s": 51.914, "max_tok_s": 55.865, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 1, "avg_tok_s": 51.329, "min_tok_s": 46.717, "max_tok_s": 54.405, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 52.828, "min_tok_s": 52.66, "max_tok_s": 52.995, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 52.828, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 16, "model_id": "miniv-qwopus35-9b-coder-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 2, "failed": 1, "pass_rate": 0.6667, "pass_pct": 66.7, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 1, "avg_tok_s": 56.275, "min_tok_s": 55.971, "max_tok_s": 56.542, "avg_attempts_per_task": 2.0, "attempts_total": 6}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 56.275, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 18, "model_id": "miniv-qwen35-9b-flash-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "repair_draft_candidate", "prior_decision": "FAST_DRAFT_WITH_REPAIR", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 53.975, "min_tok_s": 51.038, "max_tok_s": 57.125, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 1, "avg_tok_s": 56.757, "min_tok_s": 55.963, "max_tok_s": 57.614, "avg_attempts_per_task": 1.25, "attempts_total": 5}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 57.734, "min_tok_s": 57.021, "max_tok_s": 58.448, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 57.734, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 19, "model_id": "miniv-qwen35-9b-flash-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED_NEEDS_FRAMEWORK", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 2, "avg_tok_s": 49.629, "min_tok_s": 49.247, "max_tok_s": 50.07, "avg_attempts_per_task": 2.0, "attempts_total": 6}, "framework": {"tasks_total": 4, "passed": 3, "failed": 1, "pass_rate": 0.75, "pass_pct": 75.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 0, "avg_tok_s": 49.842, "min_tok_s": 48.765, "max_tok_s": 50.809, "avg_attempts_per_task": 1.5, "attempts_total": 6}, "gold": null}, "last_stage": "framework", "best_avg_tok_s": 49.842, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 20, "model_id": "miniv-qwen35-9b-flash-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "UNTESTED_VARIANT", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 2, "strict_first_pass_rate": 0.6667, "strict_pct": 66.7, "recovered_by_retry": 1, "avg_tok_s": 51.175, "min_tok_s": 49.557, "max_tok_s": 53.491, "avg_attempts_per_task": 1.333, "attempts_total": 4}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 48.48, "min_tok_s": 45.058, "max_tok_s": 51.033, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 53.245, "min_tok_s": 52.953, "max_tok_s": 53.536, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 53.245, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 21, "model_id": "miniv-qwen35-9b-flash-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "untested_variant", "prior_decision": "REJECT_FOR_TRUST_GATE", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 2, "avg_tok_s": 39.484, "min_tok_s": 38.741, "max_tok_s": 39.983, "avg_attempts_per_task": 1.667, "attempts_total": 5}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 1, "avg_tok_s": 40.174, "min_tok_s": 39.466, "max_tok_s": 40.568, "avg_attempts_per_task": 1.25, "attempts_total": 5}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 40.772, "min_tok_s": 40.387, "max_tok_s": 41.157, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 40.772, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 25, "model_id": "miniv-darwin28b-opus-i1-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 0, "strict_first_pass_rate": 0.0, "strict_pct": 0.0, "recovered_by_retry": 3, "avg_tok_s": 10.458, "min_tok_s": 10.383, "max_tok_s": 10.548, "avg_attempts_per_task": 2.0, "attempts_total": 6}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 4, "strict_first_pass_rate": 1.0, "strict_pct": 100.0, "recovered_by_retry": 0, "avg_tok_s": 10.847, "min_tok_s": 10.803, "max_tok_s": 10.865, "avg_attempts_per_task": 1.0, "attempts_total": 4}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 10.7, "min_tok_s": 10.538, "max_tok_s": 10.862, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 10.7, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 26, "model_id": "miniv-darwin28b-opus-i1-iq4xs", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 2, "failed": 1, "pass_rate": 0.6667, "pass_pct": 66.7, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 1, "avg_tok_s": 11.963, "min_tok_s": 11.597, "max_tok_s": 12.215, "avg_attempts_per_task": 2.0, "attempts_total": 6}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 11.963, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 27, "model_id": "miniv-darwin28b-opus-i1-iq3m", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 2, "failed": 1, "pass_rate": 0.6667, "pass_pct": 66.7, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 1, "avg_tok_s": 15.099, "min_tok_s": 14.401, "max_tok_s": 15.543, "avg_attempts_per_task": 2.0, "attempts_total": 6}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 15.099, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 28, "model_id": "miniv-darwin28b-coder-q5", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY_NO_GOLD", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 3, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.3333, "strict_pct": 33.3, "recovered_by_retry": 2, "avg_tok_s": 10.81, "min_tok_s": 10.722, "max_tok_s": 10.902, "avg_attempts_per_task": 1.667, "attempts_total": 5}, "framework": {"tasks_total": 4, "passed": 4, "failed": 0, "pass_rate": 1.0, "pass_pct": 100.0, "strict_first_pass": 3, "strict_first_pass_rate": 0.75, "strict_pct": 75.0, "recovered_by_retry": 1, "avg_tok_s": 10.718, "min_tok_s": 10.422, "max_tok_s": 10.868, "avg_attempts_per_task": 1.25, "attempts_total": 5}, "gold": {"tasks_total": 2, "passed": 1, "failed": 1, "pass_rate": 0.5, "pass_pct": 50.0, "strict_first_pass": 1, "strict_first_pass_rate": 0.5, "strict_pct": 50.0, "recovered_by_retry": 0, "avg_tok_s": 10.59, "min_tok_s": 10.382, "max_tok_s": 10.797, "avg_attempts_per_task": 2.0, "attempts_total": 4}}, "last_stage": "gold", "best_avg_tok_s": 10.59, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 29, "model_id": "miniv-darwin28b-coder-iq4xs", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 2, "failed": 1, "pass_rate": 0.6667, "pass_pct": 66.7, "strict_first_pass": 0, "strict_first_pass_rate": 0.0, "strict_pct": 0.0, "recovered_by_retry": 2, "avg_tok_s": 11.4, "min_tok_s": 11.17, "max_tok_s": 11.8, "avg_attempts_per_task": 2.667, "attempts_total": 8}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 11.4, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 30, "model_id": "miniv-darwin28b-coder-i1-q4ks", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 2, "failed": 1, "pass_rate": 0.6667, "pass_pct": 66.7, "strict_first_pass": 0, "strict_first_pass_rate": 0.0, "strict_pct": 0.0, "recovered_by_retry": 2, "avg_tok_s": 12.425, "min_tok_s": 12.037, "max_tok_s": 12.681, "avg_attempts_per_task": 2.333, "attempts_total": 7}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 12.425, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 31, "model_id": "miniv-darwin28b-coder-legacy-iq4xs", "environment": "MiniV Vulkan UMA", "status": "LOAD_FAIL", "classification": "LOAD_FAIL_QUARANTINE", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": null, "framework": null, "gold": null}, "last_stage": null, "best_avg_tok_s": null, "gold_stage_strict": false, "strict_end_to_end": false}, {"rank": 32, "model_id": "miniv-darwin28b-coder-i1-iq3m", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "REPAIR_OR_DRAFT_ONLY", "priority_bucket": "quarantine_research", "prior_decision": "QUARANTINE", "stages": {"smoke": {"tasks_total": 3, "passed": 1, "failed": 2, "pass_rate": 0.3333, "pass_pct": 33.3, "strict_first_pass": 0, "strict_first_pass_rate": 0.0, "strict_pct": 0.0, "recovered_by_retry": 1, "avg_tok_s": 14.62, "min_tok_s": 14.129, "max_tok_s": 15.297, "avg_attempts_per_task": 2.667, "attempts_total": 8}, "framework": null, "gold": null}, "last_stage": "smoke", "best_avg_tok_s": 14.62, "gold_stage_strict": false, "strict_end_to_end": false}], "aggregate": {"environment": "MiniV Vulkan UMA", "models_total": 26, "classification_counts": {"SMOKE_PROMOTED_NEEDS_FRAMEWORK": 6, "FRAMEWORK_READY_NO_GOLD": 12, "LOCAL_CHAMPION_STRICT_GOLD": 1, "REPAIR_OR_DRAFT_ONLY": 6, "LOAD_FAIL_QUARANTINE": 1}, "status_counts": {"MODEL_DONE": 25, "LOAD_FAIL": 1}, "strict_end_to_end_champions": ["miniv-qwopus36-27b-v2-q5"], "gold_stage_strict_passers": ["miniv-qwopus36-27b-v2-q5"], "stage_totals": {"smoke": {"models": 25, "passed_all": 19, "strict_all": 9, "avg_tok_s": 36.551}, "framework": {"models": 19, "passed_all": 13, "strict_all": 8, "avg_tok_s": 39.724}, "gold": {"models": 13, "passed_all": 1, "strict_all": 1, "avg_tok_s": 38.028}}}, "stage_totals": {"smoke": {"models": 32, "passed_all": 24, "strict_all": 11}, "framework": {"models": 23, "passed_all": 17, "strict_all": 10}, "gold": {"models": 16, "passed_all": 3, "strict_all": 3}}, "legacyModels": [], "jackrong": {"space": "https://huggingface.co/spaces/Jackrong/qwopus36-eval", "framing": "Jackrong/Kyle Hessling public qwopus36-eval style uses agentic reasoning, web-design, and canvas/WebGL prompts. This gallery maps that public comparison vocabulary to N30's strict local trust gates; it is not a hardware apples-to-apples claim.", "public_reference_metrics_seen": {"model": "Jackrong/Qwopus3.6-27B-v1-preview-GGUF Q4_K_M", "hardware": "single RTX 5090 via llama.cpp", "suite": "5 agentic + 5 web-design + 6 canvas/WebGL prompts", "headline": "62.3 tok/s avg, 87.4k generated tokens, 23.4 min runtime (from the public Space copy)"}, "local_mapping": {"smoke": "agentic trust probes and structured reasoning checks", "framework": "framework-spec execution/review tasks", "gold": "creative UI/canvas-style gold reference tasks"}}};
+const DASH={"models": [{"rank": 1, "model_id": "miniv-qwopus36-35b-a3b-q6-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "LOCAL_CHAMPION", "decode_tps": 71.2, "prefill_tps": 320.3, "mtp_accept_pct": 90, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 92, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 2, "model_id": "miniv-qwen36-35b-a3b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 63.8, "prefill_tps": 332.7, "mtp_accept_pct": 91, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 99, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 3, "model_id": "miniv-qwopus36-35b-a3b-q8-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 62.5, "prefill_tps": 361.8, "mtp_accept_pct": 92, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 93, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 4, "model_id": "miniv-qwen36-35b-a3b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 54.4, "prefill_tps": 338.6, "mtp_accept_pct": 89, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 105, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 5, "model_id": "miniv-ornith1-35b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 52.8, "prefill_tps": 328.2, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 97, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 6, "model_id": "miniv-ornith1-35b-q6-100k", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 52.6, "prefill_tps": 328.1, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 97, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 7, "model_id": "miniv-nex-n2-mini-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 49.5, "prefill_tps": 336.1, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 88, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 8, "model_id": "miniv-qwen3-coder-next-q4", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED", "decode_tps": 50.0, "prefill_tps": 228.7, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 106, "score": 0.85, "passes": "3/4", "strict_end_to_end": false}, {"rank": 9, "model_id": "miniv-qwopus35-9b-coder-q6-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED", "decode_tps": 48.1, "prefill_tps": 439.7, "mtp_accept_pct": 89, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 110, "score": 0.85, "passes": "3/4", "strict_end_to_end": false}, {"rank": 10, "model_id": "miniv-agentworld-35b-a3b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 46.5, "prefill_tps": 343.6, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 120, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 11, "model_id": "miniv-ornith1-35b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED", "decode_tps": 45.3, "prefill_tps": 372.5, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 103, "score": 0.85, "passes": "3/4", "strict_end_to_end": false}, {"rank": 12, "model_id": "miniv-gemma4-26b-a4b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 39.7, "prefill_tps": 404.8, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 84, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 13, "model_id": "miniv-gemma4-26b-a4b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 36.7, "prefill_tps": 421.9, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 83, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 14, "model_id": "miniv-agentworld-35b-a3b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 32.6, "prefill_tps": 329.3, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 114, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 15, "model_id": "miniv-ornith1-9b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "SMOKE_PROMOTED", "decode_tps": 22.6, "prefill_tps": 489.7, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 94, "score": 0.77, "passes": "3/4", "strict_end_to_end": false}, {"rank": 16, "model_id": "miniv-qwopus36-27b-v2-q6-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 19.1, "prefill_tps": 127.2, "mtp_accept_pct": 94, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 301, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 17, "model_id": "miniv-qwopus36-27b-coder-q6-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 19.0, "prefill_tps": 128.6, "mtp_accept_pct": 93, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 310, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 18, "model_id": "miniv-gemma4-12b-q6", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 16.6, "prefill_tps": 279.5, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 166, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 19, "model_id": "miniv-qwopus36-27b-coder-q8-mtp", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 14.7, "prefill_tps": 135.7, "mtp_accept_pct": 93, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 293, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}, {"rank": 20, "model_id": "miniv-gemma4-12b-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 13.2, "prefill_tps": 286.2, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 0.67, "deep_context_time_s": 159, "score": 0.92, "passes": "4/4", "strict_end_to_end": false}, {"rank": 21, "model_id": "miniv-qwopus36-27b-v2-q8", "environment": "MiniV Vulkan UMA", "status": "MODEL_DONE", "classification": "FRAMEWORK_READY", "decode_tps": 7.4, "prefill_tps": 139.0, "mtp_accept_pct": 0, "thinking_tokens": 0, "deep_context_score": 1.00, "deep_context_time_s": 300, "score": 1.00, "passes": "4/4", "strict_end_to_end": true}], "aggregate": {"environment": "MiniV Vulkan UMA", "models_total": 21, "classification_counts": {"LOCAL_CHAMPION": 1, "FRAMEWORK_READY": 16, "SMOKE_PROMOTED": 4}, "strict_end_to_end_champions": ["miniv-qwopus36-35b-a3b-q6-mtp"], "bench_version": "v2.2", "total_runs": 84, "perfect_score_count": 11, "best_decode_tps": 71.2, "best_mtp_accept_pct": 94, "best_deep_context_time_s": 92}, "legacyModels": [], "jackrong": {"space": "https://huggingface.co/spaces/Jackrong/qwopus36-eval", "framing": "Jackrong/Kyle Hessling public qwopus36-eval style uses agentic reasoning, web-design, and canvas/WebGL prompts. This gallery maps that public comparison vocabulary to N30's strict local trust gates with Bench v2.2 metrics; it is not a hardware apples-to-apples claim.", "public_reference_metrics_seen": {"model": "Jackrong/Qwopus3.6-27B-v1-preview-GGUF Q4_K_M", "hardware": "single RTX 5090 via llama.cpp", "suite": "5 agentic + 5 web-design + 6 canvas/WebGL prompts", "headline": "62.3 tok/s avg, 87.4k generated tokens, 23.4 min runtime (from the public Space copy)"}, "local_mapping": {"smoke": "agentic trust probes with adaptive timeouts by context size", "framework": "framework-spec execution/review tasks with MTP acceptance tracking", "deep_context": "long-context retrieval scoring and timing measurement"}}};
 
 const PAGE_KIND='miniv';
 const THEME_KEY=`fjson-gallery-theme-${PAGE_KIND}`;
@@ -600,72 +566,72 @@ const PAGE_TEXT={
     'hero.title.rtx':'<span class="t">RTX</span><span class="d">_</span><span class="l">5060Ti</span> <span class="d">::</span> <span class="t">TRUST</span><span class="d">_</span><span class="l">GATES</span>',
     'hero.subtitle.rtx':'Vector RTX 5060 Ti CUDA · all-local trust gates · Jackrong comparison frame · <span>Updated May 29, 2026</span>',
     'hero.title.miniv':'<span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span>',
-    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated May 29, 2026</span>',
+    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 07, 2026 · Bench v2.2</span>',
     'section.creditLabel':'<span class="icon">🧠</span> ORCHESTRATION CREDIT <span class="count">N30</span>',
     'section.metricsLabel.rtx':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">Vector RTX 5060 Ti CUDA</span>',
-    'section.metricsLabel.miniv':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA</span>',
-    'section.pipelineLabel':'<span class="icon">🧪</span> N30 TRUST PIPELINE <span class="count">strict vs recovery</span>',
+    'section.metricsLabel.miniv':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA · Bench v2.2</span>',
+    'section.pipelineLabel':'<span class="icon">🧪</span> N30 TRUST PIPELINE <span class="count">Bench v2.2 methodology</span>',
     'section.leaderboardLabel.rtx':'<span class="icon">🏆</span> QUALITY LEADERBOARD <span class="count">8 models</span>',
-    'section.leaderboardLabel.miniv':'<span class="icon">🏆</span> QUALITY LEADERBOARD <span class="count">26 models</span>',
+    'section.leaderboardLabel.miniv':'<span class="icon">🏆</span> QUALITY LEADERBOARD <span class="count">21 models · Bench v2.2</span>',
     'section.tableLabel.rtx':'<span class="icon">📋</span> VECTOR RTX CUDA — FINAL ALL-LOCAL COMPARISON <span class="count">final run</span>',
-    'section.tableLabel.miniv':'<span class="icon">📋</span> MINIV VULKAN UMA — FINAL ALL-LOCAL COMPARISON <span class="count">final run</span>',
+    'section.tableLabel.miniv':'<span class="icon">📋</span> MINIV VULKAN UMA — FINAL ALL-LOCAL COMPARISON <span class="count">Bench v2.2 final run</span>',
     'section.legacyLabel':'<span class="icon">🏎️</span> LEGACY THROUGHPUT BASELINE <span class="count">RTX CUDA · historical lane</span>',
     'section.comparisonLabel':'<span class="icon">🧬</span> JACKRONG QWOPUS36-EVAL STYLE COMPARISON <span class="count">framing, not apples-to-apples</span>',
     'section.provenanceLabel':'<span class="icon">🔗</span> PROVENANCE & OFFICIAL LINKS <span class="count">public evidence</span>',
     'credit.prefix':'Benchmark methodology owner',
-    'credit.note':'Directed by N30. Strict trust remains separated from draft/recovery lanes.',
-    'metric.models':'Models Evaluated','metric.champions':'Strict E2E Champions','metric.goldStrict':'Gold-stage Strict Passers','metric.frameworkAll':'Framework Passed All','metric.goldAll':'Gold Passed All','metric.topSpeed':'Top measured tok/s',
-    'method.smoke.title':'Smoke gate','method.smoke.body':'Agentic/structured tasks. Pass all here before deeper evaluation. Attempt 1 is strict; attempts 2-3 only show recoverability.',
-    'method.framework.title':'Framework gate','method.framework.body':'Framework-spec tasks: executable contracts, BMAD/story breakdown, spec review, and execution planning.',
-    'method.gold.title':'Gold gate','method.gold.body':'High-signal creative UI/canvas reference tasks. Gold passers are scarce by design; no draft lane is overclaimed.',
-    'table.scroll':'Swipe horizontally to inspect all gate columns. First-pass strict and recovery data stay separated.',
-    'table.num':'#','table.model':'Model','table.class':'Class','table.smoke':'Smoke','table.framework':'Framework','table.gold':'Gold','table.toks':'tok/s','table.status':'Status',
+    'credit.note':'Directed by N30. Bench v2.2 methodology: separated prefill/decode metrics, MTP acceptance tracking, and deep context retrieval scoring. Strict trust remains separated from draft/recovery lanes.',
+    'metric.models':'Models Evaluated','metric.champions':'Total Benchmark Runs','metric.goldStrict':'Perfect Score (1.00)','metric.frameworkAll':'Best Decode tok/s','metric.goldAll':'Best MTP Accept','metric.topSpeed':'Best Deep Context',
+    'method.smoke.title':'Smoke gate','method.smoke.body':'Agentic/structured tasks with adaptive timeouts by context size. Bench v2.2 separates prefill/decode metrics from llama-server API timings object. Thinking tokens isolated via reasoning_content field.',
+    'method.framework.title':'Framework gate','method.framework.body':'Framework-spec tasks: executable contracts, BMAD/story breakdown, spec review, and execution planning. MTP acceptance rate tracked for multi-token prediction models.',
+    'method.gold.title':'Deep context gate','method.gold.body':'Long-context retrieval scoring (deep_context_score) with timing measurement (deep_context_time_s). OS-level optimizations: CPU governor performance, ubatch-size tuning, THP enabled.',
+    'table.scroll':'Swipe horizontally to inspect all gate columns. Prefill/decode separated, MTP and deep context shown.',
+    'table.num':'#','table.model':'Model','table.class':'Class','table.smoke':'Pass','table.framework':'Decode','table.gold':'Prefill','table.toks':'MTP','table.status':'Status',
     'legacy.note':'Original RTX gallery throughput evidence is preserved for continuity, then fused with the new trust-gate results. Throughput alone is not promoted to production trust; it is displayed beside strict/recoverable gate outcomes.',
     'comparison.publicTitle':'Public reference frame','comparison.localTitle':'Local gate mapping',
     'comparison.publicBody1':'<b>Jackrong/Kyle Hessling Space:</b> Qwopus3.6-27B v1-preview Q4_K_M on RTX 5090, 16-prompt suite: 5 agentic, 5 web-design, 6 canvas/WebGL. Published copy reports 62.3 tok/s average, 87.4k generated tokens, 23.4 min runtime.',
-    'comparison.publicBody2':'We reuse the comparison vocabulary — agentic reasoning, production UI, and canvas/WebGL — while showing N30\'s stricter local multi-pass trust gates.',
-    'mapping.smoke':'<b>Smoke</b> → agentic trust probes and structured output reliability.','mapping.framework':'<b>Framework</b> → spec/framework planning and review tasks.','mapping.gold':'<b>Gold</b> → creative UI/canvas-style gold references.','mapping.policy':'<b>Policy</b> → attempt 1 strict; retries are recovery signal only.',
-    'provenance.source':'<b>Source run:</b> <code>all-local-model-eval-20260528-231052</code> · <b>Summary SHA256:</b> <code>4fd13586827e78a8…</code> · <b>State SHA256:</b> <code>f8baa63f755c2887…</code>',
+    'comparison.publicBody2':'We reuse the comparison vocabulary — agentic reasoning, production UI, and canvas/WebGL — while showing N30\'s stricter local multi-pass trust gates with Bench v2.2 metrics.',
+    'mapping.smoke':'<b>Smoke</b> → agentic trust probes with adaptive timeouts by context size.','mapping.framework':'<b>Framework</b> → spec/framework tasks with MTP acceptance rate tracking.','mapping.gold':'<b>Deep context</b> → long-context retrieval scoring and timing.','mapping.policy':'<b>Policy</b> → prefill/decode separated from llama-server API timings object; thinking tokens isolated via reasoning_content.',
+    'provenance.source':'<b>Source run:</b> Bench v2.2 · 21 models · 84 runs · 2026-07-07 · <b>Methodology:</b> separated prefill/decode metrics, MTP acceptance tracking, deep context retrieval scoring, thinking tokens via reasoning_content, adaptive timeouts by context size.',
     'link.jackrong':'Jackrong qwopus36-eval reference','link.github':'N30 GitHub','link.linktree':'FreakingJSON Linktree','link.youtube':'YouTube',
-    'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · RTX 5060 Ti Benchmark Gallery',
-    'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · Corsair AI Workstation 300 64GB Benchmark Gallery',
-    'chart.axis':'Trust lane score (classification-derived)','chart.axisShort':'Trust lane score','chart.toks':'tok/s','chart.strictGold':'STRICT GOLD','chart.recoverable':'RECOVERABLE','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'LOAD FAIL','chart.quarantine':'QUARANTINE','chart.draft':'DRAFT','fallback.trust':'Plotly CDN unavailable; table data below is the canonical source.','fallback.legacy':'Plotly CDN unavailable; throughput data preserved in JSON files.'
+    'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · RTX 5060 Ti Benchmark Gallery<br>Bench v2.2 · 21 models · 84 runs · 2026-07-07',
+    'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · AI Operations Center · Corsair AI Workstation 300 64GB Benchmark Gallery<br>Bench v2.2 · 21 models · 84 runs · 2026-07-07',
+    'chart.axis':'Trust lane score (classification-derived)','chart.axisShort':'Trust lane score','chart.toks':'tok/s','chart.strictGold':'LOCAL_CHAMPION','chart.recoverable':'FRAMEWORK_READY','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'LOAD FAIL','chart.quarantine':'QUARANTINE','chart.draft':'DRAFT','fallback.trust':'Plotly CDN unavailable; table data below is the canonical source.','fallback.legacy':'Plotly CDN unavailable; throughput data preserved in JSON files.'
   },
   es:{
     'controls.language':'Idioma','controls.theme':'Modo','controls.themeButtonLight':'Modo claro','controls.themeButtonDark':'Modo oscuro','controls.status':'ES/EN en vivo · Oscuro/Claro',
     'hero.title.rtx':'<span class="t">RTX</span><span class="d">_</span><span class="l">5060Ti</span> <span class="d">::</span> <span class="t">GATES</span><span class="d">_</span><span class="l">CONFIANZA</span>',
     'hero.subtitle.rtx':'Vector RTX 5060 Ti CUDA · gates locales de confianza · marco comparativo Jackrong · <span>Actualizado 29 mayo 2026</span>',
     'hero.title.miniv':'<span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span>',
-    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · gates locales de confianza · <span>Actualizado 29 mayo 2026</span>',
+    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · gates locales de confianza · <span>Actualizado 07 julio 2026 · Bench v2.2</span>',
     'section.creditLabel':'<span class="icon">🧠</span> CRÉDITO DE ORQUESTACIÓN <span class="count">N30</span>',
     'section.metricsLabel.rtx':'<span class="icon">📊</span> MÉTRICAS FINALES DE CONFIANZA <span class="count">Vector RTX 5060 Ti CUDA</span>',
-    'section.metricsLabel.miniv':'<span class="icon">📊</span> MÉTRICAS FINALES DE CONFIANZA <span class="count">MiniV Vulkan UMA</span>',
-    'section.pipelineLabel':'<span class="icon">🧪</span> PIPELINE DE CONFIANZA N30 <span class="count">estricto vs recuperación</span>',
+    'section.metricsLabel.miniv':'<span class="icon">📊</span> MÉTRICAS FINALES DE CONFIANZA <span class="count">MiniV Vulkan UMA · Bench v2.2</span>',
+    'section.pipelineLabel':'<span class="icon">🧪</span> PIPELINE DE CONFIANZA N30 <span class="count">metodología Bench v2.2</span>',
     'section.leaderboardLabel.rtx':'<span class="icon">🏆</span> RANKING DE CALIDAD <span class="count">8 modelos</span>',
-    'section.leaderboardLabel.miniv':'<span class="icon">🏆</span> RANKING DE CALIDAD <span class="count">26 modelos</span>',
+    'section.leaderboardLabel.miniv':'<span class="icon">🏆</span> RANKING DE CALIDAD <span class="count">21 modelos · Bench v2.2</span>',
     'section.tableLabel.rtx':'<span class="icon">📋</span> VECTOR RTX CUDA — COMPARATIVA LOCAL FINAL <span class="count">run final</span>',
-    'section.tableLabel.miniv':'<span class="icon">📋</span> MINIV VULKAN UMA — COMPARATIVA LOCAL FINAL <span class="count">run final</span>',
+    'section.tableLabel.miniv':'<span class="icon">📋</span> MINIV VULKAN UMA — COMPARATIVA LOCAL FINAL <span class="count">run final Bench v2.2</span>',
     'section.legacyLabel':'<span class="icon">🏎️</span> BASELINE HISTÓRICO DE THROUGHPUT <span class="count">RTX CUDA · carril histórico</span>',
     'section.comparisonLabel':'<span class="icon">🧬</span> COMPARACIÓN ESTILO JACKRONG QWOPUS36-EVAL <span class="count">marco, no equivalencia directa</span>',
     'section.provenanceLabel':'<span class="icon">🔗</span> PROVENIENCIA Y LINKS OFICIALES <span class="count">evidencia pública</span>',
     'credit.prefix':'Responsable metodológico del benchmark',
-    'credit.note':'Dirigido por N30. La confianza estricta se mantiene separada de carriles borrador/recuperación.',
-    'metric.models':'Modelos evaluados','metric.champions':'Campeones E2E estrictos','metric.goldStrict':'Pasaron Gold en estricto','metric.frameworkAll':'Framework completo','metric.goldAll':'Gold completo','metric.topSpeed':'Máx. tok/s medido',
-    'method.smoke.title':'Gate Smoke','method.smoke.body':'Tareas agentic/estructuradas. Deben pasar aquí antes de una evaluación profunda. Intento 1 es estricto; intentos 2-3 sólo indican recuperabilidad.',
-    'method.framework.title':'Gate Framework','method.framework.body':'Tareas con especificación de framework: contratos ejecutables, desglose BMAD/story, revisión de specs y planificación de ejecución.',
-    'method.gold.title':'Gate Gold','method.gold.body':'Referencias creativas de alta señal en UI/canvas. Los modelos que pasan Gold son escasos por diseño; ningún carril draft se sobrevende.',
-    'table.scroll':'Desliza horizontalmente para revisar todas las columnas. El primer intento estricto y la recuperación permanecen separados.',
-    'table.num':'#','table.model':'Modelo','table.class':'Clase','table.smoke':'Smoke','table.framework':'Framework','table.gold':'Gold','table.toks':'tok/s','table.status':'Estado',
+    'credit.note':'Dirigido por N30. Metodología Bench v2.2: métricas separadas de prefill/decode, tracking de aceptación MTP y scoring de recuperación en contexto profundo. La confianza estricta se mantiene separada de carriles borrador/recuperación.',
+    'metric.models':'Modelos evaluados','metric.champions':'Runs totales','metric.goldStrict':'Puntaje perfecto (1.00)','metric.frameworkAll':'Mejor decode tok/s','metric.goldAll':'Mejor MTP','metric.topSpeed':'Mejor ctx profundo',
+    'method.smoke.title':'Gate Smoke','method.smoke.body':'Tareas agentic/estructuradas con timeouts adaptativos por tamaño de contexto. Bench v2.2 separa métricas de prefill/decode del objeto de timings del API de llama-server. Tokens de razonamiento aislados vía reasoning_content.',
+    'method.framework.title':'Gate Framework','method.framework.body':'Tareas con especificación de framework: contratos ejecutables, desglose BMAD/story, revisión de specs y planificación. Tracking de tasa de aceptación MTP para modelos con multi-token prediction.',
+    'method.gold.title':'Gate Contexto Profundo','method.gold.body':'Scoring de recuperación en contexto largo (deep_context_score) con medición de tiempo (deep_context_time_s). Optimizaciones OS: CPU governor performance, ubatch-size, THP habilitado.',
+    'table.scroll':'Desliza horizontalmente para revisar todas las columnas. Prefill/decode separados, MTP y contexto profundo mostrados.',
+    'table.num':'#','table.model':'Modelo','table.class':'Clase','table.smoke':'Pass','table.framework':'Decode','table.gold':'Prefill','table.toks':'MTP','table.status':'Estado',
     'legacy.note':'La evidencia histórica de throughput de la galería RTX se conserva por continuidad y se fusiona con los nuevos resultados de gates de confianza. El throughput por sí solo no se promueve a confianza productiva.',
     'comparison.publicTitle':'Marco público de referencia','comparison.localTitle':'Mapeo del gate local',
     'comparison.publicBody1':'<b>Space de Jackrong/Kyle Hessling:</b> Qwopus3.6-27B v1-preview Q4_K_M en RTX 5090, suite de 16 prompts: 5 agentic, 5 web-design, 6 canvas/WebGL. El copy público reporta 62.3 tok/s promedio, 87.4k tokens generados y 23.4 min de ejecución.',
-    'comparison.publicBody2':'Reutilizamos el vocabulario comparativo — razonamiento agentic, UI de producción y canvas/WebGL — mostrando los gates locales multi-pass más estrictos de N30.',
-    'mapping.smoke':'<b>Smoke</b> → pruebas de confianza agentic y confiabilidad de output estructurado.','mapping.framework':'<b>Framework</b> → tareas de planificación/revisión de specs y framework.','mapping.gold':'<b>Gold</b> → referencias Gold creativas estilo UI/canvas.','mapping.policy':'<b>Política</b> → intento 1 estricto; los reintentos son sólo señal de recuperación.',
-    'provenance.source':'<b>Run fuente:</b> <code>all-local-model-eval-20260528-231052</code> · <b>SHA256 resumen:</b> <code>4fd13586827e78a8…</code> · <b>SHA256 estado:</b> <code>f8baa63f755c2887…</code>',
+    'comparison.publicBody2':'Reutilizamos el vocabulario comparativo — razonamiento agentic, UI de producción y canvas/WebGL — mostrando los gates locales multi-pass más estrictos de N30 con métricas Bench v2.2.',
+    'mapping.smoke':'<b>Smoke</b> → pruebas de confianza agentic con timeouts adaptativos por tamaño de contexto.','mapping.framework':'<b>Framework</b> → tareas de spec/framework con tracking de tasa de aceptación MTP.','mapping.gold':'<b>Contexto profundo</b> → scoring y medición de tiempo de recuperación en contexto largo.','mapping.policy':'<b>Política</b> → prefill/decode separados del objeto de timings del API de llama-server; tokens de razonamiento aislados vía reasoning_content.',
+    'provenance.source':'<b>Run fuente:</b> Bench v2.2 · 21 modelos · 84 runs · 2026-07-07 · <b>Metodología:</b> métricas separadas de prefill/decode, tracking de aceptación MTP, scoring de contexto profundo, tokens de razonamiento vía reasoning_content, timeouts adaptativos.',
     'link.jackrong':'Referencia Jackrong qwopus36-eval','link.github':'GitHub N30','link.linktree':'Linktree FreakingJSON','link.youtube':'YouTube',
-    'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark RTX 5060 Ti',
-    'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark Corsair AI Workstation 300 64GB',
-    'chart.axis':'Puntaje de carril de confianza (derivado por clasificación)','chart.axisShort':'Puntaje de confianza','chart.toks':'tok/s','chart.strictGold':'GOLD ESTRICTO','chart.recoverable':'RECUPERABLE','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'FALLA CARGA','chart.quarantine':'CUARENTENA','chart.draft':'DRAFT','fallback.trust':'Plotly CDN no disponible; la tabla inferior es la fuente canónica.','fallback.legacy':'Plotly CDN no disponible; los datos de throughput están preservados en JSON.'
+    'footer.rtx':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark RTX 5060 Ti<br>Bench v2.2 · 21 modelos · 84 runs · 2026-07-07',
+    'footer.miniv':'<div class="mq">⬡ · ⬡ · ⬡</div>© 2026 FreakingJSON Agencia · Centro de Operaciones IA · Galería Benchmark Corsair AI Workstation 300 64GB<br>Bench v2.2 · 21 modelos · 84 runs · 2026-07-07',
+    'chart.axis':'Puntaje de carril de confianza (derivado por clasificación)','chart.axisShort':'Puntaje de confianza','chart.toks':'tok/s','chart.strictGold':'CAMPEÓN LOCAL','chart.recoverable':'FRAMEWORK','chart.framework':'FRAMEWORK','chart.smoke':'SMOKE','chart.loadFail':'FALLA CARGA','chart.quarantine':'CUARENTENA','chart.draft':'DRAFT','fallback.trust':'Plotly CDN no disponible; la tabla inferior es la fuente canónica.','fallback.legacy':'Plotly CDN no disponible; los datos de throughput están preservados en JSON.'
   }
 };
 function tr(key){ const lang=currentLanguage(); return (PAGE_TEXT[lang]&&PAGE_TEXT[lang][key]) || PAGE_TEXT.en[key] || key; }
@@ -731,15 +697,15 @@ function chartBaseLayout(){
     yaxis:{gridcolor:light?'rgba(6,116,144,.08)':'rgba(6,182,212,.08)',zerolinecolor:light?'rgba(6,116,144,.16)':'rgba(6,182,212,.15)',tickfont:{size:mobile?8:10},automargin:true},
     margin:mobile?{l:118,r:10,t:10,b:78}:{l:220,r:110,t:20,b:70},hoverlabel:{bgcolor:light?'#ffffff':'#020617',bordercolor:'#06b6d4',font:{color:light?'#102033':'#e2e8f0'}}};
 }
-function clsScore(c){ return c==='LOCAL_CHAMPION_STRICT_GOLD'?100:c==='LOCAL_CHAMPION_RECOVERABLE_GOLD'?88:c==='FRAMEWORK_READY_NO_GOLD'?72:c==='SMOKE_PROMOTED_NEEDS_FRAMEWORK'?58:c==='REPAIR_OR_DRAFT_ONLY'?36:c==='TIMEOUT'?25:12; }
-function color(c){ return c==='LOCAL_CHAMPION_STRICT_GOLD'?'#06b6d4':c==='LOCAL_CHAMPION_RECOVERABLE_GOLD'?'#c084fc':c==='FRAMEWORK_READY_NO_GOLD'?'#4ade80':c==='SMOKE_PROMOTED_NEEDS_FRAMEWORK'?'#fb923c':c.includes('QUARANTINE')?'#ef4444':'#64748b'; }
-function laneLabel(c){ return c==='LOCAL_CHAMPION_STRICT_GOLD'?tr('chart.strictGold'):c==='LOCAL_CHAMPION_RECOVERABLE_GOLD'?tr('chart.recoverable'):c==='FRAMEWORK_READY_NO_GOLD'?tr('chart.framework'):c==='SMOKE_PROMOTED_NEEDS_FRAMEWORK'?tr('chart.smoke'):c.includes('LOAD_FAIL')?tr('chart.loadFail'):c.includes('QUARANTINE')?tr('chart.quarantine'):tr('chart.draft'); }
+function clsScore(c){ return c==='LOCAL_CHAMPION'?100:c==='FRAMEWORK_READY'?72:c==='SMOKE_PROMOTED'?58:c.includes('REPAIR')?36:c==='TIMEOUT'?25:12; }
+function color(c){ return c==='LOCAL_CHAMPION'?'#06b6d4':c==='FRAMEWORK_READY'?'#4ade80':c==='SMOKE_PROMOTED'?'#fb923c':c.includes('QUARANTINE')?'#ef4444':'#64748b'; }
+function laneLabel(c){ return c==='LOCAL_CHAMPION'?tr('chart.strictGold'):c==='FRAMEWORK_READY'?tr('chart.recoverable'):c==='SMOKE_PROMOTED'?tr('chart.smoke'):c.includes('LOAD_FAIL')?tr('chart.loadFail'):c.includes('QUARANTINE')?tr('chart.quarantine'):tr('chart.draft'); }
 function shortName(id){ const n=id.replace(/^vector-|^miniv-/,''); const limit=window.innerWidth<=700?23:42; return n.length>limit?n.slice(0,limit-1)+'…':n; }
 function renderFallback(id, text){ const el=document.getElementById(id); if(el) el.innerHTML='<div class="note">'+text+'</div>'; }
 function renderCharts(){
   if(!window.Plotly){ renderFallback('trustChart',tr('fallback.trust')); renderFallback('legacyThroughput',tr('fallback.legacy')); return; }
-  const base=chartBaseLayout(); const mobile=window.innerWidth<=700; const top=[...DASH.models].sort((a,b)=>clsScore(a.classification)-clsScore(b.classification) || (b.best_avg_tok_s||0)-(a.best_avg_tok_s||0));
-  Plotly.react('trustChart',[{type:'bar',orientation:'h',x:top.map(m=>clsScore(m.classification)),y:top.map(m=>shortName(m.model_id)),marker:{color:top.map(m=>color(m.classification))},text:top.map(m=>laneLabel(m.classification)),textposition:mobile?'none':'inside',insidetextanchor:'end',textfont:{color:'#010403',size:9},cliponaxis:false,hovertext:top.map(m=>`<b>${m.model_id}</b><br>${m.environment}<br>${m.classification}<br>Best measured tok/s: ${m.best_avg_tok_s??'—'}`),hoverinfo:'text'}],{...base,xaxis:{...base.xaxis,title:mobile?tr('chart.axisShort'):tr('chart.axis')},height:Math.max(mobile?380:330,DASH.models.length*(mobile?34:28))},{displayModeBar:false,responsive:true});
+  const base=chartBaseLayout(); const mobile=window.innerWidth<=700; const top=[...DASH.models].sort((a,b)=>clsScore(a.classification)-clsScore(b.classification) || (b.decode_tps||0)-(a.decode_tps||0));
+  Plotly.react('trustChart',[{type:'bar',orientation:'h',x:top.map(m=>clsScore(m.classification)),y:top.map(m=>shortName(m.model_id)),marker:{color:top.map(m=>color(m.classification))},text:top.map(m=>laneLabel(m.classification)),textposition:mobile?'none':'inside',insidetextanchor:'end',textfont:{color:'#010403',size:9},cliponaxis:false,hovertext:top.map(m=>`<b>${m.model_id}</b><br>${m.environment}<br>${m.classification}<br>Decode: ${m.decode_tps??'—'} tok/s · Prefill: ${m.prefill_tps??'—'} tok/s<br>MTP: ${m.mtp_accept_pct?(m.mtp_accept_pct+'%'):'—'} · Deep ctx: ${m.deep_context_time_s??'—'}s · Score: ${m.score??'—'} (${m.passes??'—'})`),hoverinfo:'text'}],{...base,xaxis:{...base.xaxis,title:mobile?tr('chart.axisShort'):tr('chart.axis')},height:Math.max(mobile?380:330,DASH.models.length*(mobile?34:28))},{displayModeBar:false,responsive:true});
   if(DASH.legacyModels && DASH.legacyModels.length && document.getElementById('legacyThroughput')){
     const lm=DASH.legacyModels.filter(m=>m.throughput_toks).sort((a,b)=>a.throughput_toks-b.throughput_toks);
     Plotly.react('legacyThroughput',[{type:'bar',orientation:'h',x:lm.map(m=>m.throughput_toks),y:lm.map(m=>mobile?m.name.split(' ').slice(0,2).join(' '):m.name.split(' ').slice(0,3).join(' ')),marker:{color:'#06b6d4'},text:lm.map(m=>`${m.throughput_toks} ${tr('chart.toks')}`),textposition:mobile?'none':'outside',cliponaxis:false,hovertext:lm.map(m=>`<b>${m.name}</b><br>${m.quant}<br>VRAM: ${m.vram_gib??'—'} GiB`),hoverinfo:'text'}],{...base,xaxis:{...base.xaxis,title:tr('chart.toks')},margin:mobile?{l:106,r:10,t:10,b:72}:{l:190,r:80,t:20,b:70},height:mobile?380:330},{displayModeBar:false,responsive:true});
