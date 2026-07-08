@@ -56,7 +56,7 @@ Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-b
 
 ## DFlash Pilot Update — 2026-07-08
 
-- Public report: [`dflash-bench/index.html`](dflash-bench/)
+- Public report: [`dflash-bench/index.html`](dflash-bench/index.html)
 - Dataset: [`dflash-bench/results.json`](dflash-bench/results.json), [`summary.csv`](dflash-bench/summary.csv), [`comparisons.csv`](dflash-bench/comparisons.csv)
 - Decision: DFlash is **not promoted** on MiniV yet. In the isolated Vulkan DFlash build, baseline was faster than DFlash on Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B.
 - Methodology: load/prefill/decode/wall/draft-acceptance kept separate; no combined TPS.
