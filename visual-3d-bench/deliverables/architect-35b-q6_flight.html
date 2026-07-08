@@ -3,684 +3,1075 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flight Simulator</title>
+<title>3D Flight Simulator</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
-canvas { display: block; }
-#hud { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
-#hudCanvas { width: 100%; height: 100%; }
-#message { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #fff; font-size: 24px; text-align: center; z-index: 20; text-shadow: 2px 2px 4px #000; display: none; }
-#message h1 { font-size: 48px; margin-bottom: 20px; }
-#message p { font-size: 18px; margin-bottom: 10px; }
-#message .key { color: #ff0; font-weight: bold; }
-#message .sub { color: #aaa; font-size: 14px; }
-#minimap { position: fixed; bottom: 20px; right: 20px; width: 200px; height: 200px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; z-index: 15; }
-#minimapCanvas { width: 100%; height: 100%; border-radius: 50%; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#000;font-family:'Courier New',monospace}
+canvas{display:block}
+#hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+#hud canvas{width:100%;height:100%}
+#info{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;text-align:center;background:rgba(0,0,0,0.5);padding:5px 15px;border-radius:5px}
+#message{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#0f0;font-size:24px;text-align:center;display:none;text-shadow:0 0 10px #0f0}
+#message.fail{color:#f00;text-shadow:0 0 10px #f00}
 </style>
 </head>
 <body>
-<canvas id="glCanvas"></canvas>
-<canvas id="hudCanvas"></canvas>
-<canvas id="minimapCanvas"></canvas>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+<div id="info">W/S: Pitch | A/D: Roll | Q/E: Yaw | Shift/Ctrl: Throttle | C: Camera | R: Restart</div>
 <div id="message"></div>
 <script>
-// ============================================================
-// VECTOR3
-// ============================================================
-class V3 {
-    constructor(x=0,y=0,z=0){this.x=x;this.y=y;this.z=z;}
-    add(v){return new V3(this.x+v.x,this.y+v.y,this.z+v.z);}
-    sub(v){return new V3(this.x-v.x,this.y-v.y,this.z-v.z);}
-    mul(s){return new V3(this.x*s,this.y*s,this.z*s);}
-    len(){return Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);}
-    norm(){const l=this.len();return l>0?this.mul(1/l):new V3();}
-    dot(v){return this.x*v.x+this.y*v.y+this.z*v.z;}
-    cross(v){return new V3(this.y*v.z-this.z*v.y,this.z*v.x-this.x*v.z,this.x*v.y-this.y*v.x);}
-    clone(){return new V3(this.x,this.y,this.z);}
-}
+const gl=document.getElementById('gl').getContext('webgl',{alpha:false,antialias:true});
+const hudCanvas=document.getElementById('hud');
+const hudCtx=hudCanvas.getContext('2d');
+const msgEl=document.getElementById('message');
+const infoEl=document.getElementById('info');
 
-// ============================================================
-// MATRIX4
-// ============================================================
-class M4 {
-    constructor(){this.m=new Float32Array(16);this.identity();}
-    identity(){this.m.set([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);return this;}
-    multiply(b){
-        const a=this.m,c=b.m,r=new Float32Array(16);
-        for(let i=0;i<4;i++)for(let j=0;j<4;j++){
-            r[j*4+i]=0;
-            for(let k=0;k<4;k++)r[j*4+i]+=a[k*4+i]*c[j*4+k];
-        }
-        this.m=r;return this;
-    }
-    static perspective(fov,aspect,near,far){
-        const r=new M4();const f=1/Math.tan(fov/2);const nf=1/(near-far);
-        r.m.set([f/aspect,0,0,0,0,f,0,0,0,0,(far+near)*nf,-1,0,0,2*far*near*nf,0]);
-        return r;
-    }
-    static lookAt(eye,target,up){
-        const r=new M4();const z=eye.sub(target).norm();
-        const x=up.cross(z).norm();const y=z.cross(x).norm();
-        r.m.set([x.x,y.x,z.x,0,x.y,y.y,z.y,0,x.z,y.z,z.z,0,
-            -x.dot(eye),-y.dot(eye),-z.dot(eye),1]);
-        return r;
-    }
-    static translate(x,y,z){
-        const r=new M4();r.m[12]=x;r.m[13]=y;r.m[14]=z;return r;
-    }
-    static scale(x,y,z){
-        const r=new M4();r.m[0]=x;r.m[5]=y;r.m[10]=z;return r;
-    }
-    static rotX(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[5]=c;r.m[6]=s;r.m[9]=-s;r.m[10]=c;return r;}
-    static rotY(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[0]=c;r.m[2]=-s;r.m[8]=s;r.m[10]=c;return r;}
-    static rotZ(a){const r=new M4();const c=Math.cos(a),s=Math.sin(a);r.m[0]=c;r.m[1]=s;r.m[4]=-s;r.m[5]=c;return r;}
-}
-
-// ============================================================
-// WEBGL SETUP
-// ============================================================
-const glCanvas = document.getElementById('glCanvas');
-const gl = glCanvas.getContext('webgl', {antialias: true, alpha: false});
-const hudCanvas = document.getElementById('hudCanvas');
-const hudCtx = hudCanvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimapCanvas');
-const minimapCtx = minimapCanvas.getContext('2d');
-
+let W,H;
 function resize(){
-    const w=window.innerWidth, h=window.innerHeight;
-    glCanvas.width=w;glCanvas.height=h;
-    hudCanvas.width=w;hudCanvas.height=h;
-    minimapCanvas.width=200;minimapCanvas.height=200;
-    gl.viewport(0,0,w,h);
+  W=window.innerWidth;H=window.innerHeight;
+  gl.canvas.width=W;gl.canvas.height=H;
+  hudCanvas.width=W;hudCanvas.height=H;
 }
-window.addEventListener('resize',resize);
 resize();
+window.addEventListener('resize',resize);
 
-// ============================================================
-// SHADERS
-// ============================================================
-const vsTerrain = `
+// Matrix math
+function mat4Create(){return new Float32Array(16)}
+function mat4Identity(o){o.fill(0);o[0]=o[5]=o[10]=o[15]=1;return o}
+function mat4Perspective(o,fov,asp,near,far){
+  const f=1/Math.tan(fov/2),nf=1/(near-far);
+  o.fill(0);o[0]=f/asp;o[5]=f;o[10]=(far+near)*nf;o[11]=-1;o[14]=2*far*near*nf;return o;
+}
+function mat4LookAt(o,eye,center,up){
+  let x0,x1,x2,y0,y1,y2,z0,z1,z2,len;
+  z0=eye[0]-center[0];z1=eye[1]-center[1];z2=eye[2]-center[2];
+  len=1/Math.sqrt(z0*z0+z1*z1+z2*z2);z0*=len;z1*=len;z2*=len;
+  x0=up[1]*z2-up[2]*z1;x1=up[2]*z0-up[0]*z2;x2=up[0]*z1-up[1]*z0;
+  len=Math.sqrt(x0*x0+x1*x1+x2*x2);
+  if(len){len=1/len;x0*=len;x1*=len;x2*=len}
+  y0=z1*x2-z2*x1;y1=z2*x0-z0*x2;y2=z0*x1-z1*x0;
+  o[0]=x0;o[1]=y0;o[2]=z0;o[3]=0;o[4]=x1;o[5]=y1;o[6]=z1;o[7]=0;
+  o[8]=x2;o[9]=y2;o[10]=z2;o[11]=0;
+  o[12]=-(x0*eye[0]+x1*eye[1]+x2*eye[2]);
+  o[13]=-(y0*eye[0]+y1*eye[1]+y2*eye[2]);
+  o[14]=-(z0*eye[0]+z1*eye[1]+z2*eye[2]);o[15]=1;return o;
+}
+function mat4Multiply(o,a,b){
+  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+    o[j*4+i]=0;
+    for(let k=0;k<4;k++)o[j*4+i]+=a[k*4+i]*b[j*4+k];
+  }return o;
+}
+function mat4Translate(o,x,y,z){
+  mat4Identity(o);o[12]=x;o[13]=y;o[14]=z;return o;
+}
+function mat4RotateY(o,r){
+  const s=Math.sin(r),c=Math.cos(r);
+  mat4Identity(o);o[0]=c;o[2]=-s;o[8]=s;o[10]=c;return o;
+}
+function mat4RotateX(o,r){
+  const s=Math.sin(r),c=Math.cos(r);
+  mat4Identity(o);o[5]=c;o[6]=s;o[9]=-s;o[10]=c;return o;
+}
+function mat4RotateZ(o,r){
+  const s=Math.sin(r),c=Math.cos(r);
+  mat4Identity(o);o[0]=c;o[1]=s;o[4]=-s;o[5]=c;return o;
+}
+function mat4Scale(o,x,y,z){
+  mat4Identity(o);o[0]=x;o[5]=y;o[10]=z;return o;
+}
+
+// Shader compilation
+function createShader(src,type){
+  const s=gl.createShader(type);gl.shaderSource(s,src);gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(s));
+  return s;
+}
+function createProgram(vs,fs){
+  const p=gl.createProgram();
+  gl.attachShader(p,createShader(vs,gl.VERTEX_SHADER));
+  gl.attachShader(p,createShader(fs,gl.FRAGMENT_SHADER));
+  gl.linkProgram(p);
+  if(!gl.getProgramParameter(p,gl.LINK_STATUS))console.error(gl.getProgramInfoLog(p));
+  return p;
+}
+
+// Shaders
+const terrainVS=`
 attribute vec3 aPos;
 attribute vec3 aNorm;
-attribute vec3 aColor;
 uniform mat4 uProj;
 uniform mat4 uView;
 uniform mat4 uModel;
 varying vec3 vNorm;
-varying vec3 vColor;
-varying float vFog;
+varying vec3 vPos;
 void main(){
-    vec4 wp = uModel * vec4(aPos,1.0);
-    gl_Position = uProj * uView * wp;
-    vNorm = aNorm;
-    vColor = aColor;
-    vFog = length(uView * wp).xyz;
+  vec4 wp=uModel*vec4(aPos,1);
+  vPos=wp.xyz;vNorm=mat3(uModel)*aNorm;
+  gl_Position=uProj*uView*wp;
 }`;
 
-const fsTerrain = `
+const terrainFS=`
 precision mediump float;
 varying vec3 vNorm;
-varying vec3 vColor;
-varying float vFog;
+varying vec3 vPos;
 uniform vec3 uLightDir;
-uniform vec3 uFogColor;
-uniform float uFogNear;
-uniform float uFogFar;
+uniform vec3 uAmbient;
+uniform float uHeight;
 void main(){
-    float diff = max(dot(normalize(vNorm), normalize(uLightDir)), 0.0);
-    float fog = clamp((vFog - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
-    vec3 col = vColor * (0.3 + 0.7 * diff);
-    col = mix(col, uFogColor, fog);
-    gl_FragColor = vec4(col, 1.0);
+  vec3 n=normalize(vNorm);
+  float diff=max(dot(n,uLightDir),0.0);
+  vec3 col=mix(vec3(0.15,0.35,0.1),vec3(0.5,0.5,0.5),smoothstep(80.0,150.0,uHeight));
+  col=mix(col,vec3(1.0),smoothstep(120.0,180.0,uHeight));
+  col=col*(uAmbient+diff*0.8);
+  float fog=smoothstep(200.0,600.0,length(vPos));
+  col=mix(col,vec3(0.53,0.65,0.85),fog);
+  gl_FragColor=vec4(col,1.0);
 }`;
 
-const vsObj = `
+const skyVS=`
+attribute vec3 aPos;
+uniform mat4 uProj;
+uniform mat4 uView;
+varying vec3 vDir;
+void main(){
+  vDir=aPos;
+  mat4 vp=uProj*uView;
+  vec4 p=vp*vec4(aPos,0.0);
+  gl_Position=p.xyww;
+}`;
+
+const skyFS=`
+precision mediump float;
+varying vec3 vDir;
+void main(){
+  float y=normalize(vDir).y;
+  vec3 top=vec3(0.2,0.4,0.9);
+  vec3 bot=vec3(0.53,0.65,0.85);
+  vec3 col=mix(bot,top,smoothstep(-0.1,0.5,y));
+  if(y>0.0)col=mix(col,vec3(0.3,0.5,1.0),smoothstep(0.0,0.3,y));
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+const aircraftVS=`
 attribute vec3 aPos;
 attribute vec3 aNorm;
-attribute vec3 aColor;
 uniform mat4 uProj;
 uniform mat4 uView;
 uniform mat4 uModel;
 varying vec3 vNorm;
-varying vec3 vColor;
-varying float vFog;
+varying vec3 vPos;
 void main(){
-    vec4 wp = uModel * vec4(aPos,1.0);
-    gl_Position = uProj * uView * wp;
-    vNorm = aNorm;
-    vColor = aColor;
-    vFog = length(uView * wp).xyz;
+  vec4 wp=uModel*vec4(aPos,1);
+  vPos=wp.xyz;vNorm=mat3(uModel)*aNorm;
+  gl_Position=uProj*uView*wp;
 }`;
 
-const fsObj = `
+const aircraftFS=`
 precision mediump float;
 varying vec3 vNorm;
-varying vec3 vColor;
-varying float vFog;
+varying vec3 vPos;
+uniform vec3 uColor;
 uniform vec3 uLightDir;
-uniform vec3 uFogColor;
-uniform float uFogNear;
-uniform float uFogFar;
+uniform vec3 uAmbient;
 void main(){
-    float diff = max(dot(normalize(vNorm), normalize(uLightDir)), 0.0);
-    float fog = clamp((vFog - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
-    vec3 col = vColor * (0.3 + 0.7 * diff);
-    col = mix(col, uFogColor, fog);
-    gl_FragColor = vec4(col, 1.0);
+  vec3 n=normalize(vNorm);
+  float diff=max(dot(n,uLightDir),0.0);
+  gl_FragColor=vec4(uColor*(uAmbient+diff*0.8),1.0);
 }`;
 
-const vsSky = `
+const ringVS=`
 attribute vec3 aPos;
-uniform mat4 uProj;
-uniform mat4 uView;
-varying float vFog;
-void main(){
-    vec4 pos = uView * vec4(aPos * 5000.0, 1.0);
-    pos.z = pos.w * 0.999;
-    gl_Position = uProj * pos;
-    vFog = 1.0;
-}`;
-
-const fsSky = `
-precision mediump float;
-varying float vFog;
-uniform float uTime;
-void main(){
-    float y = gl_FragCoord.y / 1000.0;
-    vec3 sky = mix(vec3(0.4,0.5,0.7), vec3(0.8,0.85,0.95), y);
-    float fog = vFog;
-    sky = mix(sky, vec3(0.7,0.75,0.85), fog);
-    gl_FragColor = vec4(sky, 1.0);
-}`;
-
-const vsContrail = `
-attribute vec3 aPos;
-attribute float aAlpha;
 uniform mat4 uProj;
 uniform mat4 uView;
 uniform mat4 uModel;
-varying float vAlpha;
 void main(){
-    gl_Position = uProj * uView * uModel * vec4(aPos,1.0);
-    vAlpha = aAlpha;
+  gl_Position=uProj*uView*uModel*vec4(aPos,1);
 }`;
 
-const fsContrail = `
+const ringFS=`
 precision mediump float;
-varying float vAlpha;
+uniform vec3 uColor;
+uniform float uGlow;
 void main(){
-    gl_FragColor = vec4(1.0, 1.0, 1.0, vAlpha);
+  gl_FragColor=vec4(uColor*uGlow,uGlow*0.8);
 }`;
 
-function compileShader(src, type){
-    const s = gl.createShader(type);
-    gl.shaderSource(s, src);
-    gl.compileShader(s);
-    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)){
-        console.error(gl.getShaderInfoLog(s));
-    }
-    return s;
+const obstacleVS=`
+attribute vec3 aPos;
+attribute vec3 aNorm;
+uniform mat4 uProj;
+uniform mat4 uView;
+uniform mat4 uModel;
+varying vec3 vNorm;
+varying vec3 vPos;
+void main(){
+  vec4 wp=uModel*vec4(aPos,1);
+  vPos=wp.xyz;vNorm=mat3(uModel)*aNorm;
+  gl_Position=uProj*uView*wp;
+}`;
+
+const obstacleFS=`
+precision mediump float;
+varying vec3 vNorm;
+varying vec3 vPos;
+uniform vec3 uColor;
+uniform vec3 uLightDir;
+uniform vec3 uAmbient;
+void main(){
+  vec3 n=normalize(vNorm);
+  float diff=max(dot(n,uLightDir),0.0);
+  gl_FragColor=vec4(uColor*(uAmbient+diff*0.7),1.0);
+}`;
+
+// Programs
+const terrainProg=createProgram(terrainVS,terrainFS);
+const skyProg=createProgram(skyVS,skyFS);
+const aircraftProg=createProgram(aircraftVS,aircraftFS);
+const ringProg=createProgram(ringVS,ringFS);
+const obstacleProg=createProgram(obstacleVS,obstacleFS);
+
+// Get locations
+function getLocations(prog,uniforms,attribs){
+  const u={},a={};
+  uniforms.forEach(n=>u[n]=gl.getUniformLocation(prog,n));
+  attribs.forEach(n=>a[n]=gl.getAttribLocation(prog,n));
+  return{u,a};
 }
 
-function createProgram(vs, fs){
-    const p = gl.createProgram();
-    gl.attachShader(p, compileShader(vs, gl.VERTEX_SHADER));
-    gl.attachShader(p, compileShader(fs, gl.FRAGMENT_SHADER));
-    gl.linkProgram(p);
-    if(!gl.getProgramParameter(p, gl.LINK_STATUS)){
-        console.error(gl.getProgramInfoLog(p));
+const tLoc=getLocations(terrainProg,['uProj','uView','uModel','uLightDir','uAmbient','uHeight'],['aPos','aNorm']);
+const sLoc=getLocations(skyProg,['uProj','uView'],['aPos']);
+const aLoc=getLocations(aircraftProg,['uProj','uView','uModel','uColor','uLightDir','uAmbient'],['aPos','aNorm']);
+const rLoc=getLocations(ringProg,['uProj','uView','uModel','uColor','uGlow'],['aPos']);
+const oLoc=getLocations(obstacleProg,['uProj','uView','uModel','uColor','uLightDir','uAmbient'],['aPos','aNorm']);
+
+// Generate geometry
+function createCylinder(radius,topRadius,height,segs,hasTop){
+  const verts=[],norms=[],indices=[];
+  const h=height/2;
+  // Side
+  for(let i=0;i<=segs;i++){
+    const a=(i/segs)*Math.PI*2;
+    const c=Math.cos(a),s=Math.sin(a);
+    verts.push(c*radius,-h,s*radius);norms.push(c,0,s);
+    verts.push(c*topRadius,h,s*topRadius);norms.push(c,0,s);
+  }
+  for(let i=0;i<segs;i++){
+    const a=i*2,b=a+1,c=a+2,d=a+3;
+    indices.push(a,c,b);indices.push(b,c,d);
+  }
+  // Top cap
+  if(hasTop){
+    const sv=verts.length/3;
+    verts.push(0,h,0);norms.push(0,1,0);
+    for(let i=0;i<=segs;i++){
+      const a=(i/segs)*Math.PI*2;
+      verts.push(Math.cos(a)*topRadius,h,Math.sin(a)*topRadius);norms.push(0,1,0);
     }
-    return p;
+    for(let i=1;i<=segs;i++){
+      indices.push(sv,sv+i,sv+i+1);
+    }
+  }
+  return{verts:new Float32Array(verts),norms:new Float32Array(norms),indices:new Uint16Array(indices)};
 }
 
-const terrainProg = createProgram(vsTerrain, fsTerrain);
-const objProg = createProgram(vsObj, fsObj);
-const skyProg = createProgram(vsSky, fsSky);
-const contrailProg = createProgram(vsContrail, fsContrail);
-
-// ============================================================
-// GEOMETRY HELPERS
-// ============================================================
-function createBuffer(data){
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(data), gl.STATIC_DRAW);
-    return buf;
+function createBox(w,h,d){
+  const hw=w/2,hh=h/2,hd=d/2;
+  const verts=[
+    // front
+    -hw,-hh,hd,hw,-hh,hd,hw,hh,hd,-hw,hh,hd,
+    // back
+    -hw,-hh,-hd,-hw,hh,-hd,hw,hh,-hd,hw,-hh,-hd,
+    // top
+    -hw,hh,-hd,hw,hh,-hd,hw,hh,hd,-hw,hh,hd,
+    // bottom
+    -hw,-hh,-hd,-hw,-hh,hd,hw,-hh,hd,hw,-hh,-hd,
+    // left
+    -hw,-hh,-hd,-hw,hh,-hd,-hw,hh,hd,-hw,-hh,hd,
+    // right
+    hw,-hh,hd,hw,hh,hd,hw,hh,-hd,hw,-hh,-hd
+  ];
+  const norms=[
+    0,0,1,0,0,1,0,0,1,0,0,1,
+    0,0,-1,0,0,-1,0,0,-1,0,0,-1,
+    0,1,0,0,1,0,0,1,0,0,1,0,
+    0,-1,0,0,-1,0,0,-1,0,0,-1,0,
+    -1,0,0,-1,0,0,-1,0,0,-1,0,0,
+    1,0,0,1,0,0,1,0,0,1,0,0
+  ];
+  const idxs=[];
+  for(let i=0;i<6;i++){
+    const o=i*4;
+    idxs.push(o,o+1,o+2,o,o+2,o+3);
+  }
+  return{verts:new Float32Array(verts),norms:new Float32Array(norms),indices:new Uint16Array(idxs)};
 }
 
-function createIndexBuffer(data){
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buf);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(data), gl.STATIC_DRAW);
-    return buf;
+function createSphere(radius,segs,stacks){
+  const verts=[],norms=[],indices=[];
+  for(let i=0;i<=stacks;i++){
+    const phi=Math.PI*i/stacks;
+    for(let j=0;j<=segs;j++){
+      const theta=2*Math.PI*j/segs;
+      const x=Math.sin(phi)*Math.cos(theta);
+      const y=Math.cos(phi);
+      const z=Math.sin(phi)*Math.sin(theta);
+      verts.push(x*radius,y*radius,z*radius);
+      norms.push(x,y,z);
+    }
+  }
+  for(let i=0;i<stacks;i++){
+    for(let j=0;j<segs;j++){
+      const a=i*(segs+1)+j;
+      const b=a+segs+1;
+      indices.push(a,b,a+1,b,b+1,a+1);
+    }
+  }
+  return{verts:new Float32Array(verts),norms:new Float32Array(norms),indices:new Uint16Array(indices)};
 }
 
-// ============================================================
-// TERRAIN GENERATION
-// ============================================================
-const TERRAIN_SIZE = 4000;
-const TERRAIN_SEG = 100;
-const TERRAIN_HALF = TERRAIN_SIZE / 2;
-
-function noise2D(x, z){
-    const n = Math.sin(x*0.01 + z*0.013)*0.5 + Math.sin(x*0.023 - z*0.017)*0.3 + Math.sin(x*0.007 + z*0.019)*0.2;
-    return n;
+function createTerrain(size,segs){
+  const verts=[],norms=[],indices=[];
+  const heights=[];
+  const half=size/2;
+  // Generate heightmap
+  for(let i=0;i<=segs;i++){
+    for(let j=0;j<=segs;j++){
+      const x=(i/segs-0.5)*size;
+      const z=(j/segs-0.5)*size;
+      let h=Math.sin(x*0.02)*Math.cos(z*0.02)*30+Math.sin(x*0.05+1)*Math.cos(z*0.03+2)*15+Math.sin(x*0.01+3)*Math.cos(z*0.01+1)*40;
+      // Flatten runway area
+      const runwayX=0,runwayZ=-200;
+      const distToRunway=Math.sqrt((x-runwayX)**2+(z-runwayZ)**2);
+      if(distToRunway<30)h*=distToRunway/30;
+      // Flatten some areas for takeoff
+      const takeoffDist=Math.sqrt(x*x+z*z);
+      if(takeoffDist<100)h=h*0.3+10*0.7;
+      heights.push(h);
+      verts.push(x,h,z);
+      norms.push(0,1,0);
+    }
+  }
+  for(let i=0;i<segs;i++){
+    for(let j=0;j<segs;j++){
+      const a=i*(segs+1)+j;
+      const b=a+1;
+      const c=a+segs+1;
+      const d=c+1;
+      // Calculate normals from height data
+      const dx=(heights[d]-heights[a]+heights[c]-heights[b])*0.5;
+      const dz=(heights[d]-heights[a]-heights[b]+heights[c])*0.5;
+      const len=Math.sqrt(dx*dx+4+dz*dz);
+      const nx=dx/len,ny=2/len,nz=dz/len;
+      const nidx=a*3;
+      norms[nidx]=nx;norms[nidx+1]=ny;norms[nidx+2]=nz;
+      norms[(a+1)*3]=nx;norms[(a+1)*3+1]=ny;norms[(a+1)*3+2]=nz;
+      norms[(c)*3]=nx;norms[(c)*3+1]=ny;norms[(c)*3+2]=nz;
+      norms[(d)*3]=nx;norms[(d)*3+1]=ny;norms[(d)*3+2]=nz;
+      indices.push(a,b,c,b,d,c);
+    }
+  }
+  return{verts:new Float32Array(verts),norms:new Float32Array(norms),indices:new Uint16Array(indices),heights};
 }
 
-function getTerrainHeight(x, z){
-    const nx = (x + TERRAIN_HALF) / TERRAIN_SIZE;
-    const nz = (z + TERRAIN_HALF) / TERRAIN_SIZE;
-    const h = noise2D(x, z) * 80;
-    // Flatten center area for runway
-    const cx = Math.abs(x); const cz = Math.abs(z);
-    if(cx < 30 && cz < 200) return -5;
-    // Mountain peaks
-    const peak = Math.exp(-((x*0.005)**2 + (z*0.005)**2)) * 120;
-    return Math.max(-10, h + peak);
+function createRing(radius,segs){
+  const verts=[],indices=[];
+  for(let i=0;i<=segs;i++){
+    const a=(i/segs)*Math.PI*2;
+    verts.push(Math.cos(a)*radius,0,Math.sin(a)*radius);
+  }
+  for(let i=0;i<segs;i++){
+    indices.push(i,i+1,0);
+  }
+  return{verts:new Float32Array(verts),indices:new Uint16Array(indices)};
 }
 
-function generateTerrain(){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
-
-    for(let iz = 0; iz <= TERRAIN_SEG; iz++){
-        for(let ix = 0; ix <= TERRAIN_SEG; ix++){
-            const x = -TERRAIN_HALF + (ix / TERRAIN_SEG) * TERRAIN_SIZE;
-            const z = -TERRAIN_HALF + (iz / TERRAIN_SEG) * TERRAIN_SIZE;
-            const y = getTerrainHeight(x, z);
-            verts.push(x, y, z);
-
-            // Normal approximation
-            const hx1 = getTerrainHeight(x+1, z);
-            const hx2 = getTerrainHeight(x-1, z);
-            const hz1 = getTerrainHeight(x, z+1);
-            const hz2 = getTerrainHeight(x, z-1);
-            const n = new V3(hx2-hx1, 2, hz2-hz1).norm();
-            norms.push(n.x, n.y, n.z);
-
-            // Color based on height
-            if(y < -2){
-                colors.push(0.2, 0.35, 0.6); // water
-            } else if(y < 5){
-                colors.push(0.25, 0.55, 0.15); // grass
-            } else if(y < 30){
-                colors.push(0.35, 0.5, 0.2); // dark grass
-            } else if(y < 60){
-                colors.push(0.5, 0.45, 0.35); // dirt
-            } else {
-                colors.push(0.7, 0.65, 0.6); // rock/snow
-            }
-        }
-    }
-
-    for(let iz = 0; iz < TERRAIN_SEG; iz++){
-        for(let ix = 0; ix < TERRAIN_SEG; ix++){
-            const a = iz * (TERRAIN_SEG+1) + ix;
-            const b = a + 1;
-            const c = a + TERRAIN_SEG + 1;
-            const d = c + 1;
-            indices.push(a,c,b, b,c,d);
-        }
-    }
-
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
+function createRunway(w,l){
+  const verts=[],norms=[],indices=[];
+  const hw=w/2,hl=l/2;
+  // Surface
+  verts.push(-hw,0.1,-hl,hw,0.1,-hl,hw,0.1,hl,-hw,0.1,hl);
+  const sn=verts.length/3;
+  for(let i=0;i<4;i++){norms.push(0,1,0)}
+  indices.push(sn,sn+1,sn+2,sn,sn+2,sn+3);
+  // Edge lines
+  const lineW=2;
+  // Center line dashes
+  for(let i=0;i<8;i++){
+    const z=-hl+5+i*(l-10)/8;
+    verts.push(-0.5,0.12,z,0.5,0.12,z,0.5,0.12,z+4,-0.5,0.12,z+4);
+    const sn2=verts.length/3;
+    for(let j=0;j<4;j++)norms.push(0,1,0);
+    indices.push(sn2,sn2+1,sn2+2,sn2,sn2+2,sn2+3);
+  }
+  return{verts:new Float32Array(verts),norms:new Float32Array(norms),indices:new Uint16Array(indices)};
 }
 
-// ============================================================
-// RUNWAY
-// ============================================================
-function generateRunway(){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
+// Create meshes
+const terrainGeo=createTerrain(1200,60);
+const terrainVBO=gl.createBuffer();
+const terrainNBO=gl.createBuffer();
+const terrainIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,terrainVBO);gl.bufferData(gl.ARRAY_BUFFER,terrainGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,terrainNBO);gl.bufferData(gl.ARRAY_BUFFER,terrainGeo.norms,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,terrainIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,terrainGeo.indices,gl.STATIC_DRAW);
 
-    // Main runway
-    const rw = 40, rl = 400;
-    const rw2 = 60, rl2 = 600;
+const skyGeo=createSphere(800,8,4);
+const skyVBO=gl.createBuffer();
+const skyIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,skyVBO);gl.bufferData(gl.ARRAY_BUFFER,skyGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,skyIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,skyGeo.indices,gl.STATIC_DRAW);
 
-    // Runway surface
-    for(let i = 0; i < 20; i++){
-        const t = i / 19;
-        const x = -rl/2 + t * rl;
-        verts.push(x, -4.9, -rw/2);
-        verts.push(x, -4.9, rw/2);
-        verts.push(x, -5, -rw2/2);
-        verts.push(x, -5, rw2/2);
-    }
+// Aircraft geometry
+const acBody=createBox(0.6,0.5,4);
+const acWings=createBox(5,0.15,1.5);
+const acTailH=createBox(2,0.1,0.8);
+const acTailV=createBox(0.1,1.2,0.8);
+const acProp=createCylinder(0.8,0.8,0.1,8,false);
 
-    for(let i = 0; i < 19; i++){
-        const a = i*4, b = a+1, c = a+2, d = a+3;
-        const e = a+4, f = e+1, g = e+2, h = e+3;
-        indices.push(a,c,b, b,c,d, e,g,f, f,g,h, a,b,e, e,b,f, c,d,g, g,d,h);
-    }
+function createAircraftBuffers(){
+  const buffers=[];
+  const meshes=[acBody,acWings,acTailH,acTailV,acProp];
+  const colors=[
+    new Float32Array([0.7,0.2,0.15]),
+    new Float32Array([0.5,0.15,0.1]),
+    new Float32Array([0.6,0.18,0.12]),
+    new Float32Array([0.6,0.18,0.12]),
+    new Float32Array([0.3,0.3,0.3])
+  ];
+  for(const mesh of meshes){
+    const vbo=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,vbo);
+    gl.bufferData(gl.ARRAY_BUFFER,mesh.verts,gl.STATIC_DRAW);
+    const nbo=gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER,nbo);
+    gl.bufferData(gl.ARRAY_BUFFER,mesh.norms,gl.STATIC_DRAW);
+    const ibo=gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ibo);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,mesh.indices,gl.STATIC_DRAW);
+    buffers.push({vbo,nbo,ibo,count:mesh.indices.length,color:colors[meshes.indexOf(mesh)]});
+  }
+  return buffers;
+}
+const aircraftBufs=createAircraftBuffers();
 
-    for(let i = 0; i < 20; i++){
-        const t = i / 19;
-        const x = -rl/2 + t * rl;
-        const y = -4.8;
-        const z1 = -rw/2, z2 = rw/2;
-        // White stripes
-        if(i % 2 === 0){
-            colors.push(1,1,1); colors.push(1,1,1); colors.push(1,1,1); colors.push(1,1,1);
-        } else {
-            colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7); colors.push(0.7,0.7,0.7);
-        }
-        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0);
-    }
+// Checkpoint rings
+const rings=[];
+const ringGeo=createRing(8,16);
+const ringVBO=gl.createBuffer();
+const ringIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,ringVBO);gl.bufferData(gl.ARRAY_BUFFER,ringGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ringIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,ringGeo.indices,gl.STATIC_DRAW);
 
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
+for(let i=0;i<10;i++){
+  const angle=i*0.3;
+  const dist=100+i*40;
+  rings.push({x:Math.cos(angle)*dist,z:-200+Math.sin(angle)*dist,y:30,passed:false,idx:i});
 }
 
-// ============================================================
-// CHECKPOINT RINGS
-// ============================================================
-function generateRing(radius, segments, color){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
+// Obstacles
+const obstacles=[];
+const towerGeo=createCylinder(2,3,40,8,true);
+const towerVBO=gl.createBuffer();
+const towerNBO=gl.createBuffer();
+const towerIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,towerVBO);gl.bufferData(gl.ARRAY_BUFFER,towerGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,towerNBO);gl.bufferData(gl.ARRAY_BUFFER,towerGeo.norms,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,towerIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,towerGeo.indices,gl.STATIC_DRAW);
 
-    for(let i = 0; i <= segments; i++){
-        const a = (i / segments) * Math.PI * 2;
-        const x = Math.cos(a) * radius;
-        const z = Math.sin(a) * radius;
-        verts.push(x, 0, z);
-        verts.push(x, 3, z);
-        const n = new V3(Math.cos(a), 0, Math.sin(a)).norm();
-        norms.push(n.x, n.y, n.z);
-        norms.push(n.x, n.y, n.z);
-        colors.push(color[0], color[1], color[2]);
-        colors.push(color[0], color[1], color[2]);
-    }
+const hazardGeo=createCylinder(3,3,3,8,false);
+const hazardVBO=gl.createBuffer();
+const hazardNBO=gl.createBuffer();
+const hazardIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,hazardVBO);gl.bufferData(gl.ARRAY_BUFFER,hazardGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,hazardNBO);gl.bufferData(gl.ARRAY_BUFFER,hazardGeo.norms,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,hazardIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,hazardGeo.indices,gl.STATIC_DRAW);
 
-    for(let i = 0; i < segments; i++){
-        const a = i*2, b = a+1, c = a+2, d = a+3;
-        indices.push(a,c,b, b,c,d);
-    }
-
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
+for(let i=0;i<8;i++){
+  const angle=i*0.5+0.3;
+  const dist=150+i*35;
+  obstacles.push({
+    x:Math.cos(angle)*dist,
+    z:-200+Math.sin(angle)*dist,
+    type:i<3?'tower':'hazard',
+    radius:i<3?5:8
+  });
 }
 
-// ============================================================
-// OBSTACLES (towers, balloons)
-// ============================================================
-function generateTower(height, radius, segments){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
+// Runway
+const runwayGeo=createRunway(20,300);
+const runwayVBO=gl.createBuffer();
+const runwayNBO=gl.createBuffer();
+const runwayIBO=gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER,runwayVBO);gl.bufferData(gl.ARRAY_BUFFER,runwayGeo.verts,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ARRAY_BUFFER,runwayNBO);gl.bufferData(gl.ARRAY_BUFFER,runwayGeo.norms,gl.STATIC_DRAW);
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,runwayIBO);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,runwayGeo.indices,gl.STATIC_DRAW);
 
-    for(let i = 0; i <= segments; i++){
-        const a = (i / segments) * Math.PI * 2;
-        const x = Math.cos(a) * radius;
-        const z = Math.sin(a) * radius;
-        verts.push(x, 0, z);
-        verts.push(x, height, z);
-        const n = new V3(Math.cos(a), 0, Math.sin(a)).norm();
-        norms.push(n.x, n.y, n.z);
-        norms.push(n.x, n.y, n.z);
-        colors.push(0.6, 0.2, 0.2);
-        colors.push(0.6, 0.2, 0.2);
-    }
+// Lighting
+const lightDir=new Float32Array([0.5,0.8,0.3]);
+const ambient=new Float32Array([0.3,0.3,0.4]);
 
-    for(let i = 0; i < segments; i++){
-        const a = i*2, b = a+1, c = a+2, d = a+3;
-        indices.push(a,c,b, b,c,d);
-    }
+// Camera
+let camMode=0; // 0=chase, 1=cockpit
+let camDist=35;
+let camHeight=12;
+let camAngle=0;
 
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
-}
-
-function generateBalloon(radius, segments){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
-
-    for(let i = 0; i <= 12; i++){
-        const phi = (i / 12) * Math.PI;
-        const y = Math.cos(phi) * radius;
-        const r = Math.sin(phi) * radius;
-        for(let j = 0; j <= segments; j++){
-            const a = (j / segments) * Math.PI * 2;
-            const x = Math.cos(a) * r;
-            const z = Math.sin(a) * r;
-            verts.push(x, y, z);
-            const n = new V3(x, y, z).norm();
-            norms.push(n.x, n.y, n.z);
-            colors.push(1, 0.8, 0);
-            colors.push(1, 0.8, 0);
-        }
-    }
-
-    for(let i = 0; i < 12; i++){
-        for(let j = 0; j < segments; j++){
-            const a = i*(segments+1)+j;
-            const b = a+1;
-            const c = a+segments+1;
-            const d = c+1;
-            indices.push(a,c,b, b,c,d);
-        }
-    }
-
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
-}
-
-// ============================================================
-// SKY DOME
-// ============================================================
-function generateSkyDome(){
-    const verts = [];
-    const normals = [];
-    const indices = [];
-    const seg = 16;
-
-    for(let i = 0; i <= seg; i++){
-        const phi = (i / seg) * Math.PI * 0.5;
-        const y = Math.cos(phi);
-        const r = Math.sin(phi);
-        for(let j = 0; j <= seg; j++){
-            const a = (j / seg) * Math.PI * 2;
-            const x = Math.cos(a) * r;
-            const z = Math.sin(a) * r;
-            verts.push(x, y, z);
-            normals.push(x, y, z);
-        }
-    }
-
-    for(let i = 0; i < seg; i++){
-        for(let j = 0; j < seg; j++){
-            const a = i*(seg+1)+j;
-            const b = a+1;
-            const c = a+seg+1;
-            const d = c+1;
-            indices.push(a,c,b, b,c,d);
-        }
-    }
-
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(normals),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
-}
-
-// ============================================================
-// AIRCRAFT MODEL
-// ============================================================
-function generateAircraft(){
-    const verts = [];
-    const norms = [];
-    const colors = [];
-    const indices = [];
-
-    // Fuselage (cylinder)
-    const fusSeg = 12;
-    const fusLen = 6;
-    const fusR = 0.6;
-    for(let i = 0; i < fusSeg; i++){
-        const a = (i / fusSeg) * Math.PI * 2;
-        const x1 = Math.cos(a) * fusR;
-        const z1 = Math.sin(a) * fusR;
-        const x2 = Math.cos(a) * fusR * 0.7;
-        const z2 = Math.sin(a) * fusR * 0.7;
-        verts.push(x1, 0, -fusLen/2); verts.push(x2, 0, fusLen/2);
-        const n = new V3(x1, 0, z1).norm();
-        norms.push(n.x, n.y, n.z); norms.push(n.x, n.y, n.z);
-        colors.push(0.8, 0.85, 0.9); colors.push(0.8, 0.85, 0.9);
-    }
-    for(let i = 0; i < fusSeg; i++){
-        const a = i*fusSeg*2, b = a+1, c = a+2, d = a+3;
-        indices.push(a,c,b, b,c,d);
-    }
-
-    // Wings
-    const wingW = 8, wingH = 1.5;
-    for(let i = 0; i < 2; i++){
-        const side = i === 0 ? -1 : 1;
-        const ox = side * wingW * 0.5;
-        verts.push(ox - wingW*0.5, 0, 0);
-        verts.push(ox + wingW*0.5, 0, 0);
-        verts.push(ox - wingW*0.5, 0, wingH*0.3);
-        verts.push(ox + wingW*0.5, 0, wingH*0.3);
-        verts.push(ox - wingW*0.5, -0.1, 0);
-        verts.push(ox + wingW*0.5, -0.1, 0);
-        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,-1,0); norms.push(0,-1,0);
-        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
-        colors.push(0.6,0.65,0.7); colors.push(0.6,0.65,0.7);
-    }
-    // Wing indices
-    for(let i = 0; i < 2; i++){
-        const a = i*6, b = a+1, c = a+2, d = a+3, e = a+4, f = a+5;
-        indices.push(a,c,b, b,c,d, a,b,e, e,b,f, c,d,f, f,d,e);
-    }
-
-    // Tail wing
-    for(let i = 0; i < 2; i++){
-        const side = i === 0 ? -1 : 1;
-        const ox = side * 3;
-        verts.push(ox - 2, 0, fusLen/2);
-        verts.push(ox + 2, 0, fusLen/2);
-        verts.push(ox - 2, 0, 1.2);
-        verts.push(ox + 2, 0, 1.2);
-        verts.push(ox - 2, -0.1, fusLen/2);
-        verts.push(ox + 2, -0.1, fusLen/2);
-        norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0); norms.push(0,1,0);
-        norms.push(0,-1,0); norms.push(0,-1,0);
-        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
-        colors.push(0.6,0.65,0.7); colors.push(0.6,0.65,0.7);
-    }
-    for(let i = 0; i < 2; i++){
-        const a = 12+i*6, b = a+1, c = a+2, d = a+3, e = a+4, f = a+5;
-        indices.push(a,c,b, b,c,d, a,b,e, e,b,f, c,d,f, f,d,e);
-    }
-
-    // Vertical stabilizer
-    for(let i = 0; i < 2; i++){
-        const side = i === 0 ? -1 : 1;
-        verts.push(0, 0, fusLen/2);
-        verts.push(0, 2.5, fusLen/2);
-        verts.push(0, 0, fusLen/2 - 1);
-        verts.push(0, 2.5, fusLen/2 - 1);
-        norms.push(side,0,0); norms.push(side,0,0); norms.push(side,0,0); norms.push(side,0,0);
-        colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8); colors.push(0.7,0.75,0.8);
-    }
-    for(let i = 0; i < 2; i++){
-        const a = 24+i*4, b = a+1, c = a+2, d = a+3;
-        indices.push(a,c,b, b,c,d, a,b,c, c,b,d);
-    }
-
-    // Nose cone
-    for(let i = 0; i < 8; i++){
-        const a1 = (i/8)*Math.PI*2, a2 = ((i+1)/8)*Math.PI*2;
-        const r1 = fusR * 0.7, r2 = 0;
-        const z1 = fusLen/2 - 1, z2 = fusLen/2 + 1;
-        verts.push(Math.cos(a1)*r1, Math.sin(a1)*r1, z1);
-        verts.push(Math.cos(a2)*r1, Math.sin(a2)*r1, z1);
-        verts.push(Math.cos(a1)*r2, Math.sin(a1)*r2, z2);
-        verts.push(Math.cos(a2)*r2, Math.sin(a2)*r2, z2);
-        const n1 = new V3(Math.cos(a1), Math.sin(a1), 0).norm();
-        norms.push(n1.x, n1.y, n1.z); norms.push(n1.x, n1.y, n1.z);
-        norms.push(0,0,1); norms.push(0,0,1);
-        colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3); colors.push(0.9,0.3,0.3);
-    }
-    for(let i = 0; i < 8; i++){
-        const a = i*4, b = a+1, c = a+2, d = a+3;
-        indices.push(a,c,b, b,c,d);
-    }
-
-    return {
-        vBuf: createBuffer(verts),
-        nBuf: createBuffer(norms),
-        cBuf: createBuffer(colors),
-        iBuf: createIndexBuffer(indices),
-        count: indices.length
-    };
-}
-
-// ============================================================
-// GAME STATE
-// ============================================================
-let gameState = 'menu'; // menu, playing, won, lost
-
-const keys = {};
-window.addEventListener('keydown', e => { keys[e.code] = true; e.preventDefault(); });
-window.addEventListener('keyup', e => { keys[e.code] = false; e.preventDefault(); });
-
-const aircraft = {
-    pos: new V3(0, 50, -500),
-    vel: new V3(0, 0, 0),
-    heading: 0,
-    pitch: 0,
-    roll: 0,
-    throttle: 0.3,
-    yawRate: 0,
-    altitude: 50,
-    airspeed: 0,
-    vSpeed: 0,
-    engineOn: true
+// Aircraft state
+let ac={
+  x:0,y:15,z:-200,
+  vx:0,vy:0,vz:0,
+  pitch:0,roll:0,yaw:0,
+  throttle:0.3,
+  speed:0,
+  heading:0,
+  angularVel:{p:0,r:0,y:0}
 };
 
-let cameraMode = 'chase'; // chase, cockpit
-let cameraOffset = new V3(0, 5, -20);
-let cameraLookAt = new V3(0, 0, -50);
+let checkpointsPassed=0;
+let gameOver=false;
+let gameWon=false;
+let collided=false;
 
-// Checkpoints
-const checkpoints = [];
-const checkpointPositions = [
-    new V3(0, 5
+// Input
+const keys={};
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(e.code==='KeyC'){camMode=1-camMode;infoEl.textContent=camMode?'Cockpit Camera (C: Chase)':'Chase Camera (C: Cockpit)';}
+  if(e.code==='KeyR')restartGame();
+  e.preventDefault();
+});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+function restartGame(){
+  ac.x=0;ac.y=15;ac.z=-200;
+  ac.vx=0;ac.vy=0;ac.vz=0;
+  ac.pitch=0;ac.roll=0;ac.yaw=0;
+  ac.throttle=0.3;
+  ac.speed=0;ac.heading=0;
+  ac.angularVel={p:0,r:0,y:0};
+  checkpointsPassed=0;
+  gameOver=false;gameWon=false;collided=false;
+  msgEl.style.display='none';
+  rings.forEach(r=>r.passed=false);
+  infoEl.textContent='W/S: Pitch | A/D: Roll | Q/E: Yaw | Shift/Ctrl: Throttle | C: Camera | R: Restart';
+}
+
+// Physics
+const GRAVITY=9.81;
+const LIFT_COEFF=0.04;
+const DRAG_COEFF=0.003;
+const THRUST_COEFF=15;
+const PITCH_RATE=0.8;
+const ROLL_RATE=1.2;
+const YAW_RATE=0.4;
+const DAMPING=0.95;
+
+function updatePhysics(dt){
+  if(gameOver)return;
+
+  // Input
+  let pitchInput=0,rollInput=0,yawInput=0;
+  if(keys['KeyS'])pitchInput=1;
+  if(keys['KeyW'])pitchInput=-1;
+  if(keys['KeyD'])rollInput=1;
+  if(keys['KeyA'])rollInput=-1;
+  if(keys['KeyE'])yawInput=1;
+  if(keys['KeyQ'])yawInput=-1;
+
+  let throttleInput=0;
+  if(keys['ShiftLeft']||keys['ShiftRight'])throttleInput=0.02;
+  if(keys['ControlLeft']||keys['ControlRight'])throttleInput=-0.02;
+
+  ac.throttle=Math.max(0,Math.min(1,ac.throttle+throttleInput*dt));
+
+  // Angular dynamics
+  ac.pitch+=pitchInput*PITCH_RATE*dt;
+  ac.roll+=rollInput*ROLL_RATE*dt;
+  ac.yaw+=yawInput*YAW_RATE*dt;
+
+  // Auto-leveling
+  ac.roll*=Math.pow(0.92,dt*60);
+  ac.pitch*=Math.pow(0.95,dt*60);
+
+  // Heading from yaw
+  ac.heading+=ac.yaw*dt*0.3;
+
+  // Velocity from throttle
+  const thrust=ac.throttle*THRUST_COEFF;
+  const forwardX=Math.sin(ac.heading)*Math.cos(ac.pitch);
+  const forwardY=Math.sin(ac.pitch);
+  const forwardZ=Math.cos(ac.heading)*Math.cos(ac.pitch);
+
+  ac.vx+=thrust*forwardX*dt;
+  ac.vy+=thrust*forwardY*dt;
+  ac.vz+=thrust*forwardZ*dt;
+
+  // Lift (perpendicular to velocity, upward relative to aircraft)
+  const speed=Math.sqrt(ac.vx*ac.vx+ac.vy*ac.vy+ac.vz*ac.vz);
+  ac.speed=speed;
+  const liftMag=LIFT_COEFF*speed*speed;
+  const upX=-Math.sin(ac.heading)*Math.cos(ac.pitch);
+  const upY=-Math.sin(ac.pitch);
+  const upZ=-Math.cos(ac.heading)*Math.cos(ac.pitch);
+  ac.vy+=liftMag*upY*dt;
+
+  // Drag
+  const dragMag=DRAG_COEFF*speed*speed;
+  if(speed>0){
+    const dragX=-ac.vx/speed*dragMag*dt;
+    const dragY=-ac.vy/speed*dragMag*dt;
+    const dragZ=-ac.vz/speed*dragMag*dt;
+    ac.vx+=dragX;ac.vy+=dragY;ac.vz+=dragZ;
+  }
+
+  // Gravity
+  ac.vy-=GRAVITY*dt;
+
+  // Damping
+  ac.vx*=Math.pow(DAMPING,dt*60);
+  ac.vy*=Math.pow(DAMPY,dt*60);
+  ac.vz*=Math.pow(DAMPING,dt*60);
+
+  // Integrate position
+  ac.x+=ac.vx*dt;
+  ac.y+=ac.vy*dt;
+  ac.z+=ac.vz*dt;
+
+  // Terrain collision
+  if(ac.y<2){
+    ac.y=2;ac.vy=0;
+    if(speed>5){
+      collided=true;
+      gameOver=true;
+      msgEl.className='fail';
+      msgEl.innerHTML='CRASHED!<br>Press R to restart';
+      msgEl.style.display='block';
+    }
+  }
+
+  // Obstacle collision
+  for(const obs of obstacles){
+    const dx=ac.x-obs.x;
+    const dz=ac.z-obs.z;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<obs.radius&&ac.y<60){
+      collided=true;
+      gameOver=true;
+      msgEl.className='fail';
+      msgEl.innerHTML='HIT OBSTACLE!<br>Press R to restart';
+      msgEl.style.display='block';
+    }
+  }
+
+  // Checkpoint passing
+  for(const ring of rings){
+    if(!ring.passed){
+      const dx=ac.x-ring.x;
+      const dz=ac.z-ring.z;
+      const dist=Math.sqrt(dx*dx+dz*dz);
+      if(dist<10){
+        ring.passed=true;
+        checkpointsPassed=ring.idx+1;
+        if(checkpointsPassed===rings.length){
+          gameWon=true;
+          msgEl.className='';
+          msgEl.innerHTML='ALL CHECKPOINTS PASSED!<br>Land to finish!<br>Press R to restart';
+          msgEl.style.display='block';
+        }
+      }
+    }
+  }
+
+  // Landing check
+  if(gameWon&&ac.y<5&&ac.speed<15&&ac.pitch>-0.3&&ac.pitch<0.3&&Math.abs(ac.roll)<0.3){
+    const dx=ac.x-0;
+    const dz=ac.z+200;
+    const dist=Math.sqrt(dx*dx+dz*dz);
+    if(dist<15){
+      gameOver=true;
+      msgEl.className='';
+      msgEl.innerHTML='MISSION COMPLETE!<br>Press R to play again';
+      msgEl.style.display='block';
+    }
+  }
+}
+
+// Camera
+function updateCamera(dt){
+  if(camMode===0){
+    // Chase camera
+    const camX=ac.x-Math.sin(ac.heading)*Math.cos(ac.pitch)*camDist;
+    const camY=ac.y+camHeight;
+    const camZ=ac.z-Math.cos(ac.heading)*Math.cos(ac.pitch)*camDist;
+    gl.uniform3fv(tLoc.uView,createLookAtCam(camX,camY,camZ,ac.x,ac.y,ac.z));
+    gl.uniform3fv(sLoc.uView,createLookAtCam(camX,camY,camZ,ac.x,ac.y,ac.z));
+    gl.uniform3fv(aLoc.uView,createLookAtCam(camX,camY,camZ,ac.x,ac.y,ac.z));
+    gl.uniform3fv(oLoc.uView,createLookAtCam(camX,camY,camZ,ac.x,ac.y,ac.z));
+    gl.uniform3fv(rLoc.uView,createLookAtCam(camX,camY,camZ,ac.x,ac.y,ac.z));
+  }else{
+    // Cockpit camera
+    const eyeX=ac.x+Math.sin(ac.heading)*Math.cos(ac.pitch)*0.5;
+    const eyeY=ac.y+0.3;
+    const eyeZ=ac.z+Math.cos(ac.heading)*Math.cos(ac.pitch)*0.5;
+    const lookX=ac.x+Math.sin(ac.heading)*Math.cos(ac.pitch)*100;
+    const lookY=ac.y+Math.sin(ac.pitch)*100;
+    const lookZ=ac.z+Math.cos(ac.heading)*Math.cos(ac.pitch)*100;
+    gl.uniform3fv(tLoc.uView,createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ));
+    gl.uniform3fv(sLoc.uView,createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ));
+    gl.uniform3fv(aLoc.uView,createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ));
+    gl.uniform3fv(oLoc.uView,createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ));
+    gl.uniform3fv(rLoc.uView,createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ));
+  }
+}
+
+function createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ){
+  const z0=eyeX-lookX,z1=eyeY-lookY,z2=eyeZ-lookZ;
+  let len=Math.sqrt(z0*z0+z1*z1+z2*z2);
+  if(len>0){z0/=len;z1/=len;z2/=len}
+  const x0=z1*0-z2*1;x1=z2*0-z0*1;x2=z0*1-z1*0;
+  len=Math.sqrt(x0*x0+x1*x1+x2*x2);
+  if(len>0){x0/=len;x1/=len;x2/=len}
+  const y0=z1*x2-z2*x1;y1=z2*x0-z0*x2;y2=z0*x1-z1*x0;
+  const m=new Float32Array(16);
+  m[0]=x0;m[1]=y0;m[2]=z0;m[3]=0;
+  m[4]=x1;m[5]=y1;m[6]=z1;m[7]=0;
+  m[8]=x2;m[9]=y2;m[10]=z2;m[11]=0;
+  m[12]=-(x0*eyeX+x1*eyeY+x2*eyeZ);
+  m[13]=-(y0*eyeX+y1*eyeY+y2*eyeZ);
+  m[14]=-(z0*eyeX+z1*eyeY+z2*eyeZ);m[15]=1;
+  return m;
+}
+
+// Draw functions
+function drawTerrain(projMat){
+  gl.useProgram(terrainProg);
+  gl.uniformMatrix4fv(tLoc.uProj,false,projMat);
+  gl.uniform3fv(tLoc.uLightDir,lightDir);
+  gl.uniform3fv(tLoc.uAmbient,ambient);
+  gl.uniform1f(tLoc.uHeight,0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER,terrainVBO);
+  gl.enableVertexAttribArray(tLoc.a.aPos);
+  gl.vertexAttribPointer(tLoc.a.aPos,3,gl.FLOAT,false,0,0);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER,terrainNBO);
+  gl.enableVertexAttribArray(tLoc.a.aNorm);
+  gl.vertexAttribPointer(tLoc.a.aNorm,3,gl.FLOAT,false,0,0);
+
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,terrainIBO);
+  gl.drawElements(gl.TRIANGLES,terrainGeo.indices.length,gl.UNSIGNED_SHORT,0);
+}
+
+function drawSky(projMat,viewMat){
+  gl.useProgram(skyProg);
+  gl.uniformMatrix4fv(sLoc.uProj,false,projMat);
+  gl.uniformMatrix4fv(sLoc.uView,false,viewMat);
+  gl.bindBuffer(gl.ARRAY_BUFFER,skyVBO);
+  gl.enableVertexAttribArray(sLoc.a.aPos);
+  gl.vertexAttribPointer(sLoc.a.aPos,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,skyIBO);
+  gl.drawElements(gl.TRIANGLES,skyGeo.indices.length,gl.UNSIGNED_SHORT,0);
+}
+
+function drawAircraft(projMat,viewMat){
+  gl.useProgram(aircraftProg);
+  gl.uniformMatrix4fv(aLoc.uProj,false,projMat);
+  gl.uniformMatrix4fv(aLoc.uView,false,viewMat);
+  gl.uniform3fv(aLoc.uLightDir,lightDir);
+  gl.uniform3fv(aLoc.uAmbient,ambient);
+
+  // Model matrix
+  const model=new Float32Array(16);
+  mat4Identity(model);
+  mat4RotateZ(model,ac.roll);
+  const ry=new Float32Array(16);
+  mat4RotateY(ry,ac.heading);
+  mat4Multiply(model,model,ry);
+  mat4RotateX(model,ac.pitch);
+  mat4Translate(model,ac.x,ac.y,ac.z);
+  gl.uniformMatrix4fv(aLoc.uModel,false,model);
+
+  for(const buf of aircraftBufs){
+    gl.uniform3fv(aLoc.uColor,buf.color);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf.vbo);
+    gl.enableVertexAttribArray(aLoc.a.aPos);
+    gl.vertexAttribPointer(aLoc.a.aPos,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ARRAY_BUFFER,buf.nbo);
+    gl.enableVertexAttribArray(aLoc.a.aNorm);
+    gl.vertexAttribPointer(aLoc.a.aNorm,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,buf.ibo);
+    gl.drawElements(gl.TRIANGLES,buf.count,gl.UNSIGNED_SHORT,0);
+  }
+}
+
+function drawRunway(projMat,viewMat){
+  gl.useProgram(terrainProg);
+  gl.uniformMatrix4fv(tLoc.uProj,false,projMat);
+  gl.uniform3fv(tLoc.uLightDir,lightDir);
+  gl.uniform3fv(tLoc.uAmbient,ambient);
+  gl.uniform1f(tLoc.uHeight,0);
+
+  const model=new Float32Array(16);
+  mat4Identity(model);
+  mat4Translate(model,0,0,0);
+  gl.uniformMatrix4fv(tLoc.uModel,false,model);
+
+  gl.bindBuffer(gl.ARRAY_BUFFER,runwayVBO);
+  gl.enableVertexAttribArray(tLoc.a.aPos);
+  gl.vertexAttribPointer(tLoc.a.aPos,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ARRAY_BUFFER,runwayNBO);
+  gl.enableVertexAttribArray(tLoc.a.aNorm);
+  gl.vertexAttribPointer(tLoc.a.aNorm,3,gl.FLOAT,false,0,0);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,runwayIBO);
+  gl.drawElements(gl.TRIANGLES,runwayGeo.indices.length,gl.UNSIGNED_SHORT,0);
+}
+
+function drawRings(projMat,viewMat){
+  gl.useProgram(ringProg);
+  gl.uniformMatrix4fv(rLoc.uProj,false,projMat);
+
+  for(const ring of rings){
+    const model=new Float32Array(16);
+    mat4Identity(model);
+    mat4RotateY(model,ac.heading);
+    mat4Translate(model,ring.x,ring.y,ring.z);
+    gl.uniformMatrix4fv(rLoc.uModel,false,model);
+
+    const color=ring.passed?new Float32Array([0,1,0]):new Float32Array([1,0.8,0]);
+    gl.uniform3fv(rLoc.uColor,color);
+    gl.uniform1f(rLoc.uGlow,ring.passed?0.6:0.9);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER,ringVBO);
+    gl.enableVertexAttribArray(rLoc.a.aPos);
+    gl.vertexAttribPointer(rLoc.a.aPos,3,gl.FLOAT,false,0,0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,ringIBO);
+    gl.drawElements(gl.TRIANGLES,ringGeo.indices.length,gl.UNSIGNED_SHORT,0);
+  }
+}
+
+function drawObstacles(projMat,viewMat){
+  gl.useProgram(obstacleProg);
+  gl.uniformMatrix4fv(oLoc.uProj,false,projMat);
+  gl.uniform3fv(oLoc.uLightDir,lightDir);
+  gl.uniform3fv(oLoc.uAmbient,ambient);
+
+  for(const obs of obstacles){
+    const model=new Float32Array(16);
+    mat4Identity(model);
+    mat4Translate(model,obs.x,obs.type==='tower'?20:1.5,obs.z);
+    gl.uniformMatrix4fv(oLoc.uModel,false,model);
+
+    if(obs.type==='tower'){
+      gl.uniform3fv(oLoc.uColor,new Float32Array([0.4,0.4,0.35]));
+      gl.bindBuffer(gl.ARRAY_BUFFER,towerVBO);
+      gl.enableVertexAttribArray(oLoc.a.aPos);
+      gl.vertexAttribPointer(oLoc.a.aPos,3,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ARRAY_BUFFER,towerNBO);
+      gl.enableVertexAttribArray(oLoc.a.aNorm);
+      gl.vertexAttribPointer(oLoc.a.aNorm,3,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,towerIBO);
+      gl.drawElements(gl.TRIANGLES,towerGeo.indices.length,gl.UNSIGNED_SHORT,0);
+    }else{
+      gl.uniform3fv(oLoc.uColor,new Float32Array([0.8,0.2,0.1]));
+      gl.bindBuffer(gl.ARRAY_BUFFER,hazardVBO);
+      gl.enableVertexAttribArray(oLoc.a.aPos);
+      gl.vertexAttribPointer(oLoc.a.aPos,3,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ARRAY_BUFFER,hazardNBO);
+      gl.enableVertexAttribArray(oLoc.a.aNorm);
+      gl.vertexAttribPointer(oLoc.a.aNorm,3,gl.FLOAT,false,0,0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,hazardIBO);
+      gl.drawElements(gl.TRIANGLES,hazardGeo.indices.length,gl.UNSIGNED_SHORT,0);
+    }
+  }
+}
+
+// HUD
+function drawHUD(){
+  hudCtx.clearRect(0,0,W,H);
+
+  const speed=Math.sqrt(ac.vx*ac.vx+ac.vy*ac.vy+ac.vz*ac.vz);
+  const alt=ac.y;
+  const headingDeg=((ac.heading*180/Math.PI)%360+360)%360;
+
+  // Speed indicator (left)
+  hudCtx.fillStyle='rgba(0,0,0,0.5)';
+  hudCtx.fillRect(20,80,120,200);
+  hudCtx.strokeStyle='#0f0';
+  hudCtx.lineWidth=2;
+  hudCtx.strokeRect(20,80,120,200);
+  hudCtx.fillStyle='#0f0';
+  hudCtx.font='14px monospace';
+  hudCtx.fillText('SPD: '+Math.round(speed*3.6)+' km/h',30,100);
+  hudCtx.fillText('ALT: '+Math.round(alt)+' m',30,120);
+  hudCtx.fillText('THRO: '+Math.round(ac.throttle*100)+'%',30,140);
+
+  // Heading indicator (top center)
+  hudCtx.fillStyle='rgba(0,0,0,0.5)';
+  hudCtx.fillRect(W/2-60,10,120,40);
+  hudCtx.strokeStyle='#0f0';
+  hudCtx.strokeRect(W/2-60,10,120,40);
+  hudCtx.fillStyle='#0f0';
+  hudCtx.font='18px monospace';
+  hudCtx.textAlign='center';
+  hudCtx.fillText('HDG: '+Math.round(headingDeg)+'°',W/2,35);
+  hudCtx.textAlign='left';
+
+  // Artificial horizon (center)
+  const cx=W/2,cy=H/2;
+  const size=80;
+  hudCtx.save();
+  hudCtx.beginPath();
+  hudCtx.arc(cx,cy,size,0,Math.PI*2);
+  hudCtx.clip();
+
+  hudCtx.fillStyle='#4488cc';
+  hudCtx.fillRect(cx-size,cy,size*2,size);
+  hudCtx.fillStyle='#886633';
+  hudCtx.fillRect(cx-size,cy,size*2,size);
+
+  // Horizon line
+  hudCtx.strokeStyle='#fff';
+  hudCtx.lineWidth=2;
+  hudCtx.beginPath();
+  hudCtx.moveTo(cx-size,cy);
+  hudCtx.lineTo(cx+size,cy);
+  hudCtx.stroke();
+
+  // Rotate based on roll and pitch
+  hudCtx.translate(cx,cy);
+  hudCtx.rotate(-ac.roll);
+  hudCtx.translate(0,ac.pitch*30);
+  hudCtx.strokeStyle='#fff';
+  hudCtx.lineWidth=2;
+  hudCtx.beginPath();
+  hudCtx.moveTo(-size*0.8,0);
+  hudCtx.lineTo(-size*0.3,0);
+  hudCtx.moveTo(size*0.3,0);
+  hudCtx.lineTo(size*0.8,0);
+  hudCtx.stroke();
+
+  hudCtx.restore();
+
+  // Aircraft symbol
+  hudCtx.strokeStyle='#ff0';
+  hudCtx.lineWidth=3;
+  hudCtx.beginPath();
+  hudCtx.moveTo(cx-30,cy);
+  hudCtx.lineTo(cx-10,cy);
+  hudCtx.moveTo(cx+10,cy);
+  hudCtx.lineTo(cx+30,cy);
+  hudCtx.moveTo(cx,cy-5);
+  hudCtx.lineTo(cx,cy+5);
+  hudCtx.stroke();
+  hudCtx.fillStyle='#ff0';
+  hudCtx.beginPath();
+  hudCtx.arc(cx,cy,2,0,Math.PI*2);
+  hudCtx.fill();
+
+  // Throttle bar (right)
+  hudCtx.fillStyle='rgba(0,0,0,0.5)';
+  hudCtx.fillRect(W-60,80,40,200);
+  hudCtx.strokeStyle='#0f0';
+  hudCtx.strokeRect(W-60,80,40,200);
+  hudCtx.fillStyle='#0f0';
+  hudCtx.font='12px monospace';
+  hudCtx.fillText('THR',W-55,100);
+  const barH=ac.throttle*180;
+  hudCtx.fillStyle='#0f0';
+  hudCtx.fillRect(W-55,260-barH,30,barH);
+  hudCtx.strokeStyle='#0f0';
+  hudCtx.strokeRect(W-55,80,30,180);
+
+  // Checkpoint progress
+  hudCtx.fillStyle='rgba(0,0,0,0.5)';
+  hudCtx.fillRect(W/2-100,H-50,200,35);
+  hudCtx.strokeStyle='#0f0';
+  hudCtx.strokeRect(W/2-100,H-50,200,35);
+  hudCtx.fillStyle='#0f0';
+  hudCtx.font='14px monospace';
+  hudCtx.textAlign='center';
+  hudCtx.fillText('CHECKPOINTS: '+checkpointsPassed+'/'+rings.length,W/2,H-28);
+  hudCtx.textAlign='left';
+
+  // Camera mode
+  hudCtx.fillStyle='rgba(0,0,0,0.5)';
+  hudCtx.fillRect(W-150,10,140,25);
+  hudCtx.fillStyle='#0f0';
+  hudCtx.font='12px monospace';
+  hudCtx.fillText(camMode?'COCKPIT':'CHASE',W-140,28);
+
+  // Warning
+  if(alt<10&&!gameOver){
+    hudCtx.fillStyle='rgba(255,0,0,0.3)';
+    hudCtx.fillRect(0,H-50,W,50);
+    hudCtx.fillStyle='#f00';
+    hudCtx.font='24px monospace';
+    hudCtx.textAlign='center';
+    hudCtx.fillText('PULL UP!',W/2,H-20);
+    hudCtx.textAlign='left';
+  }
+}
+
+// Main loop
+let lastTime=0;
+let projMat=new Float32Array(16);
+
+function render(time){
+  const dt=Math.min((time-lastTime)/1000,0.05);
+  lastTime=time;
+
+  updatePhysics(dt);
+  updateCamera(dt);
+
+  // Projection
+  const asp=W/H;
+  mat4Perspective(projMat,Math.PI/3,asp,1,2000);
+
+  gl.viewport(0,0,W,H);
+  gl.clearColor(0.53,0.65,0.85,1);
+  gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST);
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
+
+  // Sky
+  gl.disable(gl.CULL_FACE);
+  drawSky(projMat,gl._viewMat||projMat);
+  gl.enable(gl.CULL_FACE);
+
+  // Terrain
+  drawTerrain(projMat);
+
+  // Runway
+  drawRunway(projMat,gl._viewMat||projMat);
+
+  // Rings
+  drawRings(projMat,gl._viewMat||projMat);
+
+  // Obstacles
+  drawObstacles(projMat,gl._viewMat||projMat);
+
+  // Aircraft
+  drawAircraft(projMat,gl._viewMat||projMat);
+
+  // HUD
+  drawHUD();
+
+  requestAnimationFrame(render);
+}
+
+// Store view matrix for sky
+const origUniform3fv=gl.uniform3fv.bind(gl);
+gl.uniform3fv=function(loc,value){
+  if(loc===tLoc.uView||loc===sLoc.uView||loc===aLoc.uView||loc===oLoc.uView||loc===rLoc.uView){
+    gl._viewMat=value;
+  }
+  origUniform3fv(loc,value);
+};
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

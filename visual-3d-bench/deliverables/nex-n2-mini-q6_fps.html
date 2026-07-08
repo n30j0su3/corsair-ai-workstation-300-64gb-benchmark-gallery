@@ -1,602 +1,1499 @@
-We need produce final only complete HTML file, no explanations. Need craft single-file FPS prototype local browser. Need ensure robust. Need think through implementation.
+We need answer raw complete HTML only. Need build playable FPS browser local, one HTML, Canvas procedural 2.5D raycasting. Need implement features. Need be careful. We need produce code reasonably. Need no explanations. Need start <!DOCTYPE html>. Need include CSS JS inline.
 
-Need use HTML canvas raycasting 2.5D. Need procedural level corridors/rooms. Collision. Minimap toggle. Enemies, pickups, exit. Controls. Pointer lock. Shooting with hit detection aiming direction. AI wall-aware movement.
+We need design a game. Need robust playable. Let's plan.
 
-Need output HTML only.
+We need first-person view using 2.5D raycasting. Walls, floor ceiling, enemies, projectiles, weapon HUD, depth-aware drawing, fog. Procedurally generated level corridors/rooms/collision/minimap toggle, enemies, ammo, health pickups, exit. WASD movement with strafing, mouse aiming pointer lock, shoot/reload/sprint, pause. At least one weapon ammo/fire-rate/damage/reload, hit detection, 3+ enemies health/AI/attack, wall-aware enemy movement. Output only HTML.
 
-Let's design.
+Need decide implementation.
 
-Single HTML with canvas full screen. CSS. JS.
+We can implement raycaster with fixed map grid. Use canvas render. Player 2D movement, yaw/pitch. Collision AABB vs grid. Raycasting walls: cast rays from player to each vertical slice. Draw walls with FOV. Draw floor/ceiling as gradient maybe procedural. Depth sorting enemies and pickups with ray angle/distance. Projectiles? Could implement bullets as particles/tracers; enemy projectiles maybe? Requirement enemies/projectiles. Need include bullets/tracers. Weapon HUD.
 
-Raycaster:
-- world grid map as 2D array of integers. Solid cells 1.
-- Wall texture drawn as vertical strips. Ceiling/floor with gradients maybe.
-- Entities: enemies, pickups, exit, projectiles. Need draw with 2.5D depth-aware. Use sprite sorting by distance from player. For each sprite, project to screen and draw. Need collision.
+Minimap toggle: canvas overlay or small canvas. Need implement.
 
-Coordinate:
-player {x,y,dirX,dirY,planeX,planeY, speed, sprint, fov 60 deg}. Camera plane perpendicular to dir.
+Enemies AI: grid-based wall-aware movement toward player if line-of-sight not blocked, or path via simple BFS? Need wall-aware enemy movement. Could implement BFS over free cells to player each frame, enemy moves one cell every 0.5 sec. Also can attack if adjacent. Need enemies health. They can attack when close. 3+ enemies.
+
+Projectile: player bullets can be raycast hit enemy if aiming within cone and LOS. Ammo, fire rate, damage, reload. Enemies maybe fire projectiles? Requirement projectiles plural maybe bullets/tracers enough. But "enemies, projectiles" maybe include enemy projectiles. We can implement enemy bullets as simple line from enemy to player if LOS, spawn projectile with damage over time; wall collision? Could draw red projectiles. That adds. Need implement wall-aware.
+
+Exit: maybe glowing exit door on map; if player reaches, win. Need include.
+
+Pause: key P/Esc toggles pause; pointer lock on click.
+
+Controls: WASD movement with strafing, mouse aim pointer lock, shoot/reload/sprint. Key states. Need pointer lock. Click canvas to shoot and request pointer lock. Mouse movement yaw/pitch. Need not use external.
+
+2.5D renderer:
+Map array 0 floor, 1 wall, 2 exit? We'll map strings.
+Grid maybe 24x24. Need corridors/rooms. Could hardcode procedural pattern? "procedurally generated" can use seeded generation. Need ensure playable. We'll generate from template? Or random seeded. Simpler: define a base map with corridors/rooms and random decorations/walls? But "procedurally generated" maybe enough with seeded map using LCG. Need guarantee exit/enemies. We can generate a grid with rooms connected by corridors.
+
+Maybe implement generation:
+- N=24, M=20.
+- Fill with 1 walls.
+- Generate 4 rooms rectangles at corners/center: random x,y,w,h but not too small. Set 0 inside.
+- Connect room centers with corridors horizontal/vertical, carve 1 wide.
+- Add some branching corridors/rooms.
+- Set player start in first room, exit in last room.
+- Enemies in rooms away.
+- Pickups.
+But deterministic seeded. Need map valid.
+
+Alternatively hard-coded map with generated enemy/pickup positions. But "procedurally generated level" maybe use seeded random to place decorations/pickups/enemies. Let's do generation with fixed seed.
+
+Need collision with walls and maybe exit? Player collision with walls only. Enemies move grid step if free.
+
 Raycasting:
-for each x column, cameraX=2*x/w-1, rayDir=dir + plane*cameraX. DDA find cell. perpDist = if side0? (cellX-x)+(distX-sideX) : ...
-wallHeight = h / perpDist * scale. draw line from h/2 - wallHeight/2 + shake to h/2 + wallHeight/2. shade based perpDist and ray angle. Add vertical stripes.
-Ceiling/floor: Could draw solid with perspective? Need floor/ceiling. Draw rectangles gradient. Or draw simple perspective floor/ceiling strips with horizontal lines. Need "floor, ceiling". Use canvas fillRect top half gradient. Add texture via horizontal lines maybe.
+Canvas internal 800x600 maybe CSS full. Use FOV e.g. 70 deg. Player yaw/pitch. For each x slice, cast ray angle = yaw + (x/width -0.5)*fov. Need handle fish-eye correction: ray angle adjusted by cos? In raycasting, step length = distance * cos(angle - yaw) for wall distance. We can compute rayDir = [cos(angle), sin(angle)]. Then cast DDA. wallDist = sqrt(dx*dx+dy*dy); projected = wallDist * cos(angle - yaw). Draw wall height = h / projected * scale. Wall x = x. Draw vertical stripes from top to bottom. Depth shading based projected.
 
-Weapon HUD: draw gun at bottom center procedurally. Health/ammo/weapon. Crosshair. UI.
+Ceiling/floor: draw horizontal stripes based on distance from center? For 2.5D, fill half screen with colors. Could draw floor with perspective stripes for y > mid: for each y, depth = mid / (y-mid) maybe. Draw floor stripes every 0.5 world units. Use shade. Ceiling similar. Maybe draw floor grid lines.
 
-Input:
-keydown/up. W/S forward/back, A/D strafe, Shift sprint, Space/Left shoot, R reload. P/Esc pause toggle. Pointer lock on canvas click. Mousemove adjust yaw if locked and not paused? Need pointer lock API. If pointerlock element not canvas maybe. We'll request on mousedown or key Enter? We'll handle click.
+Walls: DDA returns cell x,y and side. Color by type: wall grey, exit green. Use shade = max(0,1 - dist/45), fog = mix color with fog color. Side darkening. Draw vertical line.
 
-Movement collision:
-Axis separate. Try move x then y, check solid at position. Circle radius. Check cells. Need boundaries.
+Depth-aware drawing of sprites/enemies:
+Sprites include enemies, pickups. Need sort by distance descending (far to near). For each, compute dx,dy, invDet = 1/(camX*dirY - camY*dirX) (raycaster math). spriteX = invDet * ((player.x - sprite.x)*dirY - (player.y - sprite.y)*dirX). If spriteX <=0 skip. transformPlaneX = invDet * (-dirY*(player.y-sprite.y)+dirX*(player.x-sprite.x)); transformPlaneY = invDet * (dirX*(player.y-sprite.y)-dirY*(player.x-sprite.x)); cameraDist = transformPlaneY. If <=0 skip. screenX = (w/2)*(1+spriteX). spriteHeight = abs(h/cameraDist); lineHeight. Draw enemy rectangle/triangular? Procedural: body with health bar, color. Need draw after walls? In raycasting, sprites should be drawn after walls to appear behind? Actually sprites need be drawn after walls if occluded by walls; but if drawn after all walls, sprites behind walls will overlay. Need depth-aware drawing with walls: either draw sprites before walls? But then walls occlude if drawn after; sprites in front of wall would be hidden incorrectly. Better implement wall drawing per slice and draw sprites behind wall? Complex. We can approximate: draw sprites after walls; they appear in front of walls, but okay? Requirement depth-aware drawing. Better implement sprite collision with wall: For each sprite, compute distance to nearest wall along ray from player to sprite; if wall distance < sprite distance - epsilon, skip (occluded). That handles occlusion. Draw after walls. Need implement nearestWallDistance along sprite angle. Use ray step to wall. Then if distToWall < spriteDist*0.92 skip.
 
-Shooting:
-Weapon: maxAmmo 12, ammo 12, fireRate 350ms, reloadTime 1100ms, damage 35, range maybe 18, projectile? Requirement render projectiles. Need projectiles. We can create muzzle flash and projectile objects with x,y,z? For FPS raycaster, projectile as small 3D sphere/tracer. When shoot, if ammo >0 and cooldown <=0 and not reloading, decrement, set cooldown, add muzzleFlash timer, add projectile from player pos with dir aim, speed 45, life 0.15, damage maybe. It travels, if hits wall or enemy, damage enemy. Hit detection aiming direction: For enemies, compute relative vector, yaw error angle. If abs(angleDiff) < aiming cone 0.065 (3.7 deg) and distance < range, hit. Maybe if projectile. Need at least 3 enemies. Each enemy health 80, attack radius, cooldown, damage. Wall-aware movement: enemies chase player with steering and collision; if direct vector hits wall, try perpendicular directions. Also can strafe. Need spawn positions not in walls.
+Enemies: Use sprites; draw body, face, health. Need hit detection. Shooting: ray from player yaw+pitch? Mouse aim. We can compute aim angle = yaw + mouseAimX? Actually mouse movement changes yaw/pitch; aimDir = [cos(yaw), sin(yaw)]. Pitch affects vertical. For hit detection, for each enemy, compute dx,dy, dist. angleDiff = atan2(sin(aimAng - ang), cos(...)); if abs(angleDiff) < 0.035 + enemySize/dist maybe and vertical? We don't track vertical pitch for enemy body; use pitch within ±0.12? Mouse movement changes pitch but maybe no crosshair? We'll draw reticle at center, pitch changes view but not aim? Pointer lock movement should aim. For simplicity, yaw controls aim and pitch affects vertical view/weapon. Hit if angular diff < hitRadius = 0.035 + 0.6/dist. LOS ray to enemy center not blocked. Damage. Reload key R. Ammo. Fire rate. Need projectile? Could spawn muzzle flash/tracer from center to hit point. For visual, draw a line from center to hit point (screen coords) with alpha. Also maybe projectile particle moving along ray. Need implement projectiles array.
 
-Entities:
-- enemies: x,y,health,maxHealth, radius, attackCooldown, hitFlash, state. draw sprite: vertical rectangle with depth shading, legs maybe. Use drawSprite: project x,y. size = h/(2*tan(fov/2)*dist) maybe scale. If behind player skip. Draw at screenX = (0.5+dx/(dirX*x+dy*y))*w, size maybe h*0.5 / dist? Need robust. Use projection denom = dot(player.pos, sprite)-dot(player.ori, sprite). if denom<=0 skip. screenX = w/2 + (player.dirY * sprite.y - player.dirX * sprite.x) / denom * (w/2 * tan(fov/2))? Simpler: use raycaster projection formula:
-cameraX = (sprite.x - player.x)*dirX + (sprite.y - player.y)*dirY = denom.
-cameraY = (sprite.x - player.x)*(-player.planeY) + (sprite.y - player.y)*player.planeX.
-screenX = (w/2)*(1 + cameraY/(cameraX*tan(fov/2))). spriteSize = h / cameraX.
-Need player.dirX/Y and planeX/Y. For first person, dir = movement direction, plane perpendicular [ -dirY, dirX ]? If dirX=1,dirY=0, planeX=0,planeY=1. CameraY = (x-xp)*(-planeY)+(y-yp)*planeX = -(y-yp). If enemy to right? screenX = w/2*(1+cameraY/tan). If enemy at positive y, cameraY negative -> left? Hmm coordinate y down? Need choose.
+Player health, ammo, sprint. Sprint holds Shift: faster, no recoil maybe.
 
-World coordinates: x right, y down? Movement: dirX = cos(angle), dirY = sin(angle). Canvas y down. Camera plane = [-sin(angle), cos(angle)] if y down? Then for angle 0 (right), dirX=1,dirY=0, planeX=0,planeY=1. Enemy at x+ (in front) denom positive. Enemy at y+ (right in screen? If angle 0, down is right? In screen, positive y is down, but world y positive maybe right? Actually canvas y down, if looking right screen, world x right, world y down corresponds down screen, which is right? Wait if angle 0 corresponds screen right? In standard raycaster with screen x horizontal, angle 0 often +x, camera plane y positive = up? But canvas y down, if planeY=+1 then screenX for y+ (world down) = right? Formula maybe. Let's not worry.
+Reload: If ammo < max and clips > 0? Simpler ammo count, reload time 1.3 sec, ammo = mag. Keydown R.
 
-Raycasting with y down means look right when dirX positive, camera plane y positive. Ray at column left has cameraX negative, rayDir = dir + plane*cameraX. For dirX=1, planeY=1, cameraX negative: rayDirY positive -> ray goes down screen, which is right? Screen column left should ray into upper-left? But if y down, positive y is down. To look right, rays should go down in world. So okay, screen right maps world y positive.
+Enemies AI:
+Enemy object {x,y, hp, attackCd, alive, type}. Map free cells. Movement:
+- If player not in line of sight? BFS from enemy to player each maybe 0.3 sec. Need wall-aware. Implement BFS on grid: start enemy cell; goal player cell. Neighbors 4-dir; free if map[y][x]!=1 and in bounds. Track parent. If path found, enemy move along next cell. If adjacent (Manhattan 1 or same), attack if cd <=0; damage player. If LOS maybe direct move. Wall-aware because BFS avoids walls. If no path, wander. Enemies attack if adjacent; damage with cooldown.
+- Also enemy projectiles: if LOS and cd, spawn red projectile at enemy + offset toward player. Projectiles move, damage if hits player. Wall collision: projectile ray step through grid, if wall hit remove; maybe damage over time. This satisfies projectiles. Need not overcomplicate.
+- Enemies health. Hit detection by player.
 
-Collision:
-solidAt(x,y) checks grid cell with margin.
+Pickups: ammo, health. Draw as sprites. Pickup if player distance < 0.4.
 
-Minimap:
-toggle M? Requirement visible minimap toggle. We can toggle with M or key V. Draw mini canvas overlay top right with wall grid, player, enemies, exit, pickups maybe. Need "visible minimap toggle" maybe show button. Include key M. Maybe default hidden, toggle M. Draw in DOM overlay.
+Exit: In map cell maybe exit cell. If player in cell, win. Draw exit sprite? Wall/door? We'll set exit cell 3 maybe. Raycast treats as wall but colored green. Exit sprite. If player reaches, show win overlay.
 
-Exit:
-Object {x,y,active}. Need maybe require all enemies defeated and ammo? Requirement exit intentional location. Need win loop. Exit active after all enemies defeated maybe and player near. Draw as glowing portal. If collision and all enemies dead -> win. If player health<=0 lose. Lose restart.
+Map:
+Need grid dimensions. Could use N=24, M=20. Use map as strings. Let's define base map with walls and corridors.
 
-Health/ammo pickups:
-Intentional locations. Add health pickups with radius 12, ammo pickups. Draw sprites.
+Maybe easier use hard-coded map with rooms/corridors. But procedural generation requested. We'll implement generation but also define corridors? Need ensure. Let's design generation.
 
-Procedurally generated level:
-Could define static map with rooms/corridors. "Procedurally generated" maybe static array generated by function. Need include corridors and rooms. We can define base map and fill with rooms. Better create function generateLevel:
-- map array 30x20 with 0.
-- carve rectangles: start room, central room, corridor, enemy room, exit room. Use random deterministic PRNG maybe seeded. Need fixed locations.
-Simpler: define map literal with walls and carve rooms. But requirement says procedurally generated. We can generate from seed with carved rectangles and random obstacles. Need ensure accessible.
+Option: Use seeded LCG:
+function rand() { seed = (seed*1664525+1013904223)>>>0; return seed/4294967296;}
+function generateMap(){
+const W=24,H=20; grid fill 1.
+rooms = [
+{x:1,y:1,w:6,h:4}, {x:16,y:1,w:7,h:5}, {x:1,y:12,w:7,h:5}, {x:16,y:12,w:6,h:4}, {x:8,y:5,w:8,h:5} maybe center
+]
+Need connect all with corridors. But random rooms? Could generate random rooms but ensure. Maybe use fixed seed and positions.
 
-Let's design map 28x20. Use function makeLevel() with array of zeros, carveRoom(x,y,w,h) set 0. Carve corridors lines. Then add pillars/obstacles. Need not random? Could use deterministic PRNG to place pillars. But accessible.
+If random:
+for i 0..5, w=3-6,h=3-5, x=1+r*(W-w-1), y=1+...
+Need ensure not overlapping too much? okay.
+Then connect center points greedily sorted by x/y; carve corridors.
+Set start = first room center, exit = last farthest center.
+But random could produce inaccessible? Corridors connect.
+Need maybe avoid exit in wall? Centers in room free.
+Need ensure player start not in enemy.
+We'll generate. But deterministic.
 
-Example dimensions:
-WORLD_W=30, WORLD_H=22.
-Start at (1,1), startRoom room(1,1,8,6)
-Corridor from start to center: carve horizontal y=3 x=1..14, vertical x=14 y=3..10.
-Main room (14,10,10,7)
-Exit room (24,15,4,5)
-Enemy room (24,3,4,5)
-Storage room (5,14,8,5)
-Corridors:
-- from start room to main: carve (1,3)-(14,3), (14,3)-(14,10)
-- main to exit: carve (24? maybe) (24,10)-(24,15), (14,15)-(24,15)
-- main to enemy: carve (24,10)-(24,3), maybe.
-- main to storage: carve (14,14)-(5,14), (5,14)-(5,10).
-Need rooms not too big.
+However collisions and raycasting need walls. Good.
 
-Use solid walls around. Add pillars in rooms. Need avoid start/enemy/exit/pickups.
+Let's choose fixed 24x20. Generate rooms:
+seeded random. Place 5 rooms:
+- start room left top
+- center room
+- right top
+- left bottom
+- right bottom
+- storage room maybe
+Connect in star: center to all others; maybe start to center.
+Carve corridors between centers.
+Add branch corridors and small alcoves.
+This yields corridors/rooms.
 
-Let's define rooms:
-carveRect(1,1,8,6)
-carveRect(14,10,10,7)
-carveRect(24,15,5,5)
-carveRect(24,3,5,5)
-carveRect(5,14,8,5)
-carveRect(1,14,4,4) maybe ammo room.
-Corridors:
-line(1,3,14,3); line(14,3,14,10)
-line(14,15,24,15); line(24,10,24,15)
-line(24,10,24,3)
-line(14,14,5,14); line(5,10,5,14)
-line(5,16,14,16)? maybe.
+Potential issue corridors width 1; player needs move through; okay.
 
-Ensure cells around rooms not connected by boundary? Carve sets 0, surrounding walls remain.
+Set exit cell at center of last room. Map cell 3.
 
-Pickups:
-ammo at (2,4), health at (16,12), ammo at (26,16), health at (26,4), maybe.
+Need minimap: small canvas 220x160 maybe. Draw grid cells, player, enemies, pickups, exit. Toggle with M or button? Requirement minimap toggle. Add key M. Also show in HUD. Need canvas minimap maybe overlay.
 
-Enemies:
-at (16,11), (25,16), (26,5), maybe one near exit. Need not spawn in walls.
+HTML structure:
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset...>
+<title>...
+<style>
+html,body { margin:0; overflow:hidden; background:#050505; font-family...}
+#gameWrap { position:fixed; inset:0; }
+canvas#game { width:100vw;height:100vh;display:block; image-rendering:auto; cursor:none; }
+#minimap { position:absolute; right:12px; top:12px; width:220px; height:160px; border...; background...; display:none; }
+#crosshair, #hud, #overlay maybe.
+</style>
+</head>
+<body>
+<div id=gameWrap>
+<canvas id=game></canvas>
+<canvas id=minimap></canvas>
+<div id=hud>...</div>
+<div id=crosshair>...</div>
+<div id=overlay>...</div>
+</div>
+<script>
+...
+</script>
+</body>
+</html>
 
-Exit at (26.5,17.5).
+Need canvas high DPI maybe. Renderer uses CSS size and internal scale. We can set canvas.width = innerWidth*dpr; style; ctx.setTransform(dpr,0,0,dpr,0,0); use viewW = innerWidth, viewH=innerHeight. Minimap too.
 
-Weapon:
-Pistol. maxAmmo 12, reload 1.2s. Maybe one-shot damage 35. Enemy health 100. 3 enemies.
-Projectile:
-shoot creates bullet object {x,y,z:1.2,vx:dirX*speed,vy:dirY*speed, life:0.18, radius:4, damage:1}. Draw as small glowing dot/tracer. On update: x+=vx*dt,y+=vy*dt,z maybe bob. Check collision at next pos: if solid or out -> hit wall, muzzle flash; remove. Else check enemies distance < enemy.radius+bullet.radius: damage; remove. Need hit detection accounting aiming direction perhaps bullet is aimed exactly. Also maybe for enemies outside bullet radius? But requirement "hit detection accounting for aiming direction"; we can implement aim cone and bullet only damages if within cone. For each enemy, compute yaw angle difference between player aim vector and enemy vector; if abs <= aimCone and distance < bullet.range. Since bullet travels along aim, this is natural. We'll show crosshair.
+Pointer lock:
+canvas.addEventListener('click', () => { if(!paused) canvas.requestPointerLock(); });
+document.addEventListener('mousemove', e => { if(pointerLockElement===canvas && !paused) { yaw -= e.movementX*0.0022; pitch -= e.movementY*0.0022; clamp; }});
+Keydown:
+if e.code==='KeyP'||e.code==='Escape' pause toggle. But Escape exits pointer lock; still pause maybe.
+if e.repeat ignore.
+if KeyM toggle minimap.
+if KeyR reload.
+Movement states: Arrow/WASD. Sprint key Shift.
+Shoot: left mouse or Space? mouse down. Need if pointer lock click. We'll implement mouse down shoot.
+Potential issue on first click request pointer lock; shoot after lock? We'll call shoot() in click if not paused.
 
-Shooting can happen by key Space or mouse click. Need prevent default.
+HUD: ammo, health, enemy count, status. Update DOM.
 
-Mouse aiming:
-mousemove if pointerLockElement===canvas and not paused? adjust yaw += movementX * sensitivity. Need clamp maybe no pitch. 2.5D no pitch, first-person horizontal.
+Game loop:
+let last = performance.now();
+function loop(now){ dt=(now-last)/1000; clamp; update(dt); render(); requestAnimationFrame(loop);}
+Need update even paused? if paused maybe not.
 
-Pause:
-P/Esc toggles. If paused, pointer unlock? Maybe not. Need freeze update, draw overlay. Escape maybe release pointer lock. P. Need not use pointer lock if click.
+Renderer:
+function render(){
+const ctx=gameCtx; ctx.setTransform(dpr,...); // if dpr changes.
+clear.
+drawCeilingFloor(ctx)
+castWalls()
+drawSprites(ctx) // enemies/pickups/exit/projectiles?
+drawHUDOverlay maybe crosshair, muzzle flash, damage overlay, reload overlay.
+drawMinimap maybe after render.
+}
+Need draw projectiles maybe after walls? Projectiles should be visible in front? Could draw before sprites? They are 3D? Simpler draw after sprites? Projectiles as glowing dots along line; draw after walls maybe. But if behind walls, maybe skip by ray wall. We'll draw projectiles after sprites with occlusion.
+Need draw walls before sprites. For sprites occlusion compute nearestWallDistance; if wallDist < spriteDist*0.94 skip. For exit as sprite? If exit cell has wall, should draw as sprite on wall? Maybe draw as glowing vertical plane at exit. Since map exit cell is wall; raycast will draw wall. Draw exit sprite at distance with occlusion? It should be visible.
 
-Rendering:
-Main loop requestAnimationFrame. dt capped 0.05. If not paused update.
-draw:
-- clear.
-- renderCeilingFloor:
-fill top half with gradient? canvas.createLinearGradient(0,0,0,h/2). Add color. Add subtle horizontal lines at intervals perspective maybe.
-floor similar.
-- raycast walls:
-for each x, DDA. Shade. Draw.
-Need performance okay. 800 width.
+World-to-screen:
+function projectSprite(s) {
+dx=s.x-player.x; dy=s.y-player.y;
+dirX=cos(yaw), dirY=sin(yaw);
+camX=player.x, camY=player.y;
+invDet = 1/(camX*dirY - camY*dirX);
+transformX = invDet*(dx*dirY - dy*dirX);
+transformY = invDet*(-dirY*dx + dirX*dy); // same formula
+if transformY <=0.05 return null;
+screenX = (w/2)*(1+transformX/transformY)
+angle = atan2(dy,dx)
+return {dist: sqrt(dx^2+dy^2), angle, screenX, transformY}
+}
+Need use yaw only not pitch for sprites.
 
-DDA implementation:
-let mapX=Math.floor(player.x), mapY; deltaDistX = Math.abs(1/(rayDirX||tiny)); etc.
-stepX = rayDirX <0 ? -1 :1; sideDistX = (rayDirX<0)? (player.x-mapX)*deltaDistX : (mapX+1.0-player.x)*deltaDistX.
-while !hit and iter<100: if sideDistX<sideDistY {sideDistX+=deltaDistX; mapX+=stepX; side=0} else ...
-if mapX/y out? solidAt false maybe.
-perpWallDist = (side==0 ? (mapX-player.x+(1-stepX)/2)/rayDirX : (mapY-player.y+(1-stepY)/2)/rayDirY). clamp min.
-shade = max(0,1 - perpDist/18). If side shade*0.8. Add color.
-Draw wall column:
-screenX = x + 0.5. wallH = Math.min(h*2, h / perpDist * 1.2). baseLine = h/2. top=baseLine - wallH/2 + maybe sin. bottom=baseLine+wallH/2.
-Color based side, shade, maybe x coordinate for stripes. Use fillStyle `rgb(${r},${g},${b})`. Need not create gradients per column maybe.
+Sprites:
+enemies: draw body. Use spriteHeight = Math.min(viewH*0.9, 180 / dist); maybe 180 world height. spriteWidth = spriteHeight*0.55. Draw shadow ellipse. Body rectangle with color; health bar. Need depth-aware; far smaller.
+Pickups: ammo/health as small boxes/cross. Exit: door/gate.
 
-Wall texture:
-Could draw subtle horizontal/vertical stripes. For each column, choose base color based on cell. Draw if random? But deterministic per x? Need avoid flicker. Use Math.sin(x*0.17) for stripes. Use color functions.
+2.5D floor/ceiling:
+function drawCeilingFloor() {
+const mid = viewH/2;
+const fogColor = [10,14,20];
+for (let y=0; y<viewH; y++) {
+const t = y/viewH;
+const shade = t<0.5 ? 1 - t*0.8 : 0.2 + (t-0.5)*0.5;
+// Ceiling color gradient
+ctx.fillStyle = ...
+ctx.fillRect(0,y,viewW,1)
+}
+Maybe use horizontal stripes based on world y? Need more 2.5D:
+for each y, depth = mid / Math.max(1, Math.abs(y-mid));
+grid offset = (depth * (player.y? maybe) + time) % 1;
+draw floor stripes:
+if y>=mid: for x? Could fill entire row with color depending on x and depth.
+We can draw floor in two triangles:
+for y mid..viewH:
+z = mid/(y-mid);
+const stripe = Math.floor((player.y + z*Math.sin(yaw)+time*player.speed) % 4?) Hard.
+Simpler fill row with fog gradient and grid lines every N pixels.
 
-Ceiling/floor:
-Maybe draw grid lines perspective:
-ceiling: fill dark, draw horizontal lines y=h/2 - i*h/10000? Use for i 0..100: y = h/2 - h/2/(i+1)? That converges; draw.
-floor: y=h/2+i*h/(i+100), draw lines.
-
-Draw sprites:
-Need sort by distance. Entities: enemies, pickups, exit, projectiles. Project each. For exit maybe active only if all enemies dead? It can be visible glow. Draw sprite:
-function drawSprite(obj, drawFn, sortKey):
-dx=obj.x-player.x, dy=obj.y-player.y; cameraX=dx*dirX+dy*dirY; cameraY=dx*planeX+dy*planeY? Need derive. Standard:
-cameraX = (spriteX - posX)*dirX + (spriteY - posY)*dirY;
-cameraY = (spriteX - posX)*planeX + (spriteY - posY)*planeY;
-screenX = Math.round((w/2)*(1 + cameraY/cameraX));
-spriteHeight = Math.abs(Math.round(h / cameraX));
-transX = Math.round(screenX - spriteHeight/2)
-if cameraX <=0 or transX>=w or transX+height<=0 skip.
-But plane should be [-dirY,dirX] or [0,1]. Use planeX=-dirY, planeY=dirX. Then cameraY = dx*planeX+dy*planeY. With dirX=1,dirY=0, planeX=0,planeY=1: cameraY=dy. Enemy right (world y positive) cameraY positive -> screenX right. Good.
-
-Depth sort descending cameraX so far first.
-
-Enemy sprite:
-draw shadow ellipse at base. Height maybe 42/cameraX. Draw body rect, head circle, legs. Use shade. Draw health bar above. Use flash if hit. Need orient? Not necessary.
-
-Pickup sprite:
-ammo/health: draw small icons. Project size = 28/cameraX. Draw rectangle/circle, text? Use canvas text.
-
-Exit sprite:
-Draw portal rectangle or ring. Use cameraX, size = 50/cameraX. Draw glow, text EXIT. If all enemies dead maybe active; if not, draw as locked/dim maybe.
-
-Weapon HUD:
-Draw in 2D: crosshair at center with small lines. If reloading progress, draw reload bar. Ammo. Health. If paused overlay. Muzzle flash maybe draw orange overlay. Gun: draw base at bottom center: rectangles/triangles with shading. If muzzleFlash>0 draw muzzle flash polygon. Need update muzzleFlash timer.
-
-UI DOM:
-Maybe overlay instructions. But output only HTML. Use CSS.
-
-Collision:
-solidAt(x,y) with margin:
-let r=0.25;
-return solidAtPoint(x+r,y+r) || ... maybe 4 corners.
-solidAtPoint checks x<0 || y<0 || x>=WORLD_W || y>=WORLD_H || map[Math.floor(y)][Math.floor(x)].
-For entities pickup collision: distance < player.radius+pickup.radius.
-Enemy collision with player: if dist < sum, push player or damage. Need wall-aware enemy movement:
-updateEnemies(dt):
-for each enemy:
-dx=player.x-e.x, dy=player.y-e.y, d=...
-if d<1: damage player 5/s maybe.
-if e.attackCooldown>0 decrement.
-if d<e.attackRange && d<1.2 && attackCooldown<=0: damage player, set cooldown.
-else:
-compute desired = dx/d,dy/d.
-Check direct path: pathHit = hasWallBetween(e.x,e.y, player.x, player.y, e.radius+0.2)? If no wall and d>1, move desired*enemySpeed*dt. If hit, try alternatives: perpendicular, diagonal combos, or wander.
-Wall-aware movement:
-function enemyMove(e, dx,dy,dt):
-let speed = 1.2*dt;
-letNow produce the final answer. Be concrete and complete.</think>
+Walls DDA:
+function castWall(x) {
+let rayAngle = player.yaw + (x/w - .5)*fov;
+let rayCos = cos(rayAngle), raySin = sin(rayAngle);
+let mapX=Math.floor(player.x), mapY=Math.floor(player.y);
+let deltaDistX = abs(1/rayCos), deltaDistY=abs(1/raySinNow produce the final answer. Be concrete and complete.</think>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Canvas FPS Prototype</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canvas FPS Raycaster</title>
 <style>
-  html,body{
-    margin:0;
-    width:100%;
-    height:100%;
-    overflow:hidden;
-    background:#05070a;
-    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    color:#e8f1ff;
-    user-select:none;
+  html, body {
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #050506;
+    color: #e7e7e7;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    user-select: none;
   }
-  canvas#game{
-    display:block;
-    width:100vw;
-    height:100vh;
-    cursor:none;
-    background:#05070a;
+
+  #gameWrap {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #050506;
   }
-  #hud{
-    position:fixed;
-    inset:0;
-    pointer-events:none;
+
+  #game {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    cursor: none;
+    background: #000;
   }
-  #crosshair{
-    position:absolute;
-    left:50%;
-    top:50%;
-    width:28px;
-    height:28px;
-    margin:-14px 0 0 -14px;
-    pointer-events:none;
+
+  #minimap {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 220px;
+    height: 160px;
+    border: 1px solid rgba(180, 220, 255, 0.35);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.55);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+    display: none;
   }
-  #crosshair:before,#crosshair:after{
-    content:"";
-    position:absolute;
-    background:rgba(225,245,255,.88);
-    box-shadow:0 0 4px #00111f;
+
+  #hud {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    pointer-events: none;
+    text-shadow: 0 2px 8px #000;
   }
-  #crosshair:before{
-    left:13px;
-    top:3px;
-    width:2px;
-    height:22px;
+
+  .hudPanel {
+    min-width: 142px;
+    padding: 10px 12px;
+    border: 1px solid rgba(180, 220, 255, 0.22);
+    border-radius: 10px;
+    background: rgba(5, 8, 12, 0.56);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
+    backdrop-filter: blur(2px);
   }
-  #crosshair:after{
-    left:3px;
-    top:13px;
-    width:22px;
-    height:2px;
+
+  .hudLabel {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: #9fb8ce;
+    text-transform: uppercase;
+    margin-bottom: 2px;
   }
-  #topInfo{
-    position:absolute;
-    left:14px;
-    top:10px;
-    padding:9px 12px;
-    border:1px solid rgba(120,190,255,.22);
-    background:rgba(4,10,18,.48);
-    backdrop-filter:blur(3px);
-    border-radius:10px;
-    font-size:14px;
-    line-height:1.45;
-    text-shadow:0 1px 2px #000;
+
+  .hudValue {
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 800;
+    color: #fff;
   }
-  #bottomInfo{
-    position:absolute;
-    left:14px;
-    bottom:12px;
-    color:#bfe8ff;
-    font-size:13px;
-    opacity:.9;
+
+  #crosshair {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 34px;
+    height: 34px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    opacity: 0.92;
+    filter: drop-shadow(0 1px 3px #000);
   }
-  #centerMessage{
-    position:absolute;
-    left:50%;
-    top:44%;
-    transform:translate(-50%,-50%);
-    padding:14px 20px;
-    border-radius:14px;
-    border:1px solid rgba(130,210,255,.25);
-    background:rgba(4,8,14,.62);
-    backdrop-filter:blur(4px);
-    font-size:18px;
-    font-weight:700;
-    letter-spacing:.02em;
-    text-align:center;
-    text-shadow:0 2px 4px #000;
-    display:none;
+
+  #crosshair::before,
+  #crosshair::after {
+    content: "";
+    position: absolute;
+    background: rgba(230, 245, 255, 0.92);
+    border-radius: 2px;
   }
-  #minimap{
-    position:absolute;
-    right:14px;
-    top:14px;
-    width:180px;
-    height:180px;
-    border:1px solid rgba(120,190,255,.28);
-    border-radius:10px;
-    background:rgba(3,8,13,.55);
-    box-shadow:0 6px 24px rgba(0,0,0,.35);
-    display:none;
+
+  #crosshair::before {
+    left: 16px;
+    top: 3px;
+    width: 2px;
+    height: 28px;
   }
-  #help{
-    position:absolute;
-    left:14px;
-    bottom:34px;
-    color:rgba(225,245,255,.75);
-    font-size:12px;
-    line-height:1.45;
+
+  #crosshair::after {
+    left: 3px;
+    top: 16px;
+    width: 28px;
+    height: 2px;
+  }
+
+  #reloadOverlay {
+    position: absolute;
+    left: 50%;
+    top: 58%;
+    transform: translate(-50%, -50%);
+    padding: 9px 15px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s linear;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  #reloadOverlay.show {
+    opacity: 1;
+  }
+
+  #damageFlash {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255, 0, 0, 0) 50%, rgba(255, 0, 0, 0.36) 100%);
+    opacity: 0;
+  }
+
+  #damageFlash.show {
+    opacity: 1;
+  }
+
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.48);
+    pointer-events: none;
+  }
+
+  #messageBox {
+    width: min(620px, calc(100vw - 36px));
+    padding: 28px 30px;
+    border: 1px solid rgba(180, 220, 255, 0.28);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(8, 13, 20, 0.92), rgba(3, 5, 8, 0.88));
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.55);
+    text-align: center;
+  }
+
+  #messageTitle {
+    margin: 0 0 12px;
+    font-size: clamp(34px, 6vw, 64px);
+    line-height: 0.95;
+    letter-spacing: 0.04em;
+    color: #fff;
+    text-shadow: 0 4px 22px rgba(0, 0, 0, 0.65), 0 0 24px rgba(80, 170, 255, 0.28);
+  }
+
+  #messageText {
+    margin: 0 auto 18px;
+    max-width: 520px;
+    color: #c9d7e4;
+    line-height: 1.45;
+    font-size: 15px;
+  }
+
+  #messageHint {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 999px;
+    color: #071017;
+    background: linear-gradient(180deg, #aee8ff, #57b8ff);
+    font-weight: 900;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    box-shadow: 0 8px 26px rgba(80, 180, 255, 0.32);
+  }
+
+  #toast {
+    position: absolute;
+    left: 50%;
+    top: 18px;
+    transform: translateX(-50%);
+    padding: 8px 14px;
+    border: 1px solid rgba(180, 220, 255, 0.22);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.48);
+    color: #dcecff;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s linear;
+    text-shadow: 0 2px 8px #000;
+  }
+
+  #toast.show {
+    opacity: 1;
   }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<div id="hud">
-  <div id="topInfo">
-    <b>Canvas FPS Prototype</b><br>
-    Health: <span id="health">100</span> | Ammo: <span id="ammo">12</span>
-  </div>
-  <div id="help">
-    WASD move<br>
-    Mouse aim · Click shoot<br>
-    Shift sprint · R reload<br>
-    Space / Left click shoot<br>
-    P / Esc pause · M minimap
-  </div>
+<div id="gameWrap">
+  <canvas id="game"></canvas>
+  <canvas id="minimap"></canvas>
+
   <div id="crosshair"></div>
-  <canvas id="minimap" width="180" height="180"></canvas>
-  <div id="centerMessage"></div>
+  <div id="reloadOverlay">RELOAD</div>
+  <div id="damageFlash"></div>
+  <div id="toast"></div>
+
+  <div id="hud">
+    <div class="hudPanel">
+      <div class="hudLabel">Ammo</div>
+      <div class="hudValue" id="ammoText">30</div>
+    </div>
+    <div class="hudPanel">
+      <div class="hudLabel">Health</div>
+      <div class="hudValue" id="healthText">100</div>
+    </div>
+    <div class="hudPanel">
+      <div class="hudLabel">Enemies</div>
+      <div class="hudValue" id="enemyText">4</div>
+    </div>
+    <div class="hudPanel">
+      <div class="hudLabel">Status</div>
+      <div class="hudValue" id="statusText">READY</div>
+    </div>
+  </div>
+
+  <div id="overlay">
+    <div id="messageBox">
+      <h1 id="messageTitle">SIGNAL EXIT</h1>
+      <p id="messageText">
+        Escape the generated facility. Move with WASD, sprint with Shift, aim with the mouse,
+        shoot with left click, reload with R, toggle minimap with M, and pause with P or Esc.
+      </p>
+      <span id="messageHint">Click to Start / Lock Mouse</span>
+    </div>
+  </div>
 </div>
+
 <script>
 (() => {
   "use strict";
 
-  const canvas = document.getElementById("game");
-  const ctx = canvas.getContext("2d", { alpha: false });
+  const gameCanvas = document.getElementById("game");
+  const gameCtx = gameCanvas.getContext("2d", { alpha: false });
   const minimapCanvas = document.getElementById("minimap");
-  const mctx = minimapCanvas.getContext("2d");
-  const healthEl = document.getElementById("health");
-  const ammoEl = document.getElementById("ammo");
-  const msgEl = document.getElementById("centerMessage");
+  const minimapCtx = minimapCanvas.getContext("2d");
+  const ammoText = document.getElementById("ammoText");
+  const healthText = document.getElementById("healthText");
+  const enemyText = document.getElementById("enemyText");
+  const statusText = document.getElementById("statusText");
+  const reloadOverlay = document.getElementById("reloadOverlay");
+  const damageFlash = document.getElementById("damageFlash");
+  const overlay = document.getElementById("overlay");
+  const messageTitle = document.getElementById("messageTitle");
+  const messageText = document.getElementById("messageText");
+  const messageHint = document.getElementById("messageHint");
+  const toast = document.getElementById("toast");
 
-  const WORLD_W = 30;
-  const WORLD_H = 22;
-  const PLAYER_RADIUS = 0.28;
-  const FOV = Math.PI / 3;
   const TAU = Math.PI * 2;
+  const FOV = Math.PI / 2.65;
+  const MAP_W = 24;
+  const MAP_H = 20;
+  const WALL = 1;
+  const EXIT_CELL = 3;
 
-  let W = 1;
-  let H = 1;
-  let DPR = 1;
+  let dpr = 1;
+  let viewW = 1;
+  let viewH = 1;
+  let minimapW = 220;
+  let minimapH = 160;
 
-  function resize() {
-    DPR = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    W = Math.floor(window.innerWidth);
-    H = Math.floor(window.innerHeight);
-    canvas.width = Math.floor(W * DPR);
-    canvas.height = Math.floor(H * DPR);
-    canvas.style.width = W + "px";
-    canvas.style.height = H + "px";
-    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  }
-  window.addEventListener("resize", resize);
-  resize();
+  let seed = 1337;
+  let minimapVisible = true;
+  let paused = true;
+  let gameOver = false;
+  let won = false;
+  let toastTimer = 0;
+  let lastToast = "";
+  let lastTime = performance.now();
 
-  function randSeed(seed) {
-    let s = seed >>> 0;
+  const keys = Object.create(null);
+  const pressed = Object.create(null);
+
+  const rand = (() => {
+    let s = seed;
     return () => {
       s = (s * 1664525 + 1013904223) >>> 0;
       return s / 4294967296;
     };
-  }
-  const rnd = randSeed(7);
-
-  function generateLevel() {
-    const map = Array.from({ length: WORLD_H }, () => Array(WORLD_W).fill(1));
-    const carveRect = (x, y, w, h) => {
-      for (let yy = y; yy < y + h; yy++) {
-        for (let xx = x; xx < x + w; xx++) {
-          if (xx > 0 && yy > 0 && xx < WORLD_W - 1 && yy < WORLD_H - 1) map[yy][xx] = 0;
-        }
-      }
-    };
-    const line = (x0, y0, x1, y1) => {
-      let dx = Math.abs(x1 - x0), dy = Math.abs(y1 - y0);
-      let sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1;
-      let err = dx - dy;
-      let x = x0, y = y0;
-      while (true) {
-        if (x > 0 && y > 0 && x < WORLD_W - 1 && y < WORLD_H - 1) map[y][x] = 0;
-        if (x === x1 && y === y1) break;
-        let e2 = 2 * err;
-        if (e2 > -dy) { err -= dy; x += sx; }
-        if (e2 < dx) { err += dx; y += sy; }
-      }
-    };
-
-    carveRect(1, 1, 8, 6);
-    carveRect(14, 10, 10, 7);
-    carveRect(24, 15, 5, 5);
-    carveRect(24, 3, 5, 5);
-    carveRect(5, 14, 8, 5);
-    carveRect(1, 14, 4, 4);
-
-    line(1, 3, 14, 3);
-    line(14, 3, 14, 10);
-    line(14, 15, 24, 15);
-    line(24, 10, 24, 15);
-    line(24, 10, 24, 3);
-    line(14, 14, 5, 14);
-    line(5, 10, 5, 14);
-    line(5, 16, 14, 16);
-
-    const pillars = [
-      [8, 7, 2, 2], [9, 7, 2, 2],
-      [12, 12, 2, 2], [13, 12, 2, 2],
-      [16, 13, 2, 2], [17, 13, 2, 2],
-      [20, 11, 2, 2], [21, 11, 2, 2],
-      [26, 17, 2, 2], [27, 17, 2, 2],
-      [26, 5, 2, 2], [27, 5, 2, 2],
-      [7, 16, 2, 2], [8, 16, 2, 2],
-      [3, 17, 2, 2], [3, 18, 2, 2],
-      [19, 17, 2, 2], [20, 17, 2, 2]
-    ];
-    for (const p of pillars) {
-      if (rnd() < 0.72) carveRect(p[0], p[1], p[2], p[3]);
-    }
-
-    for (let y = 2; y < WORLD_H - 2; y += 3) {
-      for (let x = 2; x < WORLD_W - 2; x += 3) {
-        if (rnd() < 0.11 && map[y][x] === 0) map[y][x] = 1;
-      }
-    }
-
-    return map;
-  }
-
-  const map = generateLevel();
-
-  function solidAtPoint(px, py) {
-    const x = Math.floor(px);
-    const y = Math.floor(py);
-    return x < 0 || y < 0 || x >= WORLD_W || y >= WORLD_H || map[y][x] !== 0;
-  }
-
-  function solidAt(x, y, r = PLAYER_RADIUS) {
-    return solidAtPoint(x + r, y + r) ||
-      solidAtPoint(x - r, y + r) ||
-      solidAtPoint(x + r, y - r) ||
-      solidAtPoint(x - r, y - r);
-  }
-
-  function hasWallBetween(x0, y0, x1, y1, r = 0.25) {
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const dist = Math.hypot(dx, dy);
-    const steps = Math.max(1, Math.floor(dist * 8));
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      if (solidAt(x0 + dx * t, y0 + dy * t, r)) return true;
-    }
-    return false;
-  }
+  })();
 
   function clamp(v, a, b) {
     return Math.max(a, Math.min(b, v));
   }
 
-  const player = {
-    x: 2.5,
-    y: 2.5,
-    angle: 0,
-    health: 100,
-    speed: 2.65,
-    sprintSpeed: 5.3,
-    radius: PLAYER_RADIUS,
-    recoil: 0,
-    hurtTimer: 0
-  };
-
-  const weapon = {
-    name: "Pistol",
-    maxAmmo: 12,
-    ammo: 12,
-    fireRate: 210,
-    reloadTime: 1150,
-    damage: 34,
-    bulletSpeed: 54,
-    bulletRange: 18,
-    cooldown: 0,
-    reloadTimer: 0,
-    muzzleFlash: 0
-  };
-
-  const enemies = [];
-  let nextEnemyId = 1;
-  function spawnEnemy(x, y, hp) {
-    enemies.push({
-      id: nextEnemyId++,
-      x, y,
-      hp, maxHp: hp,
-      radius: 0.34,
-      speed: 1.05 + rnd() * 0.25,
-      attackRange: 0.72,
-      attackDamage: 9,
-      attackCooldown: 0,
-      hitFlash: 0,
-      wander: 0
-    });
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
   }
-  spawnEnemy(16.5, 11.2, 120);
-  spawnEnemy(25.5, 16.5, 125);
-  spawnEnemy(26.5, 4.8, 110);
 
-  const pickups = [
-    { type: "ammo", x: 2.3, y: 4.2, radius: 0.18 },
-    { type: "health", x: 16.4, y: 12.1, radius: 0.22 },
-    { type: "ammo", x: 26.4, y: 16.4, radius: 0.18 },
-    { type: "health", x: 26.4, y: 4.4, radius: 0.22 }
-  ];
+  function dist2(ax, ay, bx, by) {
+    const dx = ax - bx;
+    const dy = ay - by;
+    return Math.hypot(dx, dy);
+  }
 
-  const exit = {
-    x: 26.5,
-    y: 17.5
-  };
-
-  const keys = Object.create(null);
-  let paused = false;
-  let won = false;
-  let lost = false;
-  let showMinimap = false;
-  let projectiles = [];
-  let particles = [];
-  let muzzleFlash = 0;
+  function modAngle(a) {
+    a %= TAU;
+    if (a < 0) a += TAU;
+    return a;
+  }
 
   function angleDiff(a, b) {
-    let d = Math.abs(a - b);
-    while (d > Math.PI) d = TAU - d;
-    return d;
+    return Math.atan2(Math.sin(a - b), Math.cos(a - b));
   }
 
-  function setMsg(text, sub = "", ms = 1800) {
-    msgEl.innerHTML = text + (sub ? "<br><span style='font-weight:400;font-size:13px'>" + sub + "</span>" : "");
-    msgEl.style.display = text ? "block" : "none";
-    clearTimeout(setMsg.t);
-    if (text) setMsg.t = setTimeout(() => msgEl.style.display = "none", ms);
+  function setCanvasSize() {
+    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    viewW = window.innerWidth;
+    viewH = window.innerHeight;
+    gameCanvas.width = Math.floor(viewW * dpr);
+    gameCanvas.height = Math.floor(viewH * dpr);
+    gameCanvas.style.width = viewW + "px";
+    gameCanvas.style.height = viewH + "px";
+    gameCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    minimapW = minimapCanvas.width = 220;
+    minimapH = minimapCanvas.height = 160;
+    minimapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function requestPointerLock() {
-    canvas.requestPointerLock && canvas.requestPointerLock();
-  }
+  window.addEventListener("resize", setCanvasSize);
+  setCanvasSize();
 
-  window.addEventListener("keydown", (e) => {
-    if (["KeyW","KeyA","KeyS","KeyD","ShiftLeft","ShiftRight","Space"].includes(e.code)) e.preventDefault();
-    keys[e.code] = true;
+  function generateMap() {
+    const grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(WALL));
+    const rooms = [];
 
-    if (e.code === "KeyP" || e.code === "Escape") {
-      if (!paused) {
-        paused = true;
-        setMsg("PAUSED", "Press P or Esc to resume", 999999);
-        if (document.pointerLockElement === canvas) document.exitPointerLock && document.exitPointerLock();
-      } else {
-        paused = false;
-        msgEl.style.display = "none";
-        requestPointerLock();
+    const addRoom = (x, y, w, h) => {
+      for (let yy = y; yy < y + h; yy++) {
+        for (let xx = x; xx < x + w; xx++) {
+          if (xx > 0 && yy > 0 && xx < MAP_W - 1 && yy < MAP_H - 1) {
+            grid[yy][xx] = 0;
+          }
+        }
+      }
+      const cx = Math.floor(x + w / 2);
+      const cy = Math.floor(y + h / 2);
+      rooms.push({ x, y, w, h, cx, cy });
+    };
+
+    addRoom(1, 1, 6, 5);
+    addRoom(16, 1, 7, 5);
+    addRoom(1, 12, 7, 5);
+    addRoom(16, 12, 6, 5);
+    addRoom(8, 5, 8, 5);
+    addRoom(10, 9, 4, 4);
+
+    const centers = rooms.map(r => ({ x: r.cx, y: r.cy }));
+    for (let i = 1; i < centers.length; i++) {
+      carveCorridor(centers[i - 1].x, centers[i - 1].y, centers[i].x, centers[i].y);
+    }
+
+    for (let i = 0; i < 8; i++) {
+      const a = rooms[Math.floor(rand() * rooms.length)];
+      const b = rooms[Math.floor(rand() * rooms.length)];
+      if (a !== b) carveCorridor(a.cx, a.cy, b.cx, b.cy);
+    }
+
+    for (let y = 0; y < MAP_H; y++) {
+      for (let x = 0; x < MAP_W; x++) {
+        if (grid[y][x] === 0) {
+          if (rand() < 0.18) grid[y][x] = 1;
+        }
       }
     }
 
-    if (e.code === "KeyM") showMinimap = !showMinimap;
-    if (e.code === "KeyR") reload();
-  }, { passive: false });
+    for (let i = 0; i < 10; i++) {
+      const r = rooms[Math.floor(rand() * rooms.length)];
+      grid[r.cy][r.cx] = 0;
+    }
 
-  window.addEventListener("keyup", (e) => {
+    const start = rooms[0];
+    const exit = rooms[rooms.length - 1];
+    grid[exit.cy][exit.cx] = EXIT_CELL;
+
+    return { grid, start, exit };
+  }
+
+  function carveCorridor(x1, y1, x2, y2) {
+    let x = x1;
+    let y = y1;
+    gridSet(x, y, 0);
+
+    while (x !== x2) {
+      x += Math.sign(x2 - x);
+      gridSet(x, y, 0);
+    }
+    while (y !== y2) {
+      y += Math.sign(y2 - y);
+      gridSet(x, y, 0);
+    }
+  }
+
+  const generated = generateMap();
+  const map = generated.grid;
+
+  const player = {
+    x: generated.start.cx + 0.5,
+    y: generated.start.cy + 0.5,
+    yaw: -Math.PI / 2,
+    pitch: 0,
+    health: 100,
+    ammo: 30,
+    maxAmmo: 30,
+    reloadTimer: 0,
+    fireTimer: 0,
+    sprinting: false,
+    damageTimer: 0
+  };
+
+  let exit = {
+    x: generated.exit.cx + 0.5,
+    y: generated.exit.cy + 0.5,
+    xMap: generated.exit.cx,
+    yMap: generated.exit.cy
+  };
+
+  const enemies = [];
+  const pickups = [];
+  const projectiles = [];
+
+  function addEnemy(x, y, hp) {
+    enemies.push({
+      x,
+      y,
+      hp,
+      maxHp: hp,
+      attackTimer: 0.4 + rand() * 0.5,
+      moveTimer: 0,
+      attackCooldown: 1.25 + rand() * 0.4,
+      alive: true,
+      color: `hsl(${220 + rand() * 45}, 90%, ${45 + rand() * 12}%)`
+    });
+  }
+
+  function addPickup(x, y, type) {
+    pickups.push({
+      x,
+      y,
+      type,
+      taken: false,
+      bob: rand() * TAU
+    });
+  }
+
+  function initEntities() {
+    enemies.length = 0;
+    pickups.length = 0;
+    projectiles.length = 0;
+
+    addEnemy(19, 3, 45);
+    addEnemy(12, 9, 55);
+    addEnemy(3, 16, 45);
+    addEnemy(19, 16, 65);
+    addEnemy(10, 11, 35);
+
+    addPickup(5, 3, "ammo");
+    addPickup(18, 3, "health");
+    addPickup(12, 16, "ammo");
+    addPickup(4, 14, "health");
+    addPickup(18, 13, "ammo");
+    addPickup(8, 7, "health");
+  }
+
+  initEntities();
+
+  function gridSet(x, y, v) {
+    if (x >= 0 && y >= 0 && x < MAP_W && y < MAP_H) map[y][x] = v;
+  }
+
+  function isWallCell(x, y) {
+    return x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || map[y][x] === WALL;
+  }
+
+  function isFreeCell(x, y) {
+    if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) return false;
+    return map[y][x] !== WALL;
+  }
+
+  function playerCollides(px, py) {
+    const r = 0.24;
+    const pts = [
+      [px - r, py - r],
+      [px + r, py - r],
+      [px - r, py + r],
+      [px + r, py + r]
+    ];
+    for (const p of pts) {
+      if (isWallCell(Math.floor(p[0]), Math.floor(p[1]))) return true;
+    }
+    return false;
+  }
+
+  function enemyCollides(e, nx, ny) {
+    const r = 0.31;
+    const pts = [
+      [nx - r, ny - r],
+      [nx + r, ny - r],
+      [nx - r, ny + r],
+      [nx + r, ny + r]
+    ];
+    for (const p of pts) {
+      if (isWallCell(Math.floor(p[0]), Math.floor(p[1]))) return true;
+    }
+    return false;
+  }
+
+  function showOverlay(title, text, hint) {
+    messageTitle.textContent = title;
+    messageText.textContent = text;
+    messageHint.textContent = hint || "Click to Continue";
+    overlay.style.display = "flex";
+  }
+
+  function hideOverlay() {
+    overlay.style.display = "none";
+  }
+
+  function toastMessage(text) {
+    if (text === lastToast) return;
+    lastToast = text;
+    toast.textContent = text;
+    toast.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
+  }
+
+  function togglePause(force) {
+    if (gameOver) return;
+    paused = typeof force === "boolean" ? force : !paused;
+    if (paused) {
+      showOverlay("PAUSED", "The facility is quiet for the moment.", "Press P or Esc to Resume");
+      if (document.pointerLockElement === gameCanvas) document.exitPointerLock();
+    } else {
+      hideOverlay();
+      gameCanvas.requestPointerLock();
+    }
+  }
+
+  gameCanvas.addEventListener("click", () => {
+    if (paused) {
+      togglePause(false);
+      return;
+    }
+    if (document.pointerLockElement !== gameCanvas) gameCanvas.requestPointerLock();
+    tryShoot();
+  });
+
+  document.addEventListener("pointerlockchange", () => {
+    if (!paused && document.pointerLockElement === gameCanvas) {
+      toastMessage("MOUSE LOCKED — AIM WITH MOUSE");
+    }
+  });
+
+  document.addEventListener("mousemove", (e) => {
+    if (paused || document.pointerLockElement !== gameCanvas) return;
+    player.yaw -= e.movementX * 0.0022;
+    player.pitch -= e.movementY * 0.0022;
+    player.pitch = clamp(player.pitch, -Math.PI / 2.45, Math.PI / 2.45);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    pressed[e.code] = true;
+    keys[e.code] = true;
+
+    if (e.code === "KeyM") {
+      minimapVisible = !minimapVisible;
+      minimapCanvas.style.display = minimapVisible ? "block" : "none";
+      toastMessage(minimapVisible ? "MINIMAP ON" : "MINIMAP OFF");
+    }
+
+    if (e.code === "KeyR") reload();
+
+    if (e.code === "KeyP" || e.code === "Escape") {
+      e.preventDefault();
+      togglePause();
+    }
+  });
+
+  document.addEventListener("keyup", (e) => {
     keys[e.code] = false;
   });
 
-  canvas.addEventListener("mousedown", (e) => {
-    if (e.button === 0) {
-      requestPointerLock();
-      if (!paused) shoot();
-    }
+  window.addEventListener("blur", () => {
+    for (const k in keys) keys[k] = false;
+    if (!gameOver) togglePause(true);
   });
 
-  canvas.addEventListener("mousemove", (e) => {
-    if (document.pointerLockElement === canvas && !paused) {
-      player.angle += e.movementX * 0.0022;
-    }
-  });
-
-  canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-
-  function reload() {
-    if (paused || lost || won) return;
-    if (weapon.reloadTimer > 0 || weapon.ammo === weapon.maxAmmo) return;
-    weapon.reloadTimer = weapon.reloadTime;
-    setMsg("RELOADING", "Hold still while the weapon chambers rounds", 900);
+  function updateHUD() {
+    ammoText.textContent = player.ammo;
+    healthText.textContent = Math.max(0, Math.ceil(player.health));
+    enemyText.textContent = enemies.filter(e => e.alive).length;
+    statusText.textContent = player.reloadTimer > 0 ? "RELOAD" : player.sprinting ? "SPRINT" : "READY";
+    reloadOverlay.classList.toggle("show", player.reloadTimer > 0 && player.reloadTimer < 1.25);
   }
 
-  function shoot() {
-    if (
+  function tryShoot() {
+    if (paused || gameOver) return;
+    if (player.reloadTimer > 0 || player.fireTimer > 0) return;
+    if (player.ammo <= 0) {
+      reload();
+      return;
+    }
+
+    player.ammo--;
+    player.fireTimer = 0.155;
+    muzzleFlash = 0.08;
+    recoil = 0.08;
+
+    const hit = findHitEnemy();
+    if (hit) {
+      const { enemy, dist, x, y, z } = hit;
+      enemy.hp -= 22;
+      enemy.hitTimer = 0.18;
+      spawnTracer({
+        sx: viewW / 2,
+        sy: viewH / 2,
+        ex: x,
+        ey: y,
+        ez: z,
+        life: 0.055,
+        maxLife: 0.055,
+        hit: true
+      });
+      if (enemy.hp <= 0) {
+        enemy.alive = false;
+        toastMessage("ENEMY DOWN");
+      }
+    } else {
+      spawnTracer({
+        sx: viewW / 2,
+        sy: viewH / 2,
+        ex: viewW / 2 + Math.cos(player.yaw) * 120,
+        ey: viewH / 2 + Math.sin(player.yaw) * 120,
+        ez: viewH / 2,
+        life: 0.055,
+        maxLife: 0.055,
+        hit: false
+      });
+    }
+  }
+
+  function reload() {
+    if (paused || gameOver || player.reloadTimer > 0) return;
+    if (player.ammo >= player.maxAmmo) return;
+    player.reloadTimer = 1.25;
+    toastMessage("RELOADING");
+  }
+
+  function findHitEnemy() {
+    const aim = {
+      x: Math.cos(player.yaw),
+      y: Math.sin(player.yaw),
+      yaw: player.yaw
+    };
+    let best = null;
+
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const dx = e.x - player.x;
+      const dy = e.y - player.y;
+      const d = Math.hypot(dx, dy);
+      if (d <= 0.01) continue;
+
+      const ang = Math.atan2(dy, dx);
+      const diff = Math.abs(angleDiff(ang, aim.yaw));
+      const hitRadius = clamp(0.045 + 0.62 / d, 0.035, 0.085);
+      if (diff > hitRadius) continue;
+
+      if (!lineOfSight(player.x, player.y, e.x, e.y, 0.08)) continue;
+
+      const v = 0.14 + e.maxHp / 170;
+      const pitchRadius = clamp(0.12 + 0.28 / d, 0.07, 0.14);
+      if (Math.abs(player.pitch) > pitchRadius) continue;
+
+      const closest = Math.min(
+        Math.abs(player.x - e.x),
+        Math.abs(player.y - e.y)
+      );
+      const score = d * 0.01 - closest * 0.002;
+
+      if (!best || score < best.score) {
+        best = { enemy: e, score, d };
+      }
+    }
+
+    return best ? {
+      enemy: best.enemy,
+      dist: best.d,
+      x: best.enemy.x + Math.cos(player.yaw) * 0.03,
+      y: best.enemy.y + Math.sin(player.yaw) * 0.03,
+      z: viewH / 2
+    } : null;
+  }
+
+  function lineOfSight(x1, y1, x2, y2, radius) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    const steps = Math.max(2, Math.ceil(len / 0.18));
+
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const x = x1 + dx * t;
+      const y = y1 + dy * t;
+      const cx = Math.floor(x + Math.cos(player.yaw) * radius);
+      const cy = Math.floor(y + Math.sin(player.yaw) * radius);
+      if (isWallCell(cx, cy)) return false;
+    }
+    return true;
+  }
+
+  function spawnTracer(p) {
+    projectiles.push({
+      type: "player",
+      x: p.sx,
+      y: p.sy,
+      z: p.sx,
+      tx: p.ex,
+      ty: p.ey,
+      tz: p.ez,
+      life: p.life,
+      maxLife: p.maxLife,
+      hit: p.hit
+    });
+  }
+
+  function updateEnemies(dt) {
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      e.hitTimer = Math.max(0, (e.hitTimer || 0) - dt);
+
+      if (lineOfSight(player.x, player.y, e.x, e.y, 0.05)) {
+        e.moveTimer -= dt;
+        if (e.moveTimer <= 0) {
+          const dx = player.x - e.x;
+          const dy = player.y - e.y;
+          const d = Math.hypot(dx, dy);
+          if (d > 0.55) {
+            const nx = e.x + dx / d;
+            const ny = e.y + dy / d;
+            const step = Math.min(0.34, dt * 1.15);
+            if (!enemyCollides(e, e.x + Math.sign(nx - e.x) * step, e.y)) e.x += Math.sign(nx - e.x) * step;
+            if (!enemyCollides(e, e.x, e.y + Math.sign(ny - e.y) * step)) e.y += Math.sign(ny - e.y) * step;
+          }
+          e.moveTimer = 0.22 + rand() * 0.2;
+        }
+      } else {
+        moveEnemyByPath(e, dt);
+      }
+
+      const d = dist2(e.x, e.y, player.x, player.y);
+      if (d < 0.58) {
+        e.attackCooldown -= dt;
+        e.attackTimer -= dt;
+        if (e.attackCooldown <= 0) {
+          e.attackCooldown = 1.25;
+          e.attackTimer = 0.55;
+          player.health = Math.max(0, player.health - 12);
+          player.damageTimer = 0.35;
+          damageFlash.classList.add("show");
+          setTimeout(() => damageFlash.classList.remove("show"), 220);
+          toastMessage("ENEMY BITE -12 HP");
+        }
+      } else {
+        e.attackTimer = 0;
+      }
+    }
+  }
+
+  function moveEnemyByPath(e, dt) {
+    e.moveTimer -= dt;
+    if (e.moveTimer > 0) return;
+    e.moveTimer = 0.42;
+
+    const path = bfsPath(Math.floor(e.x), Math.floor(e.y), Math.floor(player.x), Math.floor(player.y));
+    if (!path || path.length < 2) {
+      wanderEnemy(e);
+      return;
+    }
+
+    const next = path[1];
+    const dx = next.x + 0.5 - e.x;
+    const dy = next.y + 0.5 - e.y;
+    const d = Math.hypot(dx, dy);
+    if (d < 0.25) {
+      e.x = next.x + 0.5;
+      e.y = next.y + 0.5;
+      return;
+    }
+
+    const step = Math.min(0.42, dt * 1.55);
+    if (!enemyCollides(e, e.x + Math.sign(dx) * step, e.y)) e.x += Math.sign(dx) * step;
+    if (!enemyCollides(e, e.x, e.y + Math.sign(dy) * step)) e.y += Math.sign(dy) * step;
+  }
+
+  function wanderEnemy(e) {
+    const dirs = [
+      [1, 0],
+      [-1, 0],
+      [0, 1],
+      [0, -1]
+    ];
+    dirs.sort(() => rand() - 0.5);
+    for (const [dx, dy] of dirs) {
+      const nx = e.x + dx;
+      const ny = e.y + dy;
+      if (!enemyCollides(e, nx, ny)) {
+        e.x = nx;
+        e.y = ny;
+        return;
+      }
+    }
+  }
+
+  function bfsPath(sx, sy, gx, gy) {
+    const q = [];
+    const parent = new Map();
+    const visited = new Set();
+    q.push([sx, sy]);
+    visited.add(`${sx},${sy}`);
+
+    while (q.length) {
+      const [x, y] = q.shift();
+      if (x === gx && y === gy) break;
+
+      const dirs = [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1]
+      ];
+      for (const [dx, dy] of dirs) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const key = `${nx},${ny}`;
+        if (visited.has(key) || isWallCell(nx, ny)) continue;
+        visited.add(key);
+        parent.set(key, [x, y]);
+        q.push([nx, ny]);
+      }
+    }
+
+    if (!parent.has(`${gx},${gy}`)) return null;
+
+    const path = [];
+    let cur = [gx, gy];
+    path.push(cur);
+    while (cur[0] !== sx || cur[1] !== sy) {
+      cur = parent.get(`${cur[0]},${cur[1]}`);
+      path.push(cur);
+    }
+    path.reverse();
+    return path;
+  }
+
+  function updateProjectiles(dt) {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+      const p = projectiles[i];
+      p.life -= dt;
+      if (p.life <= 0) {
+        projectiles.splice(i, 1);
+        continue;
+      }
+
+      if (p.type === "enemy") {
+        const dx = p.tx - p.x;
+        const dy = p.ty - p.y;
+        const dz = p.tz - p.z;
+        const len = Math.hypot(dx, dy, dz) || 1;
+        p.x += dx / len * p.speed * dt;
+        p.y += dy / len * p.speed * dt;
+        p.z += dz / len * p.speed * dt;
+
+        const cx = Math.floor(p.x);
+        const cy = Math.floor(p.y);
+        if (isWallCell(cx, cy)) {
+          projectiles.splice(i, 1);
+          continue;
+        }
+
+        if (dist2(p.x, p.y, player.x, player.y) < 0.35) {
+          player.health = Math.max(0, player.health - 8);
+          player.damageTimer = 0.25;
+          damageFlash.classList.add("show");
+          setTimeout(() => damageFlash.classList.remove("show"), 180);
+          projectiles.splice(i, 1);
+        }
+      } else {
+        const dx = p.tx - p.x;
+        const dy = p.ty - p.y;
+        const dz = p.tz - p.z;
+        const len = Math.hypot(dx, dy, dz) || 1;
+        p.x += dx / len * 1.15 * dt;
+        p.y += dy / len * 1.15 * dt;
+        p.z += dz / len * 1.15 * dt;
+      }
+    }
+  }
+
+  function updatePlayer(dt) {
+    const forward =
+      (keys["KeyW"] || keys["ArrowUp"] ? 1 : 0) -
+      (keys["KeyS"] || keys["ArrowDown"] ? 1 : 0);
+    const strafe =
+      (keys["KeyD"] || keys["ArrowRight"] ? 1 : 0) -
+      (keys["KeyA"] || keys["ArrowLeft"] ? 1 : 0);
+
+    player.sprinting = !!keys["ShiftLeft"] || !!keys["ShiftRight"];
+    const speed = player.sprinting ? 3.2 : 2.35;
+    const len = Math.hypot(forward, strafe);
+    if (len > 0) {
+      const nx = forward * Math.cos(player.yaw) + strafe * Math.sin(player.yaw);
+      const ny = forward * Math.sin(player.yaw) - strafe * Math.cos(player.yaw);
+      const dx = nx / len * speed * dt;
+      const dy = ny / len * speed * dt;
+
+      if (!playerCollides(player.x + dx, player.y)) player.x += dx;
+      if (!playerCollides(player.x, player.y + dy)) player.y += dy;
+    }
+
+    player.fireTimer = Math.max(0, player.fireTimer - dt);
+    player.reloadTimer = Math.max(0, player.reloadTimer - dt);
+    player.damageTimer = Math.max(0, player.damageTimer - dt);
+  }
+
+  function updatePickups() {
+    for (const p of pickups) {
+      if (p.taken) continue;
+      if (dist2(p.x, p.y, player.x, player.y) < 0.42) {
+        p.taken = true;
+        if (p.type === "ammo") {
+          player.ammo = Math.min(player.maxAmmo, player.ammo + 12);
+          toastMessage("AMMO +12");
+        } else {
+          player.health = Math.min(100, player.health + 25);
+          toastMessage("HEALTH +25");
+        }
+      }
+    }
+  }
+
+  function updateEnemiesProjectiles(dt) {
+    if (gameOver) return;
+    const alive = enemies.filter(e => e.alive);
+    if (!alive.length) {
+      won = true;
+      gameOver = true;
+      paused = true;
+      showOverlay("EXIT REACHED", "All hostile units are down. The exit beacon is open.", "Click to Restart");
+      return;
+    }
+
+    for (const e of alive) {
+      e.attackCooldown -= dt;
+      if (lineOfSight(player.x, player.y, e.x, e.y, 0.05) && e.attackCooldown <= 0) {
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dz = 0;
+        const len = Math.hypot(dx, dy, dz) || 1;
+        projectiles.push({
+          type: "enemy",
+          x: e.x,
+          y: e.y,
+          z: viewH * 0.55,
+          tx: player.x,
+          ty: player.y,
+          tz: viewH * 0.52,
+          speed: 13,
+          life: 1.8,
+          maxLife: 1.8,
+          hit: false
+        });
+        e.attackCooldown = 1.75;
+      }
+    }
+  }
+
+  function update(dt) {
+    if (paused || gameOver) return;
+    updatePlayer(dt);
+    updateEnemies(dt);
+    updateEnemiesProjectiles(dt);
+    updatePickups();
+    updateProjectiles(dt);
+
+    if (player.health <= 0) {
+      gameOver = true;
+      paused = true;
+      showOverlay("YOU FELL", "The facility lights flicker out.", "Click to Restart");
+    }
+
+    if (dist2(player.x, player.y, exit.x, exit.y) < 0.42) {
+      won = true;
+      gameOver = true;
+      paused = true;
+      showOverlay("EXIT SECURED", "You reached the exit. The generated level is complete.", "Click to Play Again");
+    }
+
+    updateHUD();
+  }
+
+  function drawCeilingFloor() {
+    const mid = viewH / 2;
+    const time = performance.now() / 1000;
+
+    for (let y = 0; y < mid; y++) {
+      const t = y / mid;
+      const shade = 1 - t * 0.75;
+      const g = Math.floor(8 + t * 20);
+      const b = Math.floor(18 + t * 48);
+      gameCtx.fillStyle = `rgb(${Math.floor(3 * shade)}, ${g}, ${b})`;
+      gameCtx.fillRect(0, y, viewW, 1);
+    }
+
+    for (let y = mid; y < viewH; y++) {
+      const t = (y - mid) / (viewH - mid);
+      const depth = mid / Math.max(0.01, y - mid);
+      const stripe = Math.floor((time * 0.35 + depth * 0.08) % 6);
+      const g = Math.floor(26 + stripe * 4 + t * 20);
+      const b = Math.floor(32 + stripe * 2 + t * 35);
+      gameCtx.fillStyle = `rgb(${Math.floor(12 + t * 14)}, ${g}, ${b})`;
+      gameCtx.fillRect(0, y, viewW, 1);
+    }
+
+    gameCtx.strokeStyle = "rgba(180, 220, 255, 0.045)";
+    gameCtx.lineWidth = 1;
+    const gridStep = 34;
+    for (let y = mid + 16; y < viewH; y += gridStep) {
+      gameCtx.beginPath();
+      gameCtx.moveTo(0, y);
+      gameCtx.lineTo(viewW, y);
+      gameCtx.stroke();
+    }
+    for (let x = 0; x < viewW; x += gridStep) {
+      gameCtx.beginPath();
+      gameCtx.moveTo(x, mid);
+      gameCtx.lineTo(x, viewH);
+      gameCtx.stroke();
+    }
+  }
+
+  function castWalls() {
+    const fogColor = [8, 12, 18];
+    const fog = [14, 20, 28];
+    const scale = viewH * 0.74;
+    const rayDirX = Math.cos(player.yaw);
+    const rayDirY = Math.sin(player.yaw);
+    const camX = player.x;
+    const camY = player.y;
+
+    for (let x = 0; x < viewW; x++) {
+      const rayAngle = player.yaw + (x / viewW - 0.5) * FOV;
+      const cos = Math.cos(rayAngle);
+      const sin = Math.sin(rayAngle);
+      const invCos = Math.abs(1 / cos);
+      const invSin = Math.abs(1 / sin);
+
+      let mapX = Math.floor(player.x);
+      let mapY = Math.floor(player.y);
+
+      let deltaDistX = invCos;
+      let deltaDistY = invSin;
+      let stepX;
+      let stepY;
+      let sideDistX;
+      let sideDistY;
+
+      if (cos < 0) {
+        stepX = -1;
+        sideDistX = (player.x - mapX) * invCos;
+      } else {
+        stepX = 1;
+        sideDistX = (mapX + 1.0 - player.x) * invCos;
+      }
+
+      if (sin < 0) {
+        stepY = -1;
+        sideDistY = (player.y - mapY) * invSin;
+      } else {
+        stepY = 1;
+        sideDistY = (mapY + 1.0 - player.y) * invSin;
+      }
+
+      let side = 0;
+      let hit = false;
+      let wallType = WALL;
+
+      while (!hit && sideDistX < 80 && sideDistY < 80) {
+        if (sideDistX < sideDistY) {
+          sideDistX += deltaDistX;
+          mapX += stepX;
+          side = 0;
+        } else {
+          sideDistY += deltaDistY;
+          mapY += stepY;
+          side = 1;
+        }
+        if (mapX < 0 || mapY < 0 || mapX >= MAP_W || mapY >= MAP_H || map[mapY][mapX] === WALL) {
+          hit = true;
+          wallType = map[mapY][mapX];
+        }
+      }
+
+      let perpWallDist;
+      if (side === 0) {
+        perpWallDist = (mapX - player.x + (1 - stepX) / 2) / cos;
+      } else {
+        perpWallDist = (mapY - player.y + (1 - stepY) / 2) / sin;
+      }
+
+      const corrected = Math.max(0.01, perpWallDist * Math.cos(rayAngle - player.yaw));
+      const wallH = scale / corrected;
+      const start = Math.floor(mid - wallH / 2);
+      const end = Math.floor(mid + wallH / 2);
+
+      const shade = clamp(1.28 - corrected / 38, 0.08, 1.0);
+      let r = 72, g = 82, b = 94;
+      if (wallType === EXIT_CELL) {
+        r = 55 + Math.sin(performance.now() / 180) * 22;
+        g = 160 + Math.sin(performance.now() / 160) * 35;
+        b = 88;
+      }
+      if (side) {
+        r = Math.floor(r * 0.72);
+        g = Math.floor(g * 0.72);
+        b = Math.floor(b * 0.72);
+      }
+
+      const fogT = clamp(corrected / 52, 0, 1);
+      r = Math.floor(lerp(r, fog[0], fogT));
+      g = Math.floor(lerp(g, fog[1], fogT));
+      b = Math.floor(lerp(b, fog[2], fogT));
+
+      const stripe = Math.floor(((player.x * 0.35 + player.y * 0.15 + x * 0.012) % 1) * 5);
+      r = Math.floor(r * (1 - stripe * 0.018));
+      g = Math.floor(g * (1 - stripe * 0.018));
+      b = Math.floor(b * (1 - stripe * 0.018));
+
+      gameCtx.fillStyle = `rgb(${Math.max(0, Math.floor(r * shade))}, ${Math.max(0, Math.floor(g * shade))}, ${Math.max(0, Math.floor(b * shade))})`;
+      gameCtx.fillRect(x, Math.max(0, start), 1, Math.max(1, end - start + 1));
+    }
+  }
+
+  function projectSprite(x, y) {
+    const dx = x - player.x;
+    const dy = y - player.y;
+    const dirX = Math.cos(player.yaw);
+    const dirY = Math.sin(player.yaw);
+    const invDet = 1 / (player.x * dirY - player.y * dirX);
+    const transformX = invDet * (dx * dirY - dy * dirX);
+    const transformY = invDet * (-dirY * dx + dirX * dy);
+    if (transformY <= 0.045) return null;
+
+    return {
+      dist: Math.hypot(dx, dy),
+      angle: Math.atan2(dy, dx),
+      screenX: viewW / 2 * (1 + transformX / transformY),
+      depth: transformY
+    };
+  }
+
+  function nearestWallDistanceAlongAngle(angle, radius) {
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    let x = player.x;
+    let y = player.y;
+    const step = 0.055;
+    const maxD = 18;
+
+    while (maxD > 0) {
+      x += dx * step;
+      y += dy * step;
+      maxD -= step;
+      if (isWallCell(Math.floor(x), Math.floor(y))) return maxD;
+    }
+    return 18;
+  }
+
+  function drawSpriteRect(ctx, x, y, w, h, color, alpha = 1) {
+    ctx.save();
+    ctx.globalAlpha *= alpha;
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+    ctx.restore();
+  }
+
+  function drawSprites() {
+    const items = [];
+
+    for (const e of enemies) {
+      if (!e.alive) continue;
+      const p = projectSprite(e.x, e.y);
+      if (!p) continue;
+      const wallDist = nearestWallDistanceAlongAngle(p.angle, 0.08);
+      if (wallDist < p.dist * 0.92) continue;
+      items.push({ kind: "enemy", sprite: p, obj: e });
+    }
+
+    for (const p of pickups) {
+      if (p.taken) continue;
+      const s = projectSprite(p.x, p.y);
+      if (!s) continue;
+      const wallDist = nearestWallDistanceAlongAngle(s.angle, 0.05);
+      if (wallDist < s.dist * 0.92) continue;
+      items.push({ kind: "pickup", sprite: s, obj: p });
+    }
+
+    const ep = projectSprite(exit.x, exit.y);
+    if (ep) {
+      const wallDist = nearestWallDistanceAlongAngle(ep.angle, 0.05);
+      if (wallDist >= ep.dist * 0.92) items.push({ kind: "exit", sprite: ep });
+    }
+
+    items.sort((a, b) => b.sprite.depth - a.sprite.depth);
+
+    for (const item of items) {
+      if (item.kind === "enemy") drawEnemySprite(item.sprite, item.obj);
+      else if (item.kind === "pickup") drawPickupSprite(item.sprite, item.obj);
+      else drawExitSprite(item.sprite);
+    }
+  }
+
+  function drawEnemySprite(p, e) {
+    const midY = viewH / 2;
+    const h = clamp(220 / p.depth, 28, viewH * 0.82);
+    const w = h * 0.58;
+    const x = p.screenX - w / 2;
+    const y = midY - h * 0.62;
+    const alpha = clamp(1.1 - p.depth / 55, 0.25, 1);
+    const bob = Math.sin(performance.now() / 260 + e.x * 3) * 4;
+    const hitPulse = e.hitTimer > 0 ? 1.15 : 1;
+
+    gameCtx.save();
+    gameCtx.globalAlpha = alpha;
+
+    gameCtx.fillStyle = "rgba(0,0,0,0.35)";
+    gameCtx.beginPath();
+    gameCtx.ellipse(p.screenX, viewH - 10, w * 0.42, h * 0
