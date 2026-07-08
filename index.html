@@ -195,8 +195,26 @@
 </div>
 <div class="header">
   <h1><span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span></h1>
-  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 07, 2026 · Bench v2.2</span></div>
+  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 08, 2026 · Bench v2.2 + DFlash pilot</span></div>
   <div class="header-divider"></div>
+</div>
+
+
+<div class="tier t3">
+  <div class="tier-label"><span class="icon">⚡</span> DFLASH PILOT UPDATE <span class="count">July 08, 2026</span></div>
+  <div class="impact-hero">
+    <div class="impact-copy">
+      <div class="impact-kicker">Runtime pilot · measured negative</div>
+      <div class="impact-title">DFlash activated, but was slower than baseline on MiniV Vulkan.</div>
+      <p>Q8 DFlash drafters were tested against Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B using a separate llama.cpp DFlash Vulkan build. Prefill, decode, wall decode, and draft acceptance remain separated. Decision: do not promote DFlash to production MiniV yet.</p>
+      <div class="link-row"><a class="link-pill" href="dflash-bench/">Open DFlash pilot report</a><a class="link-pill" href="dflash-bench/results.json">Public JSON dataset</a><a class="link-pill" href="dflash-bench/comparisons.csv">Comparison CSV</a></div>
+    </div>
+    <div class="impact-grid">
+      <div class="impact-card"><strong>Best baseline tested</strong><span>Qwen3.6 35B-A3B Q6_K_XL: 51.07 decode tok/s</span></div>
+      <div class="impact-card"><strong>Best DFlash tested</strong><span>Qwen3.6 35B-A3B DFlash: 33.72 decode tok/s</span></div>
+      <div class="impact-card"><strong>Acceptance observed</strong><span>30.8%–37.4% draft-token acceptance, still not enough to beat baseline.</span></div>
+    </div>
+  </div>
 </div>
 
 <div class="tier t0">
@@ -566,7 +584,7 @@ const PAGE_TEXT={
     'hero.title.rtx':'<span class="t">RTX</span><span class="d">_</span><span class="l">5060Ti</span> <span class="d">::</span> <span class="t">TRUST</span><span class="d">_</span><span class="l">GATES</span>',
     'hero.subtitle.rtx':'Vector RTX 5060 Ti CUDA · all-local trust gates · Jackrong comparison frame · <span>Updated May 29, 2026</span>',
     'hero.title.miniv':'<span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span>',
-    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 07, 2026 · Bench v2.2</span>',
+    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 08, 2026 · Bench v2.2 + DFlash pilot</span>',
     'section.creditLabel':'<span class="icon">🧠</span> ORCHESTRATION CREDIT <span class="count">N30</span>',
     'section.metricsLabel.rtx':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">Vector RTX 5060 Ti CUDA</span>',
     'section.metricsLabel.miniv':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA · Bench v2.2</span>',

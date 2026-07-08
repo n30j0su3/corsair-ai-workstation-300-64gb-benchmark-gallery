@@ -1,0 +1,7 @@
+run_id,case_id,model_id,model_label,mode,ctx_tokens,max_output_tokens,draft_n_max,status,load_sec,prompt_tokens,completion_tokens,prefill_tps,decode_tps_llama_timing,decode_tps_wall,prompt_ms,predicted_ms,draft_acceptance_rate,draft_tokens_accepted,draft_tokens_generated,mean_acceptance_length
+dflash-matrix-20260708_153700,qwen36-27b-q6__baseline,qwen36-27b-q6,Qwen3.6 / Qwopus3.6 27B Q6_K,baseline,8192,256,0,SPEED_VALID_EMPTY_CONTENT,64.465,59,256,45.255,9.481,9.021,1303.732,27002.187,,,,
+dflash-matrix-20260708_153700,qwen36-27b-q6__dflash,qwen36-27b-q6,Qwen3.6 / Qwopus3.6 27B Q6_K,dflash,8192,256,8,SPEED_VALID_EMPTY_CONTENT,70.16,59,256,41.807,8.337,7.949,1411.253,30705.424,0.30782,181,588,3.45
+dflash-matrix-20260708_153700,qwen36-35b-a3b-q6__baseline,qwen36-35b-a3b-q6,Qwen3.6 35B-A3B Q6_K_XL,baseline,8192,256,0,SPEED_VALID_EMPTY_CONTENT,91.402,59,256,77.259,51.072,43.802,763.669,5012.552,,,,
+dflash-matrix-20260708_153700,qwen36-35b-a3b-q6__dflash,qwen36-35b-a3b-q6,Qwen3.6 35B-A3B Q6_K_XL,dflash,8192,256,8,SPEED_VALID_EMPTY_CONTENT,94.191,59,256,83.797,33.717,30.603,704.081,7592.696,0.37402,190,508,3.92
+dflash-matrix-20260708_153700,gemma4-26b-a4b-q6__baseline,gemma4-26b-a4b-q6,Gemma4 26B-A4B-it Q6_K_XL,baseline,8192,256,0,SPEED_VALID_EMPTY_CONTENT,64.135,67,256,176.638,44.831,41.136,379.307,5710.298,,,,
+dflash-matrix-20260708_153700,gemma4-26b-a4b-q6__dflash,gemma4-26b-a4b-q6,Gemma4 26B-A4B-it Q6_K_XL,dflash,8192,256,8,SPEED_VALID_EMPTY_CONTENT,65.16,67,256,159.646,31.1,29.207,419.678,8231.419,0.34259,185,540,3.64

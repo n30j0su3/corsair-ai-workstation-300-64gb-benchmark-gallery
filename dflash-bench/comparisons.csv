@@ -1,0 +1,4 @@
+run_id,model_id,model_label,baseline_status,dflash_status,baseline_decode_tps_wall,dflash_decode_tps_wall,wall_speedup_ratio,wall_delta_pct,baseline_decode_tps_llama,dflash_decode_tps_llama,llama_speedup_ratio,llama_delta_pct,draft_acceptance_rate,draft_tokens_accepted,draft_tokens_generated,mean_acceptance_length
+dflash-matrix-20260708_153700,qwen36-27b-q6,Qwen3.6 / Qwopus3.6 27B Q6_K,SPEED_VALID_EMPTY_CONTENT,SPEED_VALID_EMPTY_CONTENT,9.021,7.949,0.881,-11.9,9.481,8.337,0.879,-12.1,0.30782,181,588,3.45
+dflash-matrix-20260708_153700,qwen36-35b-a3b-q6,Qwen3.6 35B-A3B Q6_K_XL,SPEED_VALID_EMPTY_CONTENT,SPEED_VALID_EMPTY_CONTENT,43.802,30.603,0.699,-30.1,51.072,33.717,0.66,-34.0,0.37402,190,508,3.92
+dflash-matrix-20260708_153700,gemma4-26b-a4b-q6,Gemma4 26B-A4B-it Q6_K_XL,SPEED_VALID_EMPTY_CONTENT,SPEED_VALID_EMPTY_CONTENT,41.136,29.207,0.71,-29.0,44.831,31.1,0.694,-30.6,0.34259,185,540,3.64
