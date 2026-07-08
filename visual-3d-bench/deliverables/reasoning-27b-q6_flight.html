@@ -51,6 +51,7 @@ class Vec3{
 class Mat4{
   constructor(){this.m=new Float32Array(16);this.identity()}
   identity(){this.m.set([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);return this}
+  static identity(){return new Mat4()}
   multiply(b){
     const a=this.m,c=b.m,r=new Float32Array(16);
     for(let i=0;i<4;i++)for(let j=0;j<4;j++){
@@ -119,6 +120,8 @@ class Quat{
   }
   clone(){return new Quat(this.x,this.y,this.z,this.w)}
 }
+
+function quatIdentity(){return new Quat(0,0,0,1)}
 
 // === WEBGL SETUP ===
 const glCanvas=document.getElementById('gl');
@@ -355,9 +358,9 @@ function makeTerrain(width,depth,segs,color){
       const a=i*(segs+1)+j,b=a+1,d=a+segs+1,e=d+1;
       idx.push(a,d,b,b,d,e);
       // Compute normals
-      const v1=new Vec3(heights[i+1][j]-heights[i][j],0,s).norm();
-      const v2=new Vec3(0,0,s).norm();
-      const nm=v1.cross(v2).norm();
+      const v1 = new Vec3(s, heights[i+1][j]-heights[i][j], 0);
+      const v2 = new Vec3(0, heights[i][j+1]-heights[i][j], s);
+      const nm = v1.cross(v2).norm();
       const verts=[a,b,d,e];
       for(const vi of verts){
         n[vi*3]=nm.x;n[vi*3+1]=nm.y;n[vi*3+2]=nm.z;

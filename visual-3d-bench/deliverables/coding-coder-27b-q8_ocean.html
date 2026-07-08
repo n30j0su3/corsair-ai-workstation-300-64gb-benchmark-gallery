@@ -41,68 +41,33 @@ void main() {
     waves[3] = Wave(vec2(0.6, -0.8) * PI * 0.5, 0.3, 30.0, 6.0);
 
     vec3 position = position;
-    vec3 normal = vec3(0.0, 1.0, 0.0);
     float waveHeight = 0.0;
 
     for (int i = 0; i < 4; i++) {
         Wave w = waves[i];
         float k = 2.0 * PI / w.wavelength;
         float c = w.speed;
-        float t = uTime;
         vec2 d = normalize(w.direction);
 
         float x = dot(d, position.xz);
-        float phase = k * (x - c * t);
+        float phase = k * (x - c * uTime);
 
         float A = w.amplitude;
         float steepness = 0.02;
 
         // Gerstner wave displacement
         position.x += -A * steepness * d.x * cos(phase);
-        position.z += -A * steepness * d.z * cos(phase);
+        position.z += -A * steepness * d.y * cos(phase);
         position.y += A * sin(phase);
 
         waveHeight += A * sin(phase);
-
-        // Normal from Gerstner wave
-        normal.x += A * k * d.x * steepness * cos(phase);
-        normal.z += A * k * d.z * steepness * cos(phase);
     }
 
     vWaveHeight = waveHeight;
 
-    // Compute proper normal
-    float dx = 0.001;
-    vec3 pL = position;
-    vec3 pR = position;
-    vec3 pU = position;
-    vec3 pD = position;
-
-    // Approximate tangent derivatives
-    vec3 tangentX = vec3(
-        0.0,
-        -waves[0].amplitude * steepness * cos(waves[0].direction.x * dx * PI * 0.5) * waves[0].amplitude * 2.0 * PI / waves[0].wavelength * waves[0].direction.x,
-        -waves[0].amplitude * steepness * cos(waves[0].direction.z * dx * PI * 0.5) * waves[0].amplitude * 2.0 * PI / waves[0].wavelength * waves[0].direction.z
-    );
-
-    // Use analytical normal from Gerstner
-    normal = normalize(vec3(
-        waves[0].amplitude * k * waves[0].direction.x * steepness * cos(2.0*PI/waves[0].wavelength * dot(waves[0].direction, position.xz) - waves[0].speed * uTime * 2.0*PI/waves[0].wavelength)
-        + waves[1].amplitude * steepness * 2.0*PI/waves[1].wavelength * waves[1].direction.x * cos(2.0*PI/waves[1].wavelength * dot(waves[1].direction, position.xz) - waves[1].speed * uTime * 2.0*PI/waves[1].wavelength)
-        + waves[2].amplitude * steepness * 2.0*PI/waves[2].wavelength * waves[2].direction.x * cos(2.0*PI/waves[2].wavelength * dot(waves[2].direction, position.xz) - waves[2].speed * uTime * 2.0*PI/waves[2].wavelength)
-        + waves[3].amplitude * steepness * 2.0*PI/waves[3].wavelength * waves[3].direction.x * cos(2.0*PI/waves[3].wavelength * dot(waves[3].direction, position.xz) - waves[3].speed * uTime * 2.0*PI/waves[3].wavelength),
-        1.0,
-        waves[0].amplitude * steepness * 2.0*PI/waves[0].wavelength * waves[0].direction.z * cos(2.0*PI/waves[0].wavelength * dot(waves[0].direction, position.xz) - waves[0].speed * uTime * 2.0*PI/waves[0].wavelength)
-        + waves[1].amplitude * steepness * 2.0*PI/waves[1].wavelength * waves[1].direction.z * cos(2.0*PI/waves[1].wavelength * dot(waves[1].direction, position.xz) - waves[1].speed * uTime * 2.0*PI/waves[1].wavelength)
-        + waves[2].amplitude * steepness * 2.0*PI/waves[2].wavelength * waves[2].direction.z * cos(2.0*PI/waves[2].wavelength * dot(waves[2].direction, position.xz) - waves[2].speed * uTime * 2.0*PI/waves[2].wavelength)
-        + waves[3].amplitude * steepness * 2.0*PI/waves[3].wavelength * waves[3].direction.z * cos(2.0*PI/waves[3].wavelength * dot(waves[3].direction, position.xz) - waves[3].speed * uTime * 2.0*PI/waves[3].wavelength)
-    ));
-
-    // Recompute with proper approach
+    // Compute normal from Gerstner waves
     float steep = 0.02;
     vec3 N = vec3(0.0, 1.0, 0.0);
-    vec3 T = vec3(1.0, 0.0, 0.0);
-    vec3 B = vec3(0.0, 0.0, 1.0);
 
     for (int i = 0; i < 4; i++) {
         Wave w = waves[i];
@@ -113,7 +78,7 @@ void main() {
         float phase = k * (dot(d, position.xz) - c * uTime);
 
         N.x += -A * k * steep * d.x * cos(phase);
-        N.z += -A * k * steep * d.z * cos(phase);
+        N.z += -A * k * steep * d.y * cos(phase);
     }
     N.y = 1.0;
     N = normalize(N);

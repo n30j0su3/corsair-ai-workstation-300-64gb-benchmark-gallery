@@ -56,6 +56,7 @@ canvas{display:block}
 </div>
 </div>
 <script>
+(function(){
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 const miniCanvas=document.getElementById('minimap');
@@ -68,95 +69,89 @@ canvas.height=window.innerHeight;
 weaponCanvas.width=300;
 weaponCanvas.height=300;
 
-const SCREEN_W=canvas.width;
-const SCREEN_H=canvas.height;
-const FOV=Math.PI/3;
-const HALF_FOV=FOV/2;
-const NUM_RAYS=Math.min(SCREEN_W,800);
-const STRIP_W=SCREEN_W/NUM_RAYS;
+var SCREEN_W=canvas.width;
+var SCREEN_H=canvas.height;
+var FOV=Math.PI/3;
+var HALF_FOV=FOV/2;
+var NUM_RAYS=Math.min(SCREEN_W,800);
+var STRIP_W=SCREEN_W/NUM_RAYS;
 
-// Map
-const MAP_SIZE=32;
-let map=[];
-let mapW=MAP_SIZE,mapH=MAP_SIZE;
+var MAP_SIZE=32;
+var map=[];
+var mapW=MAP_SIZE,mapH=MAP_SIZE;
 
-// Player
-let player={x:0,y:0,angle:0,hp:100,maxHp:100,ammo:30,maxAmmo:30,ammoReserve:120,
+var player={x:0,y:0,angle:0,hp:100,maxHp:100,ammo:30,maxAmmo:30,ammoReserve:120,
 speed:3.0,sprintSpeed:5.0,fireRate:0.15,fireTimer:0,reloading:false,reloadTime:2.0,reloadTimer:0,
 bobPhase:0,bobAmount:0,isMoving:false,isSprinting:false,weaponOffset:0,weaponBob:0};
 
-// Game state
-let gameState='start'; // start, playing, paused, gameover, win
-let showMinimap=true;
-let enemies=[];
-let pickups=[];
-let projectiles=[];
-let particles=[];
-let exitPos={x:0,y:0};
-let keys={};
-let mouseDX=0;
-let lastShot=0;
-let hitMarker=0;
-let damageFlash=0;
-let screenShake=0;
-let weaponRecoil=0;
+var gameState='start';
+var showMinimap=true;
+var enemies=[];
+var pickups=[];
+var projectiles=[];
+var particles=[];
+var exitPos={x:0,y:0};
+var keys={};
+var mouseDX=0;
+var lastShot=0;
+var hitMarker=0;
+var damageFlash=0;
+var screenShake=0;
+var weaponRecoil=0;
 
-// Wall colors
-const wallColors={
+var wallColors={
 1:{r:120,g:120,b:120},
 2:{r:150,g:100,b:80},
 3:{r:80,g:120,b:100},
 4:{r:140,g:130,b:80}
 };
 
-// Procedural map generation
 function generateMap(){
 map=[];
-for(let y=0;y<mapH;y++){
+for(var y=0;y<mapH;y++){
 map[y]=[];
-for(let x=0;x<mapW;x++){
+for(var x=0;x<mapW;x++){
 map[y][x]=1;
 }
 }
 
-// Generate rooms
-let rooms=[];
-const numRooms=8+Math.floor(Math.random()*6);
+var rooms=[];
+var numRooms=8+Math.floor(Math.random()*6);
 
-for(let i=0;i<numRooms;i++){
-let rw=4+Math.floor(Math.random()*6);
-let rh=4+Math.floor(Math.random()*6);
-let rx=1+Math.floor(Math.random()*(mapW-rw-2));
-let ry=1+Math.floor(Math.random()*(mapH-rh-2));
+for(var i=0;i<numRooms;i++){
+var rw=4+Math.floor(Math.random()*6);
+var rh=4+Math.floor(Math.random()*6);
+var rx=1+Math.floor(Math.random()*(mapW-rw-2));
+var ry=1+Math.floor(Math.random()*(mapH-rh-2));
 
-let overlap=false;
-for(let r of rooms){
+var overlap=false;
+for(var ri=0;ri<rooms.length;ri++){
+var r=rooms[ri];
 if(rx<r.x+r.w+2&&rx+rw+2>r.x&&ry<r.y+r.h+2&&ry+rh+2>r.y){
 overlap=true;break;
 }
 }
 if(!overlap){
 rooms.push({x:rx,y:ry,w:rw,h:rh});
-for(let y=ry;y<ry+rh;y++){
-for(let x=rx;x<rx+rw;x++){
-map[y][x]=0;
+for(var y2=ry;y2<ry+rh;y2++){
+for(var x2=rx;x2<rx+rw;x2++){
+map[y2][x2]=0;
 }
 }
 }
 }
 
-// Connect rooms with corridors
-for(let i=1;i<rooms.length;i++){
-let a=rooms[Math.floor(Math.random()*i)];
-let b=rooms[i];
-let ax=Math.floor(a.x+a.w/2);
-let ay=Math.floor(a.y+a.h/2);
-let bx=Math.floor(b.x+b.w/2);
-let by=Math.floor(b.y+b.h/2);
+for(var i2=1;i2<rooms.length;i2++){
+var a=rooms[Math.floor(Math.random()*i2)];
+var b=rooms[i2];
+var ax=Math.floor(a.x+a.w/2);
+var ay=Math.floor(a.y+a.h/2);
+var bx=Math.floor(b.x+b.w/2);
+var by=Math.floor(b.y+b.h/2);
 
-let cx=ax,cy=ay;
+var cx=ax,cy=ay;
 while(cx!==bx){
-if(cy<mapH&&cy>=0&&cx>=0&&cx<mapW)map[cy][cx]=0;
+if(cy>=0&&cy<mapH&&cx>=0&&cx<mapW)map[cy][cx]=0;
 cx+=cx<bx?1:-1;
 }
 while(cy!==by){
@@ -165,31 +160,27 @@ cy+=cy<by?1:-1;
 }
 }
 
-// Add some wall decorations (different wall types)
-for(let y=1;y<mapH-1;y++){
-for(let x=1;x<mapW-1;x++){
-if(map[y][x]===1){
-let wallType=1+Math.floor(Math.random()*4);
-map[y][x]=wallType;
+for(var y3=1;y3<mapH-1;y3++){
+for(var x3=1;x3<mapW-1;x3++){
+if(map[y3][x3]===1){
+var wallType=1+Math.floor(Math.random()*4);
+map[y3][x3]=wallType;
 }
 }
 }
 
-// Set player start in first room
-let startRoom=rooms[0];
+var startRoom=rooms[0];
 player.x=startRoom.x+startRoom.w/2;
 player.y=startRoom.y+startRoom.h/2;
 player.angle=Math.random()*Math.PI*2;
 
-// Set exit in last room
-let endRoom=rooms[rooms.length-1];
+var endRoom=rooms[rooms.length-1];
 exitPos.x=endRoom.x+endRoom.w/2;
 exitPos.y=endRoom.y+endRoom.h/2;
 map[Math.floor(exitPos.y)][Math.floor(exitPos.x)]=0;
 
-// Place enemies
 enemies=[];
-const enemyTypes=[
+var enemyTypes=[
 {name:'grunt',hp:30,speed:1.5,damage:8,attackRange:1.5,attackRate:1.0,color:'#f44',size:0.3,
 ai:'chase',projectileColor:'#ff0'},
 {name:'heavy',hp:80,speed:0.8,damage:15,attackRange:1.8,attackRate:1.5,color:'#f80',size:0.4,
@@ -198,13 +189,13 @@ ai:'chase',projectileColor:'#f80'},
 ai:'chase',projectileColor:'#ff0'}
 ];
 
-for(let i=1;i<rooms.length-1;i++){
-let room=rooms[i];
-let numE=1+Math.floor(Math.random()*3);
-for(let j=0;j<numE;j++){
-let type=enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
-let ex=room.x+1+Math.random()*(room.w-2);
-let ey=room.y+1+Math.random()*(room.h-2);
+for(var i3=1;i3<rooms.length-1;i3++){
+var room=rooms[i3];
+var numE=1+Math.floor(Math.random()*3);
+for(var j=0;j<numE;j++){
+var type=enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
+var ex=room.x+1+Math.random()*(room.w-2);
+var ey=room.y+1+Math.random()*(room.h-2);
 enemies.push({
 x:ex,y:ey,type:type,hp:type.hp,maxHp:type.hp,
 speed:type.speed,damage:type.damage,attackRange:type.attackRange,
@@ -219,19 +210,18 @@ flashTimer:0
 }
 }
 
-// Place pickups
 pickups=[];
-for(let i=1;i<rooms.length;i++){
-let room=rooms[i];
+for(var i4=1;i4<rooms.length;i4++){
+var room2=rooms[i4];
 if(Math.random()<0.6){
-let px=room.x+1+Math.random()*(room.w-2);
-let py=room.y+1+Math.random()*(room.h-2);
+var px=room2.x+1+Math.random()*(room2.w-2);
+var py=room2.y+1+Math.random()*(room2.h-2);
 pickups.push({x:px,y:py,type:'health',amount:25,color:'#0f0',size:0.2});
 }
 if(Math.random()<0.7){
-let px=room.x+1+Math.random()*(room.w-2);
-let py=room.y+1+Math.random()*(room.h-2);
-pickups.push({x:px,y:py,type:'ammo',amount:15,color:'#ff0',size:0.2});
+var px2=room2.x+1+Math.random()*(room2.w-2);
+var py2=room2.y+1+Math.random()*(room2.h-2);
+pickups.push({x:px2,y:py2,type:'ammo',amount:15,color:'#ff0',size:0.2});
 }
 }
 }
@@ -242,20 +232,20 @@ return map[Math.floor(y)][Math.floor(x)]!==0;
 }
 
 function dist(x1,y1,x2,y2){
-return Math.sqrt((x2-x1)**2+(y2-y1)**2);
+return Math.sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
 }
 
 function castRay(ox,oy,angle){
-let sinA=Math.sin(angle);
-let cosA=Math.cos(angle);
+var sinA=Math.sin(angle);
+var cosA=Math.cos(angle);
 
-let mapX=Math.floor(ox);
-let mapY=Math.floor(oy);
+var mapX=Math.floor(ox);
+var mapY=Math.floor(oy);
 
-let deltaDistX=Math.abs(1/cosA)||1e30;
-let deltaDistY=Math.abs(1/sinA)||1e30;
+var deltaDistX=Math.abs(1/cosA)||1e30;
+var deltaDistY=Math.abs(1/sinA)||1e30;
 
-let stepX,stepY,sidDistX,sidDistY;
+var stepX,stepY,sidDistX,sidDistY;
 
 if(cosA<0){
 stepX=-1;
@@ -272,11 +262,11 @@ stepY=1;
 sidDistY=(mapY+1-oy)*deltaDistY;
 }
 
-let hit=0;
-let side=0;
-let dist=0;
+var hit=0;
+var side=0;
+var dist2=0;
 
-for(let i=0;i<64;i++){
+for(var i=0;i<64;i++){
 if(sidDistX<sidDistY){
 sidDistX+=deltaDistX;
 mapX+=stepX;
@@ -286,7 +276,7 @@ sidDistY+=deltaDistY;
 mapY+=stepY;
 side=1;
 }
-if(mapX<0||mapX>=mapW||mapY<0||mapY>=mapH){hit=1;break;}
+if(mapX<0||mapX>=mapW||mapY<0||mapY>=mapH||!map[mapY]){hit=1;break;}
 if(map[mapY][mapX]>0){
 hit=map[mapY][mapX];
 break;
@@ -294,73 +284,58 @@ break;
 }
 
 if(side===0){
-dist=sidDistX-deltaDistX;
+dist2=sidDistX-deltaDistX;
 }else{
-dist=sidDistY-deltaDistY;
+dist2=sidDistY-deltaDistY;
 }
 
-return{dist:dist,hit:hit,side:side,mapX:mapX,mapY:mapY};
+return{dist:dist2,hit:hit,side:side,mapX:mapX,mapY:mapY};
 }
 
-function castFloorRay(ox,oy,angle,yPos){
-let sinA=Math.sin(angle);
-let cosA=Math.cos(angle);
-let p=SCREEN_H/(2*yPos-SCREEN_H);
-if(p<=0)p=0.001;
-
-let rayX=ox+p*sinA;
-let rayY=oy+p*cosA;
-return{dist:p,x:rayX,y:rayY};
-}
-
-// Raycasting render
 function render(){
-let imgData=ctx.createImageData(SCREEN_W,SCREEN_H);
-let buf=imgData.data;
+var imgData=ctx.createImageData(SCREEN_W,SCREEN_H);
+var buf=imgData.data;
 
-// Cast rays
-let zBuffer=new Float32Array(NUM_RAYS);
+var zBuffer=new Float32Array(NUM_RAYS);
 
-for(let i=0;i<NUM_RAYS;i++){
-let rayAngle=player.angle-HALF_FOV+(i/NUM_RAYS)*FOV;
-let ray=castRay(player.x,player.y,rayAngle);
-let perpDist=ray.dist*Math.cos(rayAngle-player.angle);
+for(var i=0;i<NUM_RAYS;i++){
+var rayAngle=player.angle-HALF_FOV+(i/NUM_RAYS)*FOV;
+var ray=castRay(player.x,player.y,rayAngle);
+var perpDist=ray.dist*Math.cos(rayAngle-player.angle);
 zBuffer[i]=perpDist;
 
 if(perpDist<0.01)perpDist=0.01;
 
-let wallHeight=SCREEN_H/perpDist;
-let drawStart=Math.max(0,Math.floor((SCREEN_H-wallHeight)/2));
-let drawEnd=Math.min(SCREEN_H-1,Math.floor((SCREEN_H+wallHeight)/2));
+var wallHeight=SCREEN_H/perpDist;
+var drawStart=Math.max(0,Math.floor((SCREEN_H-wallHeight)/2));
+var drawEnd=Math.min(SCREEN_H-1,Math.floor((SCREEN_H+wallHeight)/2));
 
-let wc=wallColors[ray.hit]||wallColors[1];
-let shade=ray.side===1?0.7:1.0;
-let fogFactor=Math.max(0,1-perpDist/18);
-let r=Math.floor(wc.r*shade*fogFactor);
-let g=Math.floor(wc.g*shade*fogFactor);
-let b=Math.floor(wc.b*shade*fogFactor);
+var wc=wallColors[ray.hit]||wallColors[1];
+var shade=ray.side===1?0.7:1.0;
+var fogFactor=Math.max(0,1-perpDist/18);
+var r=Math.floor(wc.r*shade*fogFactor);
+var g=Math.floor(wc.g*shade*fogFactor);
+var b=Math.floor(wc.b*shade*fogFactor);
 
-// Wall stripe
-let stripX=Math.floor(i*STRIP_W);
-let stripWidth=Math.ceil(STRIP_W);
-for(let y=0;y<SCREEN_H;y++){
-let idx=(y*SCREEN_W+stripX)*4;
+var stripX=Math.floor(i*STRIP_W);
+var stripWidth=Math.ceil(STRIP_W);
+for(var y=0;y<SCREEN_H;y++){
+var idx=(y*SCREEN_W+stripX)*4;
 if(y>=drawStart&&y<drawEnd){
 buf[idx]=r;
 buf[idx+1]=g;
 buf[idx+2]=b;
 buf[idx+3]=255;
 }else{
-// Floor/ceiling
-let floorDist=SCREEN_H/(2*y-SCREEN_H);
+var floorDist=SCREEN_H/(2*y-SCREEN_H);
 if(floorDist>0&&floorDist<20){
-let fFog=Math.max(0,1-floorDist/15);
-let fx=player.x+floorDist*Math.sin(rayAngle);
-let fy=player.y+floorDist*Math.cos(rayAngle);
-let tileX=Math.floor(fx)%2;
-let tileY=Math.floor(fy)%2;
-let floorShade=((tileX+tileY)%2===0)?0.3:0.15;
-let ceilShade=((tileX+tileY)%2===0)?0.15:0.08;
+var fFog=Math.max(0,1-floorDist/15);
+var fx=player.x+floorDist*Math.sin(rayAngle);
+var fy=player.y+floorDist*Math.cos(rayAngle);
+var tileX=Math.floor(fx)%2;
+var tileY=Math.floor(fy)%2;
+var floorShade=((tileX+tileY)%2===0)?0.3:0.15;
+var ceilShade=((tileX+tileY)%2===0)?0.15:0.08;
 
 if(y<SCREEN_H/2){
 buf[idx]=Math.floor(40*ceilShade*fFog);
@@ -375,13 +350,12 @@ buf[idx+3]=255;
 }
 }
 }
-// Fill remaining strip width
-for(let sx=1;sx<stripWidth;sx++){
+for(var sx=1;sx<stripWidth;sx++){
 if(stripX+sx<SCREEN_W){
-for(let y=0;y<SCREEN_H;y++){
-let idx=(y*SCREEN_W+stripX+sx)*4;
-let idx2=(y*SCREEN_W+stripX)*4;
-buf[idx]=buf[idx2];buf[idx+1]=buf[idx2+1];buf[idx+2]=buf[idx2+2];buf[idx+3]=255;
+for(var y2=0;y2<SCREEN_H;y2++){
+var idx2=(y2*SCREEN_W+stripX+sx)*4;
+var idx3=(y2*SCREEN_W+stripX)*4;
+buf[idx2]=buf[idx3];buf[idx2+1]=buf[idx3+1];buf[idx2+2]=buf[idx3+2];buf[idx2+3]=255;
 }
 }
 }
@@ -389,194 +363,184 @@ buf[idx]=buf[idx2];buf[idx+1]=buf[idx2+1];buf[idx+2]=buf[idx2+2];buf[idx+3]=255;
 
 ctx.putImageData(imgData,0,0);
 
-// Draw sprites (enemies, pickups)
 renderSprites(zBuffer);
 }
 
 function renderSprites(zBuffer){
-let sprites=[];
+var sprites=[];
 
-// Add enemies
-for(let e of enemies){
+for(var ei=0;ei<enemies.length;ei++){
+var e=enemies[ei];
 if(e.hp<=0)continue;
-let dx=e.x-player.x;
-let dy=e.y-player.y;
-let d=Math.sqrt(dx*dx+dy*dy);
+var dx=e.x-player.x;
+var dy=e.y-player.y;
+var d=Math.sqrt(dx*dx+dy*dy);
 sprites.push({x:e.x,y:e.y,dist:d,type:'enemy',data:e});
 }
 
-// Add pickups
-for(let p of pickups){
-let dx=p.x-player.x;
-let dy=p.y-player.y;
-let d=Math.sqrt(dx*dx+dy*dy);
-sprites.push({x:p.x,y:p.y,dist:d,type:'pickup',data:p});
+for(var pi=0;pi<pickups.length;pi++){
+var p=pickups[pi];
+var dx2=p.x-player.x;
+var dy2=p.y-player.y;
+var d2=Math.sqrt(dx2*dx2+dy2*dy2);
+sprites.push({x:p.x,y:p.y,dist:d2,type:'pickup',data:p});
 }
 
-// Sort back to front
-sprites.sort((a,b)=>b.dist-a.dist);
+sprites.sort(function(a,b){return b.dist-a.dist;});
 
-for(let sp of sprites){
-let dx=sp.x-player.x;
-let dy=sp.y-player.y;
-let angle=Math.atan2(dx,dy);
-let relAngle=angle-player.angle;
+for(var si=0;si<sprites.length;si++){
+var sp=sprites[si];
+var dx3=sp.x-player.x;
+var dy3=sp.y-player.y;
+var angle=Math.atan2(dx3,dy3);
+var relAngle=angle-player.angle;
 
 while(relAngle>Math.PI)relAngle-=Math.PI*2;
 while(relAngle<-Math.PI)relAngle+=Math.PI*2;
 
 if(Math.abs(relAngle)>HALF_FOV+0.3)continue;
 
-let screenX=(0.5+relAngle/FOV)*SCREEN_W;
-let size=sp.data.size||0.3;
-let spriteHeight=SCREEN_H/sp.dist*size;
-let spriteWidth=spriteHeight;
+var screenX=(0.5+relAngle/FOV)*SCREEN_W;
+var size=sp.data.size||0.3;
+var spriteHeight=SCREEN_H/sp.dist*size;
+var spriteWidth=spriteHeight;
 
 if(sp.dist<0.5)continue;
 
-let drawStartY=Math.floor((SCREEN_H-spriteHeight)/2);
-let drawEndY=Math.floor((SCREEN_H+spriteHeight)/2);
-let drawStartX=Math.floor(screenX-spriteWidth/2);
-let drawEndX=Math.floor(screenX+spriteWidth/2);
+var drawStartY=Math.floor((SCREEN_H-spriteHeight)/2);
+var drawEndY=Math.floor((SCREEN_H+spriteHeight)/2);
+var drawStartX=Math.floor(screenX-spriteWidth/2);
+var drawEndX=Math.floor(screenX+spriteWidth/2);
 
-let fogFactor=Math.max(0,1-sp.dist/18);
+var fogFactor2=Math.max(0,1-sp.dist/18);
 
 if(sp.type==='enemy'){
-let e=sp.data;
-// Draw enemy body
-for(let x=Math.max(0,drawStartX);x<Math.min(SCREEN_W,drawEndX);x++){
-let zBufIdx=Math.floor(x/STRIP_W);
+var e2=sp.data;
+for(var x=Math.max(0,drawStartX);x<Math.min(SCREEN_W,drawEndX);x++){
+var zBufIdx=Math.floor(x/STRIP_W);
 if(zBufIdx>=NUM_RAYS)continue;
 if(sp.dist>=zBuffer[zBufIdx])continue;
 
-let t=(x-drawStartX)/spriteWidth;
-let bodyColor=e.flashTimer>0?'#fff':e.color;
-let r2,g2,b2;
+var t=(x-drawStartX)/spriteWidth;
+var r2,g2,b2;
 
-if(e.flashTimer>0){
+if(e2.flashTimer>0){
 r2=255;g2=255;b2=255;
 }else{
-let cr=parseInt(e.color.slice(1,3),16);
-let cg=parseInt(e.color.slice(3,5),16);
-let cb=parseInt(e.color.slice(5,7),16);
-r2=Math.floor(cr*fogFactor);
-g2=Math.floor(cg*fogFactor);
-b2=Math.floor(cb*fogFactor);
+var cr=parseInt(e2.color.slice(1,3),16);
+var cg=parseInt(e2.color.slice(3,5),16);
+var cb=parseInt(e2.color.slice(5,7),16);
+r2=Math.floor(cr*fogFactor2);
+g2=Math.floor(cg*fogFactor2);
+b2=Math.floor(cb*fogFactor2);
 }
 
-// Simple enemy shape - body and head
-let headTop=drawStartY;
-let bodyTop=drawStartY+spriteHeight*0.3;
-let bodyBot=drawEndY;
+var headTop=drawStartY;
+var bodyBot=drawEndY;
 
-for(let y=Math.max(0,headTop);y<Math.min(SCREEN_H,bodyBot);y++){
-let idx=(y*SCREEN_W+x)*4;
+for(var y=Math.max(0,headTop);y<Math.min(SCREEN_H,bodyBot);y++){
+var idx4=(y*SCREEN_W+x)*4;
 if(y<headTop+spriteHeight*0.25){
-// Head
-let headCenterX=screenX;
-let headR=spriteWidth*0.2;
-let hx=Math.abs(x-headCenterX);
+var headCenterX=screenX;
+var headR=spriteWidth*0.2;
+var hx=Math.abs(x-headCenterX);
 if(hx<headR){
-ctx.fillStyle=`rgb(${r2},${g2},${b2})`;
+ctx.fillStyle='rgb('+r2+','+g2+','+b2+')';
 ctx.fillRect(x,y,1,1);
 }
 }else{
-// Body
-ctx.fillStyle=`rgb(${r2},${g2},${b2})`;
+ctx.fillStyle='rgb('+r2+','+g2+','+b2+')';
 ctx.fillRect(x,y,1,1);
 }
 }
 }
 
-// Health bar
-if(e.hp<e.maxHp){
-let barW=spriteWidth*0.8;
-let barH=4;
-let barX=screenX-barW/2;
-let barY=drawStartY-8;
+if(e2.hp<e2.maxHp){
+var barW=spriteWidth*0.8;
+var barH=4;
+var barX=screenX-barW/2;
+var barY=drawStartY-8;
 ctx.fillStyle='#300';
 ctx.fillRect(barX,barY,barW,barH);
 ctx.fillStyle='#f00';
-ctx.fillRect(barX,barY,barW*(e.hp/e.maxHp),barH);
+ctx.fillRect(barX,barY,barW*(e2.hp/e2.maxHp),barH);
 }
 }else if(sp.type==='pickup'){
-let p=sp.data;
-let bob=Math.sin(Date.now()/500)*3;
-let pColor=p.type==='health'?'#0f0':'#ff0';
-for(let x=Math.max(0,drawStartX);x<Math.min(SCREEN_W,drawEndX);x++){
-let zBufIdx=Math.floor(x/STRIP_W);
-if(zBufIdx>=NUM_RAYS)continue;
-if(sp.dist>=zBuffer[zBufIdx])continue;
-let cy=drawStartY+spriteHeight/2+bob;
-let r2=parseInt(pColor.slice(1,3),16);
-let g2=parseInt(pColor.slice(3,5),16);
-let b2=parseInt(pColor.slice(5,7),16);
-let distFromCenter=Math.abs(x-screenX)/(spriteWidth/2);
+var p2=sp.data;
+var bob=Math.sin(Date.now()/500)*3;
+var pColor=p2.type==='health'?'#0f0':'#ff0';
+for(var x2=Math.max(0,drawStartX);x2<Math.min(SCREEN_W,drawEndX);x2++){
+var zBufIdx2=Math.floor(x2/STRIP_W);
+if(zBufIdx2>=NUM_RAYS)continue;
+if(sp.dist>=zBuffer[zBufIdx2])continue;
+var cy=drawStartY+spriteHeight/2+bob;
+var r3=parseInt(pColor.slice(1,3),16);
+var g3=parseInt(pColor.slice(3,5),16);
+var b3=parseInt(pColor.slice(5,7),16);
+var distFromCenter=Math.abs(x2-screenX)/(spriteWidth/2);
 if(distFromCenter<1){
-let alpha=1-distFromCenter*0.5;
-ctx.fillStyle=`rgba(${Math.floor(r2*fogFactor)},${Math.floor(g2*fogFactor)},${Math.floor(b2*fogFactor)},${alpha})`;
-ctx.fillRect(x,cy-3,1,6);
+var alpha=1-distFromCenter*0.5;
+ctx.fillStyle='rgba('+Math.floor(r3*fogFactor2)+','+Math.floor(g3*fogFactor2)+','+Math.floor(b3*fogFactor2)+','+alpha+')';
+ctx.fillRect(x2,cy-3,1,6);
 }
 }
 }
 }
 }
 
-// Draw particles
-for(let p of particles){
-let dx=p.x-player.x;
-let dy=p.y-player.y;
-let d=Math.sqrt(dx*dx+dy*dy);
-let angle=Math.atan2(dx,dy);
-let relAngle=angle-player.angle;
-while(relAngle>Math.PI)relAngle-=Math.PI*2;
-while(relAngle<-Math.PI)relAngle+=Math.PI*2;
-if(Math.abs(relAngle)>HALF_FOV)continue;
+for(var pi2=0;pi2<particles.length;pi2++){
+var p3=particles[pi2];
+var dx4=p3.x-player.x;
+var dy4=p3.y-player.y;
+var d3=Math.sqrt(dx4*dx4+dy4*dy4);
+var angle2=Math.atan2(dx4,dy4);
+var relAngle2=angle2-player.angle;
+while(relAngle2>Math.PI)relAngle2-=Math.PI*2;
+while(relAngle2<-Math.PI)relAngle2+=Math.PI*2;
+if(Math.abs(relAngle2)>HALF_FOV)continue;
 
-let screenX=(0.5+relAngle/FOV)*SCREEN_W;
-let size=Math.max(1,4/d);
-let fogFactor=Math.max(0,1-d/15);
-ctx.fillStyle=`rgba(${p.r},${p.g},${p.b},${p.life*fogFactor})`;
-ctx.fillRect(screenX-1,SCREEN_H/2-1,size+1,size+1);
+var screenX2=(0.5+relAngle2/FOV)*SCREEN_W;
+var size2=Math.max(1,4/d3);
+var fogFactor3=Math.max(0,1-d3/15);
+ctx.fillStyle='rgba('+p3.r+','+p3.g+','+p3.b+','+(p3.life*fogFactor3)+')';
+ctx.fillRect(screenX2-1,SCREEN_H/2-1,size2+1,size2+1);
 }
 
-// Draw exit glow
 if(exitPos){
-let dx=exitPos.x-player.x;
-let dy=exitPos.y-player.y;
-let d=Math.sqrt(dx*dx+dy*dy);
-let angle=Math.atan2(dx,dy);
-let relAngle=angle-player.angle;
-while(relAngle>Math.PI)relAngle-=Math.PI*2;
-while(relAngle<-Math.PI)relAngle+=Math.PI*2;
+var dx5=exitPos.x-player.x;
+var dy5=exitPos.y-player.y;
+var d4=Math.sqrt(dx5*dx5+dy5*dy5);
+var angle3=Math.atan2(dx5,dy5);
+var relAngle3=angle3-player.angle;
+while(relAngle3>Math.PI)relAngle3-=Math.PI*2;
+while(relAngle3<-Math.PI)relAngle3+=Math.PI*2;
 
-if(Math.abs(relAngle)<HALF_FOV){
-let screenX=(0.5+relAngle/FOV)*SCREEN_W;
-let glowSize=Math.max(20,SCREEN_H/d*0.5);
-let fogFactor=Math.max(0,1-d/15);
-let grad=ctx.createRadialGradient(screenX,SCREEN_H/2,0,screenX,SCREEN_H/2,glowSize);
-grad.addColorStop(0,`rgba(0,255,100,${0.6*fogFactor})`);
+if(Math.abs(relAngle3)<HALF_FOV && d4>0.001){
+var screenX3=(0.5+relAngle3/FOV)*SCREEN_W;
+var glowSize=Math.max(20,Math.min(240,SCREEN_H/d4*0.5));
+var fogFactor4=Math.max(0,1-d4/15);
+var grad=ctx.createRadialGradient(screenX3,SCREEN_H/2,0,screenX3,SCREEN_H/2,glowSize);
+grad.addColorStop(0,'rgba(0,255,100,'+(0.6*fogFactor4)+')');
 grad.addColorStop(1,'rgba(0,255,100,0)');
 ctx.fillStyle=grad;
-ctx.fillRect(screenX-glowSize,SCREEN_H/2-glowSize,glowSize*2,glowSize*2);
-}
+ctx.fillRect(screenX3-glowSize,SCREEN_H/2-glowSize,glowSize*2,glowSize*2);
 }
 }
 
 function renderMinimap(){
 if(!showMinimap)return;
-let scale=5;
+var scale=5;
 miniCtx.fillStyle='rgba(0,0,0,0.7)';
 miniCtx.fillRect(0,0,160,160);
-let ox=80-player.x*scale;
-let oy=80-player.y*scale;
+var ox=80-player.x*scale;
+var oy=80-player.y*scale;
 
-for(let y=0;y<mapH;y++){
-for(let x=0;x<mapW;x++){
-let sx=ox+x*scale;
-let sy=oy+y*scale;
+for(var y=0;y<mapH;y++){
+for(var x=0;x<mapW;x++){
+var sx=ox+x*scale;
+var sy=oy+y*scale;
 if(sx<-scale||sx>160||sy<-scale||sy>160)continue;
-if(map[y][x]>0){
+if(map[y] && map[y][x]>0){
 miniCtx.fillStyle='#444';
 miniCtx.fillRect(sx,sy,scale,scale);
 }else{
@@ -586,27 +550,25 @@ miniCtx.fillRect(sx,sy,scale,scale);
 }
 }
 
-// Exit
 miniCtx.fillStyle='#0f0';
 miniCtx.fillRect(ox+exitPos.x*scale-2,oy+exitPos.y*scale-2,4,4);
 
-// Pickups
-for(let p of pickups){
-miniCtx.fillStyle=p.type==='health'?'#0f0':'#ff0';
-miniCtx.fillRect(ox+p.x*scale-1,oy+p.y*scale-1,2,2);
+for(var pi3=0;pi3<pickups.length;pi3++){
+var p4=pickups[pi3];
+miniCtx.fillStyle=p4.type==='health'?'#0f0':'#ff0';
+miniCtx.fillRect(ox+p4.x*scale-1,oy+p4.y*scale-1,2,2);
 }
 
-// Enemies
-for(let e of enemies){
-if(e.hp<=0)continue;
-miniCtx.fillStyle=e.color;
-miniCtx.fillRect(ox+e.x*scale-1,oy+e.y*scale-1,3,3);
+for(var ei2=0;ei2<enemies.length;ei2++){
+var e3=enemies[ei2];
+if(e3.hp<=0)continue;
+miniCtx.fillStyle=e3.color;
+miniCtx.fillRect(ox+e3.x*scale-1,oy+e3.y*scale-1,3,3);
 }
 
-// Player
 miniCtx.fillStyle='#0ff';
 miniCtx.fillRect(ox+player.x*scale-2,oy+player.y*scale-2,4,4);
-let dirLen=8;
+var dirLen=8;
 miniCtx.strokeStyle='#0ff';
 miniCtx.lineWidth=1;
 miniCtx.beginPath();
@@ -618,43 +580,38 @@ miniCtx.stroke();
 function renderWeapon(){
 weaponCtx.clearRect(0,0,300,300);
 
-let recoil=weaponRecoil;
-let bobX=player.isMoving?Math.sin(player.bobPhase)*5*player.bobAmount:0;
-let bobY=player.isMoving?Math.abs(Math.cos(player.bobPhase))*4*player.bobAmount:0;
+var recoil=weaponRecoil;
+var bobX=player.isMoving?Math.sin(player.bobPhase)*5*player.bobAmount:0;
+var bobY=player.isMoving?Math.abs(Math.cos(player.bobPhase))*4*player.bobAmount:0;
 
 weaponCtx.save();
 weaponCtx.translate(150+bobX,250+bobY+recoil*30);
 weaponCtx.rotate(recoil*0.05);
 
-// Gun body
 weaponCtx.fillStyle='#555';
 weaponCtx.fillRect(-20,-60,40,80);
 weaponCtx.fillStyle='#444';
 weaponCtx.fillRect(-15,-55,30,70);
 
-// Barrel
 weaponCtx.fillStyle='#333';
 weaponCtx.fillRect(-8,-120,16,70);
 weaponCtx.fillStyle='#222';
 weaponCtx.fillRect(-6,-125,12,8);
 
-// Grip
 weaponCtx.fillStyle='#666';
 weaponCtx.fillRect(-12,10,24,40);
 
-// Muzzle flash
 if(recoil>0.5){
-weaponCtx.fillStyle=`rgba(255,200,50,${recoil})`;
+weaponCtx.fillStyle='rgba(255,200,50,'+recoil+')';
 weaponCtx.beginPath();
 weaponCtx.arc(0,-130,15+Math.random()*10,0,Math.PI*2);
 weaponCtx.fill();
-weaponCtx.fillStyle=`rgba(255,255,200,${recoil*0.7})`;
+weaponCtx.fillStyle='rgba(255,255,200,'+(recoil*0.7)+')';
 weaponCtx.beginPath();
 weaponCtx.arc(0,-130,8+Math.random()*5,0,Math.PI*2);
 weaponCtx.fill();
 }
 
-// Sight
 weaponCtx.fillStyle='#888';
 weaponCtx.fillRect(-3,-128,6,6);
 
@@ -663,7 +620,7 @@ weaponCtx.restore();
 
 function renderDamageFlash(){
 if(damageFlash>0){
-document.getElementById('damage-flash').style.background=`rgba(255,0,0,${damageFlash*0.3})`;
+document.getElementById('damage-flash').style.background='rgba(255,0,0,'+(damageFlash*0.3)+')';
 }
 }
 
@@ -683,28 +640,27 @@ player.fireTimer=player.fireRate;
 weaponRecoil=1;
 screenShake=3;
 
-// Raycast for hit detection
-let rayAngle=player.angle;
-let ray=castRay(player.x,player.y,rayAngle);
+var rayAngle=player.angle;
+var ray=castRay(player.x,player.y,rayAngle);
 
-// Check enemy hits
-let closestHit=null;
-let closestDist=ray.dist;
+var closestHit=null;
+var closestDist=ray.dist;
 
-for(let e of enemies){
-if(e.hp<=0)continue;
-let dx=e.x-player.x;
-let dy=e.y-player.y;
-let d=Math.sqrt(dx*dx+dy*dy);
-let angle=Math.atan2(dx,dy);
-let relAngle=angle-player.angle;
-while(relAngle>Math.PI)relAngle-=Math.PI*2;
-while(relAngle<-Math.PI)relAngle+=Math.PI*2;
+for(var ei3=0;ei3<enemies.length;ei3++){
+var e4=enemies[ei3];
+if(e4.hp<=0)continue;
+var dx6=e4.x-player.x;
+var dy6=e4.y-player.y;
+var d5=Math.sqrt(dx6*dx6+dy6*dy6);
+var angle4=Math.atan2(dx6,dy6);
+var relAngle4=angle4-player.angle;
+while(relAngle4>Math.PI)relAngle4-=Math.PI*2;
+while(relAngle4<-Math.PI)relAngle4+=Math.PI*2;
 
-let hitWidth=Math.atan2(e.size,d);
-if(Math.abs(relAngle)<hitWidth&&d<closestDist){
-closestHit=e;
-closestDist=d;
+var hitWidth=Math.atan2(e4.size,d5);
+if(Math.abs(relAngle4)<hitWidth&&d5<closestDist){
+closestHit=e4;
+closestDist=d5;
 }
 }
 
@@ -716,8 +672,7 @@ closestHit.lastSeenX=player.x;
 closestHit.lastSeenY=player.y;
 hitMarker=0.2;
 
-// Blood particles
-for(let i=0;i<5;i++){
+for(var i5=0;i5<5;i5++){
 particles.push({
 x:closestHit.x,y:closestHit.y,
 vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,
@@ -726,8 +681,7 @@ life:1,r:255,g:0,b:0
 }
 
 if(closestHit.hp<=0){
-// Death particles
-for(let i=0;i<15;i++){
+for(var i6=0;i6<15;i6++){
 particles.push({
 x:closestHit.x,y:closestHit.y,
 vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,
@@ -736,10 +690,9 @@ life:1.5,r:255,g:Math.floor(Math.random()*100),b:0
 }
 }
 }else{
-// Wall hit particles
-let wx=player.x+ray.dist*Math.sin(rayAngle);
-let wy=player.y+ray.dist*Math.cos(rayAngle);
-for(let i=0;i<3;i++){
+var wx=player.x+ray.dist*Math.sin(rayAngle);
+var wy=player.y+ray.dist*Math.cos(rayAngle);
+for(var i7=0;i7<3;i7++){
 particles.push({
 x:wx,y:wy,
 vx:(Math.random()-0.5)*1,vy:(Math.random()-0.5)*1,
@@ -758,8 +711,8 @@ player.reloadTimer=player.reloadTime;
 }
 
 function updatePlayer(dt){
-let moveX=0,moveY=0;
-let speed=player.isSprinting?player.sprintSpeed:player.speed;
+var moveX=0,moveY=0;
+var speed=player.isSprinting?player.sprintSpeed:player.speed;
 if(player.hp<=0)speed=0;
 
 player.isMoving=false;
@@ -769,10 +722,9 @@ if(keys['s']||keys['arrowdown']){moveX-=Math.sin(player.angle)*speed*dt;moveY-=M
 if(keys['a']){moveX+=Math.sin(player.angle-Math.PI/2)*speed*dt;moveY+=Math.cos(player.angle-Math.PI/2)*speed*dt;player.isMoving=true;}
 if(keys['d']){moveX+=Math.sin(player.angle+Math.PI/2)*speed*dt;moveY+=Math.cos(player.angle+Math.PI/2)*speed*dt;player.isMoving=true;}
 
-// Collision
-let margin=0.2;
-let newX=player.x+moveX;
-let newY=player.y+moveY;
+var margin=0.2;
+var newX=player.x+moveX;
+var newY=player.y+moveY;
 
 if(!isWall(newX+margin,player.y)&&!isWall(newX-margin,player.y)&&
 !isWall(newX+margin,player.y+margin)&&!isWall(newX-margin,player.y-margin)){
@@ -783,22 +735,20 @@ if(!isWall(player.x,player.y+moveY+margin)&&!isWall(player.x,player.y+moveY-marg
 player.y=player.y+moveY;
 }
 
-// Head bob
 if(player.isMoving){
-let bobSpeed=player.isSprinting?12:8;
+var bobSpeed=player.isSprinting?12:8;
 player.bobPhase+=dt*bobSpeed;
 player.bobAmount=Math.min(player.bobAmount+dt*5,1);
 }else{
 player.bobAmount=Math.max(player.bobAmount-dt*5,0);
 }
 
-// Timers
 if(player.fireTimer>0)player.fireTimer-=dt;
 if(player.reloading){
 player.reloadTimer-=dt;
 if(player.reloadTimer<=0){
-let needed=player.maxAmmo-player.ammo;
-let available=Math.min(needed,player.ammoReserve);
+var needed=player.maxAmmo-player.ammo;
+var available=Math.min(needed,player.ammoReserve);
 player.ammo+=available;
 player.ammoReserve-=available;
 player.reloading=false;
@@ -810,25 +760,23 @@ if(screenShake>0)screenShake-=dt*10;
 if(hitMarker>0)hitMarker-=dt;
 if(damageFlash>0)damageFlash-=dt*3;
 
-// Check exit
 if(dist(player.x,player.y,exitPos.x,exitPos.y)<1.5){
 gameState='win';
 document.getElementById('message').style.display='block';
 document.getElementById('message').innerHTML='YOU ESCAPED!<br><small>Click to restart</small>';
 }
 
-// Check pickups
-for(let i=pickups.length-1;i>=0;i--){
-let p=pickups[i];
-if(dist(player.x,player.y,p.x,p.y)<0.8){
-if(p.type==='health'&&player.hp<player.maxHp){
-player.hp=Math.min(player.maxHp,player.hp+p.amount);
-pickups.splice(i,1);
+for(var i8=pickups.length-1;i8>=0;i8--){
+var p5=pickups[i8];
+if(dist(player.x,player.y,p5.x,p5.y)<0.8){
+if(p5.type==='health'&&player.hp<player.maxHp){
+player.hp=Math.min(player.maxHp,player.hp+p5.amount);
+pickups.splice(i8,1);
 updateHUD();
 }
-if(p.type==='ammo'){
-player.ammoReserve+=p.amount;
-pickups.splice(i,1);
+if(p5.type==='ammo'){
+player.ammoReserve+=p5.amount;
+pickups.splice(i8,1);
 updateHUD();
 }
 }
@@ -836,71 +784,65 @@ updateHUD();
 }
 
 function updateEnemies(dt){
-for(let e of enemies){
-if(e.hp<=0)continue;
+for(var ei4=0;ei4<enemies.length;ei4++){
+var e5=enemies[ei4];
+if(e5.hp<=0)continue;
 
-if(e.flashTimer>0)e.flashTimer-=dt;
+if(e5.flashTimer>0)e5.flashTimer-=dt;
 
-let dx=player.x-e.x;
-let dy=player.y-e.y;
-let d=Math.sqrt(dx*dx+dy*dy);
+var dx7=player.x-e5.x;
+var dy7=player.y-e5.y;
+var d6=Math.sqrt(dx7*dx7+dy7*dy7);
 
-// Alert detection
-if(d<e.alertDist){
-e.state='chase';
-e.lastSeenX=player.x;
-e.lastSeenY=player.y;
+if(d6<e5.alertDist){
+e5.state='chase';
+e5.lastSeenX=player.x;
+e5.lastSeenY=player.y;
 }
 
-if(e.state==='idle'){
-// Patrol
-e.patrolTimer-=dt;
-if(e.patrolTimer<=0){
-e.patrolAngle=Math.random()*Math.PI*2;
-e.patrolTimer=2+Math.random()*3;
+if(e5.state==='idle'){
+e5.patrolTimer-=dt;
+if(e5.patrolTimer<=0){
+e5.patrolAngle=Math.random()*Math.PI*2;
+e5.patrolTimer=2+Math.random()*3;
 }
-let px=Math.sin(e.patrolAngle)*e.speed*dt*0.5;
-let py=Math.cos(e.patrolAngle)*e.speed*dt*0.5;
-if(!isWall(e.x+px+0.2,e.y)&&!isWall(e.x+px-0.2,e.y)){e.x+=px;}
-if(!isWall(e.x,e.y+py+0.2)&&!isWall(e.x,e.y+py-0.2)){e.y+=py;}
-}else if(e.state==='chase'){
-// Move toward player
-let angle=Math.atan2(dx,dy);
-let moveAngle=angle;
+var px=Math.sin(e5.patrolAngle)*e5.speed*dt*0.5;
+var py=Math.cos(e5.patrolAngle)*e5.speed*dt*0.5;
+if(!isWall(e5.x+px+0.2,e5.y)&&!isWall(e5.x+px-0.2,e5.y)){e5.x+=px;}
+if(!isWall(e5.x,e5.y+py+0.2)&&!isWall(e5.x,e5.y+py-0.2)){e5.y+=py;}
+}else if(e5.state==='chase'){
+var angle5=Math.atan2(dx7,dy7);
+var moveAngle=angle5;
 
-// Wall-aware: try to go around walls
-let testX=e.x+Math.sin(moveAngle)*e.speed*dt;
-let testY=e.y+Math.cos(moveAngle)*e.speed*dt;
+var testX=e5.x+Math.sin(moveAngle)*e5.speed*dt;
+var testY=e5.y+Math.cos(moveAngle)*e5.speed*dt;
 
 if(isWall(testX+0.2,testY)||isWall(testX-0.2,testY)||isWall(testX,testY+0.2)||isWall(testX,testY-0.2)){
-// Try left
-let leftAngle=moveAngle+0.5;
-let lx=e.x+Math.sin(leftAngle)*e.speed*dt;
-let ly=e.y+Math.cos(leftAngle)*e.speed*dt;
+var leftAngle=moveAngle+0.5;
+var lx=e5.x+Math.sin(leftAngle)*e5.speed*dt;
+var ly=e5.y+Math.cos(leftAngle)*e5.speed*dt;
 if(!isWall(lx+0.2,ly)&&!isWall(lx-0.2,ly)){
-e.x=lx;e.y=ly;
+e5.x=lx;e5.y=ly;
 }else{
-// Try right
-let rightAngle=moveAngle-0.5;
-let rx=e.x+Math.sin(rightAngle)*e.speed*dt;
-let ry=e.y+Math.cos(rightAngle)*e.speed*dt;
+var rightAngle=moveAngle-0.5;
+var rx=e5.x+Math.sin(rightAngle)*e5.speed*dt;
+var ry=e5.y+Math.cos(rightAngle)*e5.speed*dt;
 if(!isWall(rx+0.2,ry)&&!isWall(rx-0.2,ry)){
-e.x=rx;e.y=ry;
+e5.x=rx;e5.y=ry;
 }
 }
 }else{
-e.x=testX;
-e.y=testY;
+e5.x=testX;
+e5.y=testY;
 }
 
-// Attack
-if(d<e.attackRange){
-e.attackTimer-=dt;
-if(e.attackTimer<=0){
-player.hp-=e.damage;
+if(d6<e5.attackRange){
+e5.attackTimer-=dt;
+if(e5.attackTimer<=0){
+player.hp-=e5.damage;
 damageFlash=1;
 screenShake=5;
-e.attackTimer=e.attackRate;
+e5.attackTimer=e5.attackRate;
 updateHUD();
 
 if(player.hp<=0){
@@ -915,49 +857,47 @@ document.getElementById('message').innerHTML='YOU DIED<br><small>Click to restar
 }
 
 function updateProjectiles(dt){
-for(let i=projectiles.length-1;i>=0;i--){
-let p=projectiles[i];
-p.x+=p.vx*dt;
-p.y+=p.vy*dt;
-p.life-=dt;
+for(var i9=projectiles.length-1;i9>=0;i9--){
+var p6=projectiles[i9];
+p6.x+=p6.vx*dt;
+p6.y+=p6.vy*dt;
+p6.life-=dt;
 
-if(isWall(p.x,p.y)||p.life<=0){
-// Impact particles
-for(let j=0;j<3;j++){
+if(isWall(p6.x,p6.y)||p6.life<=0){
+for(var j2=0;j2<3;j2++){
 particles.push({
-x:p.x,y:p.y,
+x:p6.x,y:p6.y,
 vx:(Math.random()-0.5)*2,vy:(Math.random()-0.5)*2,
-life:0.5,r:p.r,g:p.g,b:p.b
+life:0.5,r:p6.r,g:p6.g,b:p6.b
 });
 }
-projectiles.splice(i,1);
+projectiles.splice(i9,1);
 continue;
 }
 
-// Check enemy hits (for enemy projectiles)
-if(p.isEnemy){
-for(let e of enemies){
-if(e.hp<=0)continue;
-if(dist(p.x,p.y,e.x,e.y)<0.5){
-e.hp-=p.damage;
-if(e.hp<=0){
-for(let j=0;j<10;j++){
-particles.push({x:e.x,y:e.y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,life:1,r:255,g:0,b:0});
+if(p6.isEnemy){
+for(var ei5=0;ei5<enemies.length;ei5++){
+var e6=enemies[ei5];
+if(e6.hp<=0)continue;
+if(dist(p6.x,p6.y,e6.x,e6.y)<0.5){
+e6.hp-=p6.damage;
+if(e6.hp<=0){
+for(var j3=0;j3<10;j3++){
+particles.push({x:e6.x,y:e6.y,vx:(Math.random()-0.5)*3,vy:(Math.random()-0.5)*3,life:1,r:255,g:0,b:0});
 }
 }
-projectiles.splice(i,1);
+projectiles.splice(i9,1);
 break;
 }
 }
 }
 
-// Check player hit
-if(p.isEnemy&&dist(p.x,p.y,player.x,player.y)<0.3){
-player.hp-=p.damage;
+if(p6.isEnemy&&dist(p6.x,p6.y,player.x,player.y)<0.3){
+player.hp-=p6.damage;
 damageFlash=1;
 screenShake=3;
 updateHUD();
-projectiles.splice(i,1);
+projectiles.splice(i9,1);
 if(player.hp<=0){
 gameState='gameover';
 document.getElementById('message').style.display='block';
@@ -968,17 +908,16 @@ document.getElementById('message').innerHTML='YOU DIED<br><small>Click to restar
 }
 
 function updateParticles(dt){
-for(let i=particles.length-1;i>=0;i--){
-let p=particles[i];
-p.x+=p.vx*dt;
-p.y+=p.vy*dt;
-p.life-=dt;
-if(p.life<=0)particles.splice(i,1);
+for(var i10=particles.length-1;i10>=0;i10--){
+var p7=particles[i10];
+p7.x+=p7.vx*dt;
+p7.y+=p7.vy*dt;
+p7.life-=dt;
+if(p7.life<=0)particles.splice(i10,1);
 }
 }
 
-// Input
-document.addEventListener('keydown',e=>{
+document.addEventListener('keydown',function(e){
 keys[e.key.toLowerCase()]=true;
 if(e.key.toLowerCase()==='m'&&gameState==='playing'){
 showMinimap=!showMinimap;
@@ -1002,19 +941,19 @@ player.isSprinting=true;
 }
 });
 
-document.addEventListener('keyup',e=>{
+document.addEventListener('keyup',function(e){
 keys[e.key.toLowerCase()]=false;
 if(e.key.toLowerCase()==='shift'){
 player.isSprinting=false;
 }
 });
 
-canvas.addEventListener('mousemove',e=>{
+canvas.addEventListener('mousemove',function(e){
 if(gameState!=='playing')return;
 mouseDX+=e.movementX;
 });
 
-canvas.addEventListener('mousedown',e=>{
+canvas.addEventListener('mousedown',function(e){
 if(gameState==='playing'){
 shoot();
 }else if(gameState==='paused'){
@@ -1026,22 +965,21 @@ restartGame();
 }
 });
 
-document.addEventListener('pointerlockchange',()=>{
+document.addEventListener('pointerlockchange',function(){
 if(!document.pointerLockElement&&gameState==='playing'){
 gameState='paused';
 document.getElementById('pause-screen').style.display='flex';
 }
 });
 
-// Continuous shooting
-setInterval(()=>{
+setInterval(function(){
 if(gameState==='playing'&&keys['mouse0']){
 shoot();
 }
 },50);
 
-canvas.addEventListener('mousedown',e=>{keys['mouse0']=true;});
-canvas.addEventListener('mouseup',e=>{keys['mouse0']=false;});
+canvas.addEventListener('mousedown',function(e){keys['mouse0']=true;});
+canvas.addEventListener('mouseup',function(e){keys['mouse0']=false;});
 
 function restartGame(){
 player.hp=100;
@@ -1065,10 +1003,9 @@ updateHUD();
 }
 
 function gameLoop(timestamp){
-let dt=1/60;
+var dt=1/60;
 
 if(gameState==='playing'){
-// Mouse rotation
 player.angle+=mouseDX*0.003;
 mouseDX=0;
 
@@ -1078,7 +1015,6 @@ updateProjectiles(dt);
 updateParticles(dt);
 }
 
-// Render
 ctx.save();
 if(screenShake>0){
 ctx.translate((Math.random()-0.5)*screenShake*2,(Math.random()-0.5)*screenShake*2);
@@ -1089,11 +1025,10 @@ renderMinimap();
 renderWeapon();
 renderDamageFlash();
 
-// Hit marker
 if(hitMarker>0){
-ctx.strokeStyle=`rgba(255,255,255,${hitMarker*5})`;
+ctx.strokeStyle='rgba(255,255,255,'+(hitMarker*5)+')';
 ctx.lineWidth=2;
-let cx=SCREEN_W/2,cy=SCREEN_H/2;
+var cx=SCREEN_W/2,cy=SCREEN_H/2;
 ctx.beginPath();
 ctx.moveTo(cx-10,cy-10);ctx.lineTo(cx-4,cy-4);
 ctx.moveTo(cx+10,cy-10);ctx.lineTo(cx+4,cy-4);
@@ -1104,7 +1039,6 @@ ctx.stroke();
 
 ctx.restore();
 
-// Reload indicator
 if(player.reloading){
 ctx.fillStyle='#ff0';
 ctx.font='20px Courier New';
@@ -1112,9 +1046,8 @@ ctx.textAlign='center';
 ctx.fillText('RELOADING...',SCREEN_W/2,SCREEN_H/2+50);
 }
 
-// Low ammo warning
 if(player.ammo<=5&&player.ammo>0&&gameState==='playing'){
-ctx.fillStyle=`rgba(255,0,0,${0.5+Math.sin(Date.now()/200)*0.5})`;
+ctx.fillStyle='rgba(255,0,0,'+(0.5+Math.sin(Date.now()/200)*0.5)+')';
 ctx.font='16px Courier New';
 ctx.textAlign='center';
 ctx.fillText('LOW AMMO',SCREEN_W/2,SCREEN_H-60);
@@ -1123,8 +1056,7 @@ ctx.fillText('LOW AMMO',SCREEN_W/2,SCREEN_H-60);
 requestAnimationFrame(gameLoop);
 }
 
-// Start
-document.getElementById('start-btn').addEventListener('click',()=>{
+document.getElementById('start-btn').addEventListener('click',function(){
 document.getElementById('start-screen').style.display='none';
 generateMap();
 gameState='playing';
@@ -1132,12 +1064,17 @@ canvas.requestPointerLock();
 updateHUD();
 });
 
-window.addEventListener('resize',()=>{
+window.addEventListener('resize',function(){
 canvas.width=window.innerWidth;
 canvas.height=window.innerHeight;
+SCREEN_W=canvas.width;
+SCREEN_H=canvas.height;
+NUM_RAYS=Math.min(SCREEN_W,800);
+STRIP_W=SCREEN_W/NUM_RAYS;
 });
 
 requestAnimationFrame(gameLoop);
+})();
 </script>
 </body>
 </html>

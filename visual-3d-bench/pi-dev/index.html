@@ -29,28 +29,23 @@
   .prompt-tile { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:10px; text-decoration:none; color:inherit; transition:border-color .2s, transform .2s; }
   a.prompt-tile:hover { border-color:rgba(6,182,212,.55); transform:translateY(-1px); }
   .prompt-tile.complete { border-color:rgba(74,222,128,.32); }
-  .prompt-tile.truncated { border-color:rgba(239,68,68,.35); }
-  .prompt-tile.missing { border-color:rgba(100,116,139,.22); opacity:.55; }
   .prompt-name { font-size:.73rem; font-weight:700; margin-bottom:5px; }
   .prompt-quality { font-size:.62rem; padding:2px 7px; border-radius:999px; display:inline-block; font-family:'JetBrains Mono',ui-monospace,monospace; }
   .q-complete { background:rgba(74,222,128,.15); color:#4ade80; }
-  .q-truncated { background:rgba(239,68,68,.15); color:#ef4444; }
-  .q-missing { background:rgba(100,116,139,.15); color:#94a3b8; }
   .prompt-meta { font-size:.62rem; color:#64748b; margin-top:5px; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .sha { color:#475569; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .footer { text-align:center; padding:24px 0; color:#64748b; font-size:.65rem; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  code { color:#a7f3d0; }
   @media (max-width:700px) { body { padding:12px; } .model-header { align-items:flex-start; flex-direction:column; } }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🧪 MiniV Visual 3D Benchmark — pi-dev Harness</h1>
-  <div class="subtitle">Pi v0.80.2 · read/write/bash tools · 3 top models × 5 prompts</div>
-  <div class="banner"><strong>pi-dev harness:</strong> Same visual prompts, but routed through Pi v0.80.2 with read/write/bash tools. This evaluates whether a specialized agent harness improves artifact discipline.</div>
-  <div class="links"><a class="button" href="../">← Back to direct benchmark</a><a class="button" href="bench-results.log">📄 Raw bench log</a></div>
-  <div class="summary">
-    <div class="stat"><div class="val">3</div><div class="label">Models</div></div><div class="stat"><div class="val">15</div><div class="label">Runs</div></div><div class="stat"><div class="val">15</div><div class="label">Complete</div></div><div class="stat"><div class="val">0</div><div class="label">Fences</div></div><div class="stat"><div class="val">376K</div><div class="label">Total chars</div></div>
-  </div>
-  
+  <div class="subtitle">Pi v0.80.2 · read/write/bash tools · 3 top models × 5 prompts · runtime fixes applied</div>
+  <div class="banner"><strong>pi-dev harness runtime gate green:</strong> 15/15 harness deliverables complete, 0 markdown fences, 0 strict browser/runtime issues. One benign Three.js property warning remains classified non-blocking.</div>
+  <div class="links"><a class="button" href="../">← Back to direct benchmark</a><a class="button" href="pi-dev-results-summary.json">📄 pi-dev summary</a><a class="button" href="manifest.json">🔐 SHA256 manifest</a><a class="button" href="bench-results.log">📄 Raw bench log</a></div>
+  <div class="summary"><div class="stat"><div class="val">3</div><div class="label">Models</div></div><div class="stat"><div class="val">15</div><div class="label">Files</div></div><div class="stat"><div class="val">15</div><div class="label">Complete</div></div><div class="stat"><div class="val">0</div><div class="label">Fences</div></div><div class="stat"><div class="val">376K</div><div class="label">Total chars</div></div><div class="stat"><div class="val">0</div><div class="label">Strict issues</div></div></div>
   <section class="model-card">
     <div class="model-header">
       <div class="model-name">architect-35b-q6</div>
@@ -64,54 +59,27 @@
           <div class="prompt-name">Three.js Particle Galaxy</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">12K chars · 71s</div>
+          <div class="prompt-meta sha">sha256 9bc9b564d242…</div>
         </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_fps.html" target="_blank">
           <div class="prompt-name">FPS Raycasting Engine</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">41K chars · 274s</div>
+          <div class="prompt-meta sha">sha256 2fe89239e55b…</div>
         </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_flight.html" target="_blank">
           <div class="prompt-name">3D Flight Simulation</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">37K chars · 232s</div>
+          <div class="prompt-meta">38K chars · 232s</div>
+          <div class="prompt-meta sha">sha256 131d0ef30adf…</div>
         </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_ocean.html" target="_blank">
           <div class="prompt-name">Three.js Wave Ocean Shader</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">15K chars · 91s</div>
+          <div class="prompt-meta sha">sha256 3301843db969…</div>
         </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_breakout.html" target="_blank">
           <div class="prompt-name">Breakout Canvas Game</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">24K chars · 231s</div>
-        </a>
-    </div>
-  </section>
-  <section class="model-card">
-    <div class="model-header">
-      <div class="model-name">qwen36-35b-q6</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">118K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_galaxy.html" target="_blank">
-          <div class="prompt-name">Three.js Particle Galaxy</div>
-          <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">12K chars · 71s</div>
-        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_fps.html" target="_blank">
-          <div class="prompt-name">FPS Raycasting Engine</div>
-          <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">24K chars · 184s</div>
-        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_flight.html" target="_blank">
-          <div class="prompt-name">3D Flight Simulation</div>
-          <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">50K chars · 415s</div>
-        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_ocean.html" target="_blank">
-          <div class="prompt-name">Three.js Wave Ocean Shader</div>
-          <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">11K chars · 74s</div>
-        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_breakout.html" target="_blank">
-          <div class="prompt-name">Breakout Canvas Game</div>
-          <span class="prompt-quality q-complete">COMPLETE</span>
-          <div class="prompt-meta">21K chars · 202s</div>
+          <div class="prompt-meta sha">sha256 28d41f29ec4c…</div>
         </a>
     </div>
   </section>
@@ -128,26 +96,68 @@
           <div class="prompt-name">Three.js Particle Galaxy</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">12K chars · 87s</div>
+          <div class="prompt-meta sha">sha256 4a1345c7d48d…</div>
         </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_fps.html" target="_blank">
           <div class="prompt-name">FPS Raycasting Engine</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">34K chars · 242s</div>
+          <div class="prompt-meta sha">sha256 9aa2d93667e8…</div>
         </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_flight.html" target="_blank">
           <div class="prompt-name">3D Flight Simulation</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">52K chars · 504s</div>
+          <div class="prompt-meta sha">sha256 2155f95cce0a…</div>
         </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_ocean.html" target="_blank">
           <div class="prompt-name">Three.js Wave Ocean Shader</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">11K chars · 84s</div>
+          <div class="prompt-meta sha">sha256 4a57196743ec…</div>
         </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_breakout.html" target="_blank">
           <div class="prompt-name">Breakout Canvas Game</div>
           <span class="prompt-quality q-complete">COMPLETE</span>
           <div class="prompt-meta">20K chars · 242s</div>
+          <div class="prompt-meta sha">sha256 aaa32ced5803…</div>
         </a>
     </div>
   </section>
-  <div class="footer">Generated by Hermes · MiniV local AI benchmark · 2026-07-07 21:23</div>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">qwen36-35b-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">118K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars · 71s</div>
+          <div class="prompt-meta sha">sha256 4909bcb097db…</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">24K chars · 184s</div>
+          <div class="prompt-meta sha">sha256 192c85836e61…</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">50K chars · 415s</div>
+          <div class="prompt-meta sha">sha256 e33731d769a1…</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars · 74s</div>
+          <div class="prompt-meta sha">sha256 932ca5e76630…</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">21K chars · 202s</div>
+          <div class="prompt-meta sha">sha256 8938acb69a67…</div>
+        </a>
+    </div>
+  </section>
+  <div class="footer">Generated by Hermes · MiniV pi-dev visual benchmark post-runtime-fix closure · 2026-07-08T14:37:55Z</div>
 </div>
 </body>
 </html>

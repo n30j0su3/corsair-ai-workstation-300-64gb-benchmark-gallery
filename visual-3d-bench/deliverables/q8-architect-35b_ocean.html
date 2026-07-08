@@ -67,17 +67,11 @@ canvas { display: block; }
             // Calculate normal contribution from this wave
             float sinDp = sin(cosDp + phase);
             vec3 waveNormal = vec3(
-                -c * s * d.x * d.x * k * sinVal,
-                k * amplitude * sinVal,
-                -c * s * d.y * d.x * k * sinVal
-            );
-            // Fix: use sinDp instead of sinVal
-            vec3 waveNormal2 = vec3(
                 -c * s * d.x * d.x * k * sinDp,
                 k * amplitude * sinDp,
                 -c * s * d.y * d.x * k * sinDp
             );
-            displacedNormal += waveNormal2;
+            displacedNormal += waveNormal;
             totalHeight += amplitude * cosVal;
         }
 

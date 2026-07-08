@@ -1,0 +1,205 @@
+{
+  "generated_at": "2026-07-08T14:37:55Z",
+  "run_id": "visual-3d-selfdebug-20260707-215546",
+  "scope": "visual-3d-bench-pi-dev-public-gallery",
+  "summary_file": "pi-dev-results-summary.json",
+  "runtime_gate": {
+    "raw_status_counts": {
+      "PASS": 64
+    },
+    "strict_runtime_issues": 0,
+    "benign_warning_only": 6,
+    "warning_reviewed": 0
+  },
+  "summary": {
+    "files": 15,
+    "complete": 15,
+    "fenced": 0,
+    "total_chars": 376426,
+    "total_bytes": 376669,
+    "models": 3,
+    "sha256_manifested": 15
+  },
+  "files": [
+    {
+      "path": "deliverables/architect-35b-q6_breakout.html",
+      "model": "architect-35b-q6",
+      "prompt": "breakout",
+      "size": 24457,
+      "chars": 24427,
+      "sha256": "28d41f29ec4c0594135f2f9c5b64db6c04341f3a52e08c689b66eb43937940cd",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/architect-35b-q6_flight.html",
+      "model": "architect-35b-q6",
+      "prompt": "flight",
+      "size": 37570,
+      "chars": 37570,
+      "sha256": "131d0ef30adfa715b5a823c866e96b4b0ab42c1fe0ec881ed6043dd3705123b4",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/architect-35b-q6_fps.html",
+      "model": "architect-35b-q6",
+      "prompt": "fps",
+      "size": 41297,
+      "chars": 41297,
+      "sha256": "2fe89239e55be6b4103acf0902fdc99657b3c43a2dc85d30e9d0ecd6671cacfd",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/architect-35b-q6_galaxy.html",
+      "model": "architect-35b-q6",
+      "prompt": "galaxy",
+      "size": 11906,
+      "chars": 11906,
+      "sha256": "9bc9b564d2426b934f34c6881c5ebc4f21449a64421c727516c3a8d2212a2937",
+      "has_html_close": true,
+      "script_open_count": 2,
+      "script_close_count": 2,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/architect-35b-q6_ocean.html",
+      "model": "architect-35b-q6",
+      "prompt": "ocean",
+      "size": 14901,
+      "chars": 14896,
+      "sha256": "3301843db96937e17204cac5f62e09e43e8933ea407988840cd50637b2dc761a",
+      "has_html_close": true,
+      "script_open_count": 2,
+      "script_close_count": 2,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/ornith-35b-q6-100k_breakout.html",
+      "model": "ornith-35b-q6-100k",
+      "prompt": "breakout",
+      "size": 20081,
+      "chars": 20054,
+      "sha256": "aaa32ced5803e469f0da7fbf6b099f0a61211ee60ca30f0454bc332c38a9550f",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/ornith-35b-q6-100k_flight.html",
+      "model": "ornith-35b-q6-100k",
+      "prompt": "flight",
+      "size": 51763,
+      "chars": 51739,
+      "sha256": "2155f95cce0ae366e14cc7f5eed6132ae405c049e8fcae2e6379fc06b552aac0",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/ornith-35b-q6-100k_fps.html",
+      "model": "ornith-35b-q6-100k",
+      "prompt": "fps",
+      "size": 33882,
+      "chars": 33870,
+      "sha256": "9aa2d93667e8585cfb515b91dc0a8fd51f94e7847f2fb055be6e64a2febfe5ee",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/ornith-35b-q6-100k_galaxy.html",
+      "model": "ornith-35b-q6-100k",
+      "prompt": "galaxy",
+      "size": 11562,
+      "chars": 11562,
+      "sha256": "4a1345c7d48dad1ff5e8fcbcfa26a1650892d7b580f62237512eee3b4a7b4673",
+      "has_html_close": true,
+      "script_open_count": 2,
+      "script_close_count": 2,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/ornith-35b-q6-100k_ocean.html",
+      "model": "ornith-35b-q6-100k",
+      "prompt": "ocean",
+      "size": 10815,
+      "chars": 10811,
+      "sha256": "4a57196743ec3d9440bf59ddaff2781779101072437ca9b340105997eb7d1b7a",
+      "has_html_close": true,
+      "script_open_count": 6,
+      "script_close_count": 6,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/qwen36-35b-q6_breakout.html",
+      "model": "qwen36-35b-q6",
+      "prompt": "breakout",
+      "size": 20681,
+      "chars": 20677,
+      "sha256": "8938acb69a675a8a51beaf109bcfa76ddfd58142ad0757521de684742f5d5e63",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/qwen36-35b-q6_flight.html",
+      "model": "qwen36-35b-q6",
+      "prompt": "flight",
+      "size": 50283,
+      "chars": 50274,
+      "sha256": "e33731d769a1eb5fc2bbce6bb6fd206818f6319453f8bad972fd789b1a19bf56",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/qwen36-35b-q6_fps.html",
+      "model": "qwen36-35b-q6",
+      "prompt": "fps",
+      "size": 24059,
+      "chars": 24057,
+      "sha256": "192c85836e615992c78ed6a90cc1d73e2262fc896e5974fc58e9dc5b4a60c4d4",
+      "has_html_close": true,
+      "script_open_count": 1,
+      "script_close_count": 1,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/qwen36-35b-q6_galaxy.html",
+      "model": "qwen36-35b-q6",
+      "prompt": "galaxy",
+      "size": 12427,
+      "chars": 12426,
+      "sha256": "4909bcb097db16126df72980f10b060084d05c0a96eb497b586d9a5133972bd4",
+      "has_html_close": true,
+      "script_open_count": 2,
+      "script_close_count": 2,
+      "fenced": false
+    },
+    {
+      "path": "deliverables/qwen36-35b-q6_ocean.html",
+      "model": "qwen36-35b-q6",
+      "prompt": "ocean",
+      "size": 10985,
+      "chars": 10860,
+      "sha256": "932ca5e766309d1a5ccf44bd72e9faa20b8cf1126a71dc8dd899412d06767433",
+      "has_html_close": true,
+      "script_open_count": 2,
+      "script_close_count": 2,
+      "fenced": false
+    }
+  ]
+}

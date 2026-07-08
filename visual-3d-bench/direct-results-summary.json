@@ -1,36 +1,80 @@
 {
-  "generated_at": "2026-07-07T21:23:08.229537",
-  "type": "direct-local-model-remediated",
+  "generated_at": "2026-07-08T14:37:55Z",
+  "run_id": "visual-3d-selfdebug-20260707-215546",
+  "type": "direct-local-model-remediated-post-pass4-runtime-verified",
+  "runtime_gate": {
+    "source_files": [
+      "/tmp/visual3d-qa/audit-results.json",
+      "/tmp/visual3d-qa/structural-audit-results.json"
+    ],
+    "raw_status_counts": {
+      "PASS": 64
+    },
+    "strict_runtime_issues": 0,
+    "benign_warning_only": 6,
+    "warning_reviewed": 0,
+    "warnings": [
+      {
+        "kind": "direct",
+        "file": "architect-35b-q6_flight.html",
+        "class": "benign_warning",
+        "text": "[.WebGL-0x2c0c0014b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      },
+      {
+        "kind": "direct",
+        "file": "architect-35b-q6_flight.html",
+        "class": "benign_warning",
+        "text": "[.WebGL-0x2c0c0014b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      },
+      {
+        "kind": "direct",
+        "file": "architect-35b-q6_flight.html",
+        "class": "benign_warning",
+        "text": "[.WebGL-0x2c0c0014b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+      },
+      {
+        "kind": "direct",
+        "file": "architect-35b-q6_flight.html",
+        "class": "benign_warning",
+        "text": "[.WebGL-0x2c0c0014b600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      },
+      {
+        "kind": "direct",
+        "file": "nex-n2-mini-q6_ocean.html",
+        "class": "benign_warning",
+        "text": "Scripts \"build/three.js\" and \"build/three.min.js\" are deprecated with r150+, and will be removed with r160. Please use ES Modules or alternatives: https://threejs.org/docs/index.html#manual/en/introduction/Installation"
+      },
+      {
+        "kind": "pi-dev",
+        "file": "qwen36-35b-q6_galaxy.html",
+        "class": "benign_warning",
+        "text": "THREE.ShaderMaterial: 'sizeAttenuation' is not a property of this material."
+      }
+    ],
+    "strict_issues": []
+  },
   "models": {
     "architect-35b-q6": {
-      "breakout": {
-        "file": "architect-35b-q6_breakout.html",
-        "size": 24101,
-        "chars": 24087,
+      "galaxy": {
+        "file": "architect-35b-q6_galaxy.html",
+        "path": "deliverables/architect-35b-q6_galaxy.html",
+        "size": 8787,
+        "chars": 8787,
+        "sha256": "d0e13621f286e75c4fc9d078f1721b0e8adad4cef9eeb635d831bd4063749126",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
+        "script_open_count": 2,
+        "script_close_count": 2,
         "fenced": false,
         "model": "architect-35b-q6",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "architect-35b-q6_flight.html",
-        "size": 33538,
-        "chars": 33537,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "architect-35b-q6",
-        "prompt": "flight"
+        "prompt": "galaxy"
       },
       "fps": {
         "file": "architect-35b-q6_fps.html",
+        "path": "deliverables/architect-35b-q6_fps.html",
         "size": 33325,
         "chars": 33325,
+        "sha256": "329a33b12484ec00b21889056e2d2d97be6052b7f1cb3ccc00ed012c256f84fb",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
@@ -39,22 +83,26 @@
         "model": "architect-35b-q6",
         "prompt": "fps"
       },
-      "galaxy": {
-        "file": "architect-35b-q6_galaxy.html",
-        "size": 8809,
-        "chars": 8809,
+      "flight": {
+        "file": "architect-35b-q6_flight.html",
+        "path": "deliverables/architect-35b-q6_flight.html",
+        "size": 33536,
+        "chars": 33535,
+        "sha256": "538d82159703a752054ccab5d868539e8e19ddf5602aea504f785736c917f547",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
+        "script_open_count": 1,
+        "script_close_count": 1,
         "fenced": false,
         "model": "architect-35b-q6",
-        "prompt": "galaxy"
+        "prompt": "flight"
       },
       "ocean": {
         "file": "architect-35b-q6_ocean.html",
+        "path": "deliverables/architect-35b-q6_ocean.html",
         "size": 14477,
         "chars": 14477,
+        "sha256": "2cb9858747d0f81777fa4ae22d703ebd48583f577ec6095125950b076c7eb0fa",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -62,25 +110,57 @@
         "fenced": false,
         "model": "architect-35b-q6",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "architect-35b-q6_breakout.html",
+        "path": "deliverables/architect-35b-q6_breakout.html",
+        "size": 24101,
+        "chars": 24087,
+        "sha256": "f962a26f64c41a4c884d8e61b41ec1cc82cb6a3c5b074e3c3483ee92b51fd704",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "breakout"
       }
     },
     "coding-coder-27b-q6": {
-      "breakout": {
-        "file": "coding-coder-27b-q6_breakout.html",
-        "size": 22018,
-        "chars": 21965,
+      "galaxy": {
+        "file": "coding-coder-27b-q6_galaxy.html",
+        "path": "deliverables/coding-coder-27b-q6_galaxy.html",
+        "size": 10479,
+        "chars": 10479,
+        "sha256": "f95a99f835f7eb9aecfa97bd00b4bc6bc886be2b48c403c6ccf1723fd6fe4e08",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "galaxy"
+      },
+      "fps": {
+        "file": "coding-coder-27b-q6_fps.html",
+        "path": "deliverables/coding-coder-27b-q6_fps.html",
+        "size": 27312,
+        "chars": 27312,
+        "sha256": "a91c6cd806cc48a9e08bc65d2f432aa29d6cc7f76d365e5d95579e908d2e610f",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
         "model": "coding-coder-27b-q6",
-        "prompt": "breakout"
+        "prompt": "fps"
       },
       "flight": {
         "file": "coding-coder-27b-q6_flight.html",
-        "size": 26861,
-        "chars": 26859,
+        "path": "deliverables/coding-coder-27b-q6_flight.html",
+        "size": 26845,
+        "chars": 26843,
+        "sha256": "8110e702bd45cd28e47b7ced909810429f2ed88a0f2cfe41726e079b92d304f3",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
@@ -89,34 +169,12 @@
         "model": "coding-coder-27b-q6",
         "prompt": "flight"
       },
-      "fps": {
-        "file": "coding-coder-27b-q6_fps.html",
-        "size": 27312,
-        "chars": 27312,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "coding-coder-27b-q6",
-        "prompt": "fps"
-      },
-      "galaxy": {
-        "file": "coding-coder-27b-q6_galaxy.html",
-        "size": 10479,
-        "chars": 10479,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
-        "fenced": false,
-        "model": "coding-coder-27b-q6",
-        "prompt": "galaxy"
-      },
       "ocean": {
         "file": "coding-coder-27b-q6_ocean.html",
+        "path": "deliverables/coding-coder-27b-q6_ocean.html",
         "size": 5574,
         "chars": 5534,
+        "sha256": "f437105972b5ca0e3aba88ea852de63ef639cf6677256acb689e81ed83824f73",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -124,25 +182,29 @@
         "fenced": false,
         "model": "coding-coder-27b-q6",
         "prompt": "ocean"
-      }
-    },
-    "coding-coder-27b-q8": {
+      },
       "breakout": {
-        "file": "coding-coder-27b-q8_breakout.html",
-        "size": 22578,
-        "chars": 22550,
+        "file": "coding-coder-27b-q6_breakout.html",
+        "path": "deliverables/coding-coder-27b-q6_breakout.html",
+        "size": 22018,
+        "chars": 21965,
+        "sha256": "777d80fbb600a9d671dcdd32b46423ed58830a3b411745c10e508b8d4858d890",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
-        "model": "coding-coder-27b-q8",
+        "model": "coding-coder-27b-q6",
         "prompt": "breakout"
-      },
+      }
+    },
+    "coding-coder-27b-q8": {
       "galaxy": {
         "file": "coding-coder-27b-q8_galaxy.html",
+        "path": "deliverables/coding-coder-27b-q8_galaxy.html",
         "size": 10883,
         "chars": 10883,
+        "sha256": "b6123f8fbd776aa65c48da1dfd0297fb51eddab7663dd11dd5936c3fba3d6509",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -153,8 +215,10 @@
       },
       "ocean": {
         "file": "coding-coder-27b-q8_ocean.html",
-        "size": 12292,
-        "chars": 12292,
+        "path": "deliverables/coding-coder-27b-q8_ocean.html",
+        "size": 9631,
+        "chars": 9631,
+        "sha256": "603d2b6a091c687171f44f7af6846de593b10be2fd4f683b208f4a0d3b16237d",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 6,
@@ -162,161 +226,115 @@
         "fenced": false,
         "model": "coding-coder-27b-q8",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "coding-coder-27b-q8_breakout.html",
+        "path": "deliverables/coding-coder-27b-q8_breakout.html",
+        "size": 22578,
+        "chars": 22550,
+        "sha256": "81d7da5516c66e4a795a0051c46ec011992bc3d11d0301b05ce757d23994ff16",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "coding-coder-27b-q8",
+        "prompt": "breakout"
       }
     },
     "nex-n2-mini-q6": {
-      "breakout": {
-        "file": "nex-n2-mini-q6_breakout.html",
-        "size": 25183,
-        "chars": 25183,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "nex-n2-mini-q6",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "nex-n2-mini-q6_flight.html",
-        "size": 46680,
-        "chars": 46651,
+      "galaxy": {
+        "file": "nex-n2-mini-q6_galaxy.html",
+        "path": "deliverables/nex-n2-mini-q6_galaxy.html",
+        "size": 8956,
+        "chars": 8956,
+        "sha256": "53d6b7a8b1fa58381f953ab4d70e3e09b840616218b66d663307ddc7dd993068",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
         "model": "nex-n2-mini-q6",
-        "prompt": "flight"
+        "prompt": "galaxy"
       },
       "fps": {
         "file": "nex-n2-mini-q6_fps.html",
-        "size": 48843,
-        "chars": 48840,
+        "path": "deliverables/nex-n2-mini-q6_fps.html",
+        "size": 41137,
+        "chars": 41131,
+        "sha256": "719ba2c8fe8d797b359ee6d28237d49c1b8b06cee00bab440759b96805fbaf34",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 2,
+        "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
         "model": "nex-n2-mini-q6",
         "prompt": "fps"
       },
-      "galaxy": {
-        "file": "nex-n2-mini-q6_galaxy.html",
-        "size": 25844,
-        "chars": 25843,
+      "flight": {
+        "file": "nex-n2-mini-q6_flight.html",
+        "path": "deliverables/nex-n2-mini-q6_flight.html",
+        "size": 32240,
+        "chars": 32226,
+        "sha256": "7edf3337094a0159ed42bb270b8f2df466c859aec1c3ba582a36d26abe7a0aad",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 6,
-        "script_close_count": 4,
+        "script_open_count": 1,
+        "script_close_count": 1,
         "fenced": false,
         "model": "nex-n2-mini-q6",
-        "prompt": "galaxy"
+        "prompt": "flight"
       },
       "ocean": {
         "file": "nex-n2-mini-q6_ocean.html",
-        "size": 23577,
-        "chars": 23577,
+        "path": "deliverables/nex-n2-mini-q6_ocean.html",
+        "size": 16250,
+        "chars": 16249,
+        "sha256": "57aa9909f23bc4cd16c1032245cabe7e7d84503db0c26071b6615fb2be7422f6",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "nex-n2-mini-q6_breakout.html",
+        "path": "deliverables/nex-n2-mini-q6_breakout.html",
+        "size": 31435,
+        "chars": 31435,
+        "sha256": "cf09cbc90bb7ec62b72c1e2f50368d0cdc430dc6b99df771b3266fd67b220927",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
         "model": "nex-n2-mini-q6",
-        "prompt": "ocean"
-      }
-    },
-    "ornith-35b-q6-100k": {
-      "breakout": {
-        "file": "ornith-35b-q6-100k_breakout.html",
-        "size": 32517,
-        "chars": 32455,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "ornith-35b-q6-100k",
         "prompt": "breakout"
-      },
-      "flight": {
-        "file": "ornith-35b-q6-100k_flight.html",
-        "size": 40329,
-        "chars": 40305,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "ornith-35b-q6-100k",
-        "prompt": "flight"
-      },
-      "fps": {
-        "file": "ornith-35b-q6-100k_fps.html",
-        "size": 38343,
-        "chars": 38343,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "ornith-35b-q6-100k",
-        "prompt": "fps"
-      },
-      "galaxy": {
-        "file": "ornith-35b-q6-100k_galaxy.html",
-        "size": 12339,
-        "chars": 12267,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
-        "fenced": false,
-        "model": "ornith-35b-q6-100k",
-        "prompt": "galaxy"
-      },
-      "ocean": {
-        "file": "ornith-35b-q6-100k_ocean.html",
-        "size": 9584,
-        "chars": 9240,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
-        "fenced": false,
-        "model": "ornith-35b-q6-100k",
-        "prompt": "ocean"
       }
     },
     "ornith-35b-q6": {
-      "breakout": {
-        "file": "ornith-35b-q6_breakout.html",
-        "size": 24561,
-        "chars": 24527,
+      "galaxy": {
+        "file": "ornith-35b-q6_galaxy.html",
+        "path": "deliverables/ornith-35b-q6_galaxy.html",
+        "size": 11460,
+        "chars": 11460,
+        "sha256": "f775925fad87e6825333b683a48b10a5e4fb1e08d35c895cdea93fac50162001",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
+        "script_open_count": 2,
+        "script_close_count": 2,
         "fenced": false,
         "model": "ornith-35b-q6",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "ornith-35b-q6_flight.html",
-        "size": 46359,
-        "chars": 46357,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "ornith-35b-q6",
-        "prompt": "flight"
+        "prompt": "galaxy"
       },
       "fps": {
         "file": "ornith-35b-q6_fps.html",
-        "size": 32603,
-        "chars": 32603,
+        "path": "deliverables/ornith-35b-q6_fps.html",
+        "size": 32573,
+        "chars": 32573,
+        "sha256": "795c5146234af20b50a343b68fe7033da710bf8f11a2c8f2119dcde942aa80de",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
@@ -325,22 +343,26 @@
         "model": "ornith-35b-q6",
         "prompt": "fps"
       },
-      "galaxy": {
-        "file": "ornith-35b-q6_galaxy.html",
-        "size": 11457,
-        "chars": 11457,
+      "flight": {
+        "file": "ornith-35b-q6_flight.html",
+        "path": "deliverables/ornith-35b-q6_flight.html",
+        "size": 46359,
+        "chars": 46357,
+        "sha256": "546cda88a144598c8e7b588287557f0fb99025549c77663cf4d51a000de900a8",
         "has_html_close": true,
         "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
+        "script_open_count": 1,
+        "script_close_count": 1,
         "fenced": false,
         "model": "ornith-35b-q6",
-        "prompt": "galaxy"
+        "prompt": "flight"
       },
       "ocean": {
         "file": "ornith-35b-q6_ocean.html",
+        "path": "deliverables/ornith-35b-q6_ocean.html",
         "size": 14662,
         "chars": 14661,
+        "sha256": "14cf6d7c768195d22eedbfc32745284025d5bab5de41d075f89debfcdc7b5a0c",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 6,
@@ -348,25 +370,129 @@
         "fenced": false,
         "model": "ornith-35b-q6",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "ornith-35b-q6_breakout.html",
+        "path": "deliverables/ornith-35b-q6_breakout.html",
+        "size": 24561,
+        "chars": 24527,
+        "sha256": "e7cbfcfab056f766817134114c94447b1485cf3dde83a92e21ca2e5d0abb628c",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "breakout"
+      }
+    },
+    "ornith-35b-q6-100k": {
+      "galaxy": {
+        "file": "ornith-35b-q6-100k_galaxy.html",
+        "path": "deliverables/ornith-35b-q6-100k_galaxy.html",
+        "size": 12339,
+        "chars": 12267,
+        "sha256": "71f3aabe5c85ae52cf9f715e8b9771a7815ff4417976a695c39cfa349b7e1fb5",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "galaxy"
+      },
+      "fps": {
+        "file": "ornith-35b-q6-100k_fps.html",
+        "path": "deliverables/ornith-35b-q6-100k_fps.html",
+        "size": 38343,
+        "chars": 38343,
+        "sha256": "d07c7009a88c40574f6b344b0402f41c4cc42743c15ec2b2d83b742c13c4524e",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "fps"
+      },
+      "flight": {
+        "file": "ornith-35b-q6-100k_flight.html",
+        "path": "deliverables/ornith-35b-q6-100k_flight.html",
+        "size": 37540,
+        "chars": 37516,
+        "sha256": "394f0ba1c1fe6188241cdfc5f9f231e6858d7a60cd1be0790ace06ed7d765e8e",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "flight"
+      },
+      "ocean": {
+        "file": "ornith-35b-q6-100k_ocean.html",
+        "path": "deliverables/ornith-35b-q6-100k_ocean.html",
+        "size": 9421,
+        "chars": 9077,
+        "sha256": "248a0ef403e80859a98270fce806034b7b910b381206bafaedef6b4bb7e9b9c9",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "ornith-35b-q6-100k_breakout.html",
+        "path": "deliverables/ornith-35b-q6-100k_breakout.html",
+        "size": 32517,
+        "chars": 32455,
+        "sha256": "1e8795a5b04da39c0e61e84ea705cf34252a60c066ad0da1600ae8c59df823b2",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "breakout"
       }
     },
     "q8-architect-35b": {
-      "breakout": {
-        "file": "q8-architect-35b_breakout.html",
-        "size": 19680,
-        "chars": 19662,
+      "galaxy": {
+        "file": "q8-architect-35b_galaxy.html",
+        "path": "deliverables/q8-architect-35b_galaxy.html",
+        "size": 6485,
+        "chars": 6485,
+        "sha256": "c9ee4e600b1024962bfefa1d147ed98ed68c24a60211cf15ed8a4399e7d451c7",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "galaxy"
+      },
+      "fps": {
+        "file": "q8-architect-35b_fps.html",
+        "path": "deliverables/q8-architect-35b_fps.html",
+        "size": 18340,
+        "chars": 18340,
+        "sha256": "b68e8212436dd4400d5ec38f3a9b1521cd74cb05bcbc133aeb7bbff062049957",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
         "script_close_count": 1,
         "fenced": false,
         "model": "q8-architect-35b",
-        "prompt": "breakout"
+        "prompt": "fps"
       },
       "flight": {
         "file": "q8-architect-35b_flight.html",
-        "size": 22154,
-        "chars": 22152,
+        "path": "deliverables/q8-architect-35b_flight.html",
+        "size": 22174,
+        "chars": 22172,
+        "sha256": "a9496cb6e94670fb1d1461255327b53f68f810efe9cdc659af13c8e203437a2f",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 1,
@@ -375,34 +501,12 @@
         "model": "q8-architect-35b",
         "prompt": "flight"
       },
-      "fps": {
-        "file": "q8-architect-35b_fps.html",
-        "size": 18340,
-        "chars": 18340,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "q8-architect-35b",
-        "prompt": "fps"
-      },
-      "galaxy": {
-        "file": "q8-architect-35b_galaxy.html",
-        "size": 6507,
-        "chars": 6507,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 2,
-        "script_close_count": 2,
-        "fenced": false,
-        "model": "q8-architect-35b",
-        "prompt": "galaxy"
-      },
       "ocean": {
         "file": "q8-architect-35b_ocean.html",
-        "size": 14419,
-        "chars": 14419,
+        "path": "deliverables/q8-architect-35b_ocean.html",
+        "size": 14181,
+        "chars": 14181,
+        "sha256": "cbf969affbe2778a92b2f5cc4305cfa0a7622304d186e1e7020f4167f92eb958",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 6,
@@ -410,13 +514,29 @@
         "fenced": false,
         "model": "q8-architect-35b",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "q8-architect-35b_breakout.html",
+        "path": "deliverables/q8-architect-35b_breakout.html",
+        "size": 19680,
+        "chars": 19662,
+        "sha256": "e71094030273f6f76779e7ca0b992ccc5c595b4a2355bf3a2c9eb5016eb2c7bd",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "breakout"
       }
     },
     "q8-reasoning-27b": {
       "galaxy": {
         "file": "q8-reasoning-27b_galaxy.html",
-        "size": 12552,
-        "chars": 12552,
+        "path": "deliverables/q8-reasoning-27b_galaxy.html",
+        "size": 12450,
+        "chars": 12450,
+        "sha256": "198207d572f5b30dcb72b5d736763b51beec08b4e8b76379a0875c1e4e6268e8",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -427,46 +547,12 @@
       }
     },
     "qwen36-35b-q6": {
-      "breakout": {
-        "file": "qwen36-35b-q6_breakout.html",
-        "size": 24814,
-        "chars": 24758,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q6",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "qwen36-35b-q6_flight.html",
-        "size": 44064,
-        "chars": 44053,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q6",
-        "prompt": "flight"
-      },
-      "fps": {
-        "file": "qwen36-35b-q6_fps.html",
-        "size": 28769,
-        "chars": 28755,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q6",
-        "prompt": "fps"
-      },
       "galaxy": {
         "file": "qwen36-35b-q6_galaxy.html",
+        "path": "deliverables/qwen36-35b-q6_galaxy.html",
         "size": 13813,
         "chars": 13811,
+        "sha256": "a20c34e402093db7140fb9724af2b606ef5a373455631a468fb9bef96fa35270",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -475,10 +561,40 @@
         "model": "qwen36-35b-q6",
         "prompt": "galaxy"
       },
+      "fps": {
+        "file": "qwen36-35b-q6_fps.html",
+        "path": "deliverables/qwen36-35b-q6_fps.html",
+        "size": 28769,
+        "chars": 28755,
+        "sha256": "158ee12b980514e8fe057d40526561a6080a6b70a58dbf4a453f9cefc4b8b7de",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "fps"
+      },
+      "flight": {
+        "file": "qwen36-35b-q6_flight.html",
+        "path": "deliverables/qwen36-35b-q6_flight.html",
+        "size": 44064,
+        "chars": 44053,
+        "sha256": "8ff7052d36052675fa8dd8536f3e41b0d69ab451f6318753baa25af76eb882be",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "flight"
+      },
       "ocean": {
         "file": "qwen36-35b-q6_ocean.html",
-        "size": 12866,
-        "chars": 12802,
+        "path": "deliverables/qwen36-35b-q6_ocean.html",
+        "size": 12970,
+        "chars": 12906,
+        "sha256": "02ff331f00b548af92a76c590728bf126df2248f4ecb1872399dce10675ff05d",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -486,49 +602,29 @@
         "fenced": false,
         "model": "qwen36-35b-q6",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "qwen36-35b-q6_breakout.html",
+        "path": "deliverables/qwen36-35b-q6_breakout.html",
+        "size": 24814,
+        "chars": 24758,
+        "sha256": "0ad4dd04f842dedf9870fbbdeef03c1ab77e904c7817dc2d584b8ef150009da1",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "breakout"
       }
     },
     "qwen36-35b-q8": {
-      "breakout": {
-        "file": "qwen36-35b-q8_breakout.html",
-        "size": 20507,
-        "chars": 20482,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q8",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "qwen36-35b-q8_flight.html",
-        "size": 34157,
-        "chars": 34131,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q8",
-        "prompt": "flight"
-      },
-      "fps": {
-        "file": "qwen36-35b-q8_fps.html",
-        "size": 48060,
-        "chars": 48046,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "qwen36-35b-q8",
-        "prompt": "fps"
-      },
       "galaxy": {
         "file": "qwen36-35b-q8_galaxy.html",
+        "path": "deliverables/qwen36-35b-q8_galaxy.html",
         "size": 7317,
         "chars": 7317,
+        "sha256": "f9b53d9c3b68d39cfd6d9736c9f597236c0a189c56f3661f0ac7a1eaa58312e5",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -537,10 +633,40 @@
         "model": "qwen36-35b-q8",
         "prompt": "galaxy"
       },
+      "fps": {
+        "file": "qwen36-35b-q8_fps.html",
+        "path": "deliverables/qwen36-35b-q8_fps.html",
+        "size": 48261,
+        "chars": 48247,
+        "sha256": "dfc731fe6431c79cca03bc5767aadf931f6d30b66fc2c20d910efb8f6a76e5bd",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "fps"
+      },
+      "flight": {
+        "file": "qwen36-35b-q8_flight.html",
+        "path": "deliverables/qwen36-35b-q8_flight.html",
+        "size": 34207,
+        "chars": 34181,
+        "sha256": "7cfd166f561516ef136e33dc0802ee908386d8f13e80f1afe1684006f64650bf",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "flight"
+      },
       "ocean": {
         "file": "qwen36-35b-q8_ocean.html",
-        "size": 11885,
-        "chars": 11885,
+        "path": "deliverables/qwen36-35b-q8_ocean.html",
+        "size": 11806,
+        "chars": 11806,
+        "sha256": "0f790036c9d537ec4b46e25b7a489959068936feaa969eb424e6c2b328a1c64f",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 6,
@@ -548,49 +674,29 @@
         "fenced": false,
         "model": "qwen36-35b-q8",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "qwen36-35b-q8_breakout.html",
+        "path": "deliverables/qwen36-35b-q8_breakout.html",
+        "size": 20514,
+        "chars": 20489,
+        "sha256": "68fca70499b74b1b997729fc4031a6c23dfba45ccc263d05c0c856df3fe8970b",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "breakout"
       }
     },
     "reasoning-27b-q6": {
-      "breakout": {
-        "file": "reasoning-27b-q6_breakout.html",
-        "size": 20016,
-        "chars": 19993,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "reasoning-27b-q6",
-        "prompt": "breakout"
-      },
-      "flight": {
-        "file": "reasoning-27b-q6_flight.html",
-        "size": 31623,
-        "chars": 31622,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "reasoning-27b-q6",
-        "prompt": "flight"
-      },
-      "fps": {
-        "file": "reasoning-27b-q6_fps.html",
-        "size": 29062,
-        "chars": 29062,
-        "has_html_close": true,
-        "has_script_open": true,
-        "script_open_count": 1,
-        "script_close_count": 1,
-        "fenced": false,
-        "model": "reasoning-27b-q6",
-        "prompt": "fps"
-      },
       "galaxy": {
         "file": "reasoning-27b-q6_galaxy.html",
+        "path": "deliverables/reasoning-27b-q6_galaxy.html",
         "size": 10244,
         "chars": 10240,
+        "sha256": "10ad66e6b2730ef4b04230cb699ec67eef8d4f6794d509de3c62f4b587cf408e",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -599,10 +705,40 @@
         "model": "reasoning-27b-q6",
         "prompt": "galaxy"
       },
+      "fps": {
+        "file": "reasoning-27b-q6_fps.html",
+        "path": "deliverables/reasoning-27b-q6_fps.html",
+        "size": 28528,
+        "chars": 28528,
+        "sha256": "88a8b77e3dbc86a9ec95ec38883d2e81e54200c55b7b8f041b33762032e814b9",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "fps"
+      },
+      "flight": {
+        "file": "reasoning-27b-q6_flight.html",
+        "path": "deliverables/reasoning-27b-q6_flight.html",
+        "size": 31737,
+        "chars": 31736,
+        "sha256": "17c9b50cbdbac3c9eed58ba8d241c753e011794489ba0ba08926cd5308701573",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "flight"
+      },
       "ocean": {
         "file": "reasoning-27b-q6_ocean.html",
+        "path": "deliverables/reasoning-27b-q6_ocean.html",
         "size": 11481,
         "chars": 11481,
+        "sha256": "5ee56921cf2a69f146a7597e26496377ba0c9377f9dc7bce760146c4d1653e7b",
         "has_html_close": true,
         "has_script_open": true,
         "script_open_count": 2,
@@ -610,6 +746,20 @@
         "fenced": false,
         "model": "reasoning-27b-q6",
         "prompt": "ocean"
+      },
+      "breakout": {
+        "file": "reasoning-27b-q6_breakout.html",
+        "path": "deliverables/reasoning-27b-q6_breakout.html",
+        "size": 20016,
+        "chars": 19993,
+        "sha256": "a6fb5745fb529befee199790351e9d171d38a5bfde009a2380be1c1c119b0826",
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "breakout"
       }
     }
   },
@@ -617,6 +767,9 @@
     "files": 49,
     "complete": 49,
     "fenced": 0,
-    "total_chars": 1126488
+    "total_chars": 1080232,
+    "total_bytes": 1081190,
+    "models": 11,
+    "sha256_manifested": 49
   }
 }

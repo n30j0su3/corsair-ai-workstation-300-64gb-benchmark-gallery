@@ -631,7 +631,7 @@ function updatePhysics(dt){
 
   // Damping
   ac.vx*=Math.pow(DAMPING,dt*60);
-  ac.vy*=Math.pow(DAMPY,dt*60);
+  ac.vy*=Math.pow(DAMPING,dt*60);
   ac.vz*=Math.pow(DAMPING,dt*60);
 
   // Integrate position
@@ -727,13 +727,13 @@ function updateCamera(dt){
 }
 
 function createLookAtCam(eyeX,eyeY,eyeZ,lookX,lookY,lookZ){
-  const z0=eyeX-lookX,z1=eyeY-lookY,z2=eyeZ-lookZ;
+  let z0=eyeX-lookX,z1=eyeY-lookY,z2=eyeZ-lookZ;
   let len=Math.sqrt(z0*z0+z1*z1+z2*z2);
   if(len>0){z0/=len;z1/=len;z2/=len}
-  const x0=z1*0-z2*1;x1=z2*0-z0*1;x2=z0*1-z1*0;
+  let x0=z1*0-z2*1,x1=z2*0-z0*1,x2=z0*1-z1*0;
   len=Math.sqrt(x0*x0+x1*x1+x2*x2);
   if(len>0){x0/=len;x1/=len;x2/=len}
-  const y0=z1*x2-z2*x1;y1=z2*x0-z0*x2;y2=z0*x1-z1*x0;
+  const y0=z1*x2-z2*x1,y1=z2*x0-z0*x2,y2=z0*x1-z1*x0;
   const m=new Float32Array(16);
   m[0]=x0;m[1]=y0;m[2]=z0;m[3]=0;
   m[4]=x1;m[5]=y1;m[6]=z1;m[7]=0;

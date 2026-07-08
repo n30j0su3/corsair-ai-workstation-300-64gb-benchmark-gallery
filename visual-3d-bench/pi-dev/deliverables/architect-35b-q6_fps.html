@@ -188,9 +188,9 @@ const enemies = [];
 // Pickups
 const pickups = [];
 // Projectiles
-const projectiles = [];
+let projectiles = [];
 // Particles
-const particles = [];
+let particles = [];
 
 // Input
 const keys = {};
@@ -331,8 +331,8 @@ function castRay(ox, oy, angle) {
   const maxDist = 20;
 
   // DDA raycasting
-  const mapX = Math.floor(ox);
-  const mapY = Math.floor(oy);
+  let mapX = Math.floor(ox);
+  let mapY = Math.floor(oy);
 
   const deltaDistX = Math.abs(1 / cos);
   const deltaDistY = Math.abs(1 / sin);

@@ -345,7 +345,7 @@ function castRay(ox, oy, angle) {
             side = 1;
         }
 
-        if (mapX < 0 || mapX >= MAP_W || mapY < 0 || mapY >= MAP_H) break;
+        if (mapX < 0 || mapX >= MAP_W || mapY < 0 || mapY >= MAP_H || !map[mapY]) break;
 
         if (map[mapY][mapX] > 0 && map[mapY][mapX] !== 9) {
             hit = true;
@@ -424,13 +424,17 @@ function renderWalls() {
         const drawEnd = drawStart + lineHeight;
 
         // Wall color
-        const wc = wallColors[ray.mapY] && wallColors[ray.mapY][ray.mapX];
-        let r = wc ? wc.r : 120;
-        let g = wc ? wc.g : 100;
-        let b = wc ? wc.b : 80;
-
-        if (map[ray.mapY][ray.mapX] === 9) {
-            r = 50; g = 200; b = 50;
+        let r = 120, g = 100, b = 80;
+        if (ray.hit && ray.mapY >= 0 && ray.mapY < MAP_H && ray.mapX >= 0 && ray.mapX < MAP_W) {
+            const wc = wallColors[ray.mapY] && wallColors[ray.mapY][ray.mapX];
+            if (wc) {
+                r = wc.r;
+                g = wc.g;
+                b = wc.b;
+            }
+            if (map[ray.mapY][ray.mapX] === 9) {
+                r = 50; g = 200; b = 50;
+            }
         }
 
         if (ray.side === 1) {
@@ -507,7 +511,7 @@ function renderFloorCeiling(zBuffer) {
             const mx = Math.floor(x);
             const my = Math.floor(y);
 
-            if (mx >= 0 && mx < MAP_W && my >= 0 && my < MAP_H && map[my][mx] === 0) {
+            if (mx >= 0 && mx < MAP_W && my >= 0 && my < MAP_H && map[my] && map[my][mx] === 0) {
                 const isLine = (Math.floor(x) + Math.floor(y)) % 2 === 0;
                 const alpha = (1 - fogFactor) * 0.15;
                 ctx.fillStyle = isLine ? `rgba(100,100,100,${alpha})` : `rgba(60,60,60,${alpha})`;

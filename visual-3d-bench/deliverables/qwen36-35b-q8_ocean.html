@@ -12,8 +12,12 @@ canvas { display: block; }
 </head>
 <body>
 <script type="x-shader/x-vertex" id="vertexShader">
+    precision highp float;
+    precision highp int;
+
     uniform float uTime;
     uniform float uWaveAmplitude;
+    uniform float uSteepness;
 
     varying vec3 vWorldPosition;
     varying vec3 vNormal;
@@ -21,22 +25,12 @@ canvas { display: block; }
     varying vec2 vUv;
     varying float vFresnel;
 
-    // Gerstner wave parameters
-    // Each wave: direction, amplitude, frequency, speed, steepness
-    struct GerstnerWave {
-        vec2 direction;
-        float amplitude;
-        float wavelength;
-        float speed;
-        float steepness;
-    };
-
     void main() {
         vUv = uv;
         vec3 pos = position;
 
-        // Wave definitions
-        vec4 wave1 = vec4(1.0, 0.0, 0.08, 1.2);   // direction, amp, freq, speed
+        // Wave definitions: direction(x,y), amplitude(z), speed(w)
+        vec4 wave1 = vec4(1.0, 0.0, 0.08, 1.2);
         vec4 wave2 = vec4(0.707, 0.707, 0.06, 0.9);
         vec4 wave3 = vec4(-0.5, 0.866, 0.04, 1.5);
         vec4 wave4 = vec4(0.3, -0.95, 0.05, 0.7);
@@ -59,7 +53,6 @@ canvas { display: block; }
             vec2 dir = normalize(w.xy);
             float amp = w.z;
             float speed = w.w;
-            float frequency = 2.0 * 3.14159265 / (1.0 / w.z);
 
             float k = 2.0 * 3.14159265 / (1.0 / w.z);
             float c = speed;
@@ -68,9 +61,9 @@ canvas { display: block; }
             float cosA = cos(angle);
             float sinA = sin(angle);
 
-            displaced.x += dir.x * amp * steepness * sinA;
+            displaced.x += dir.x * amp * uSteepness * sinA;
             displaced.y += amp * cosA;
-            displaced.z += dir.y * amp * steepness * sinA;
+            displaced.z += dir.y * amp * uSteepness * sinA;
 
             // Derivatives for normal calculation
             float ka = k * amp;
@@ -106,6 +99,9 @@ canvas { display: block; }
 </script>
 
 <script type="x-shader/x-fragment" id="fragmentShader">
+    precision highp float;
+    precision highp int;
+
     uniform float uTime;
     uniform vec3 uSunDirection;
     uniform vec3 uSunColor;
@@ -178,7 +174,10 @@ canvas { display: block; }
 </script>
 
 <script type="x-shader/x-vertex" id="skyVertexShader">
+    precision highp float;
+
     varying vec3 vDirection;
+
     void main() {
         vDirection = position;
         vec4 pos = projectionMatrix * mat4(mat3(viewMatrix)) * vec4(position, 1.0);
@@ -187,12 +186,14 @@ canvas { display: block; }
 </script>
 
 <script type="x-shader/x-fragment" id="skyFragmentShader">
+    precision highp float;
+
     uniform vec3 uSunDirection;
     uniform vec3 uSkyTop;
     uniform vec3 uSkyHorizon;
     uniform vec3 uSunColor;
-    varying vec3 vDirection;
 
+    varying vec3 vDirection;
     void main() {
         vec3 dir = normalize(vDirection);
         float y = dir.y;
@@ -233,6 +234,7 @@ canvas { display: block; }
     // --- Ocean ---
     const oceanUniforms = {
         uTime: { value: 0 },
+        uSteepness: { value: 0.8 },
         uSunDirection: { value: new THREE.Vector3(1, 0.3, 0.5).normalize() },
         uSunColor: { value: new THREE.Color(1.0, 0.95, 0.8) },
         uDeepColor: { value: new THREE.Color(0.0, 0.02, 0.08) },

@@ -514,13 +514,11 @@ ctx.fillRect(i * (W / numRays), drawStart, W / numRays + 1, drawEnd - drawStart)
 ctx.fillStyle = `rgba(0,0,0,0.3)`;
 ctx.fillRect(i * (W / numRays), drawStart, W / numRays + 1, 2);
 ctx.fillRect(i * (W / numRays), drawEnd - 2, W / numRays + 1, 2);
-}
 
 // Distance fog overlay
-if (perpDist > 0.01) {
 let fogAlpha = Math.max(0, Math.min(0.7, (perpDist - 8) / 15));
 ctx.fillStyle = `rgba(0,0,0,${fogAlpha})`;
-ctx.fillRect(i * (W / numRays), drawStart || 0, W / numRays + 1, lineHeight);
+ctx.fillRect(i * (W / numRays), drawStart, W / numRays + 1, lineHeight);
 }
 }
 

@@ -176,7 +176,7 @@
             }
 
             galaxyGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-            galaxyGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            galaxyGeo.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
             galaxyGeo.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
             galaxyGeo.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
             galaxyGeo.setAttribute('aRandom', new THREE.BufferAttribute(randoms, 1));
@@ -189,7 +189,7 @@
                 vertexShader: `
                     attribute float size;
                     attribute float alpha;
-                    attribute vec3 color;
+                    attribute vec3 aColor;
                     attribute float aRandom;
 
                     uniform float uTime;
@@ -199,7 +199,7 @@
                     varying float vAlpha;
 
                     void main() {
-                        vColor = color;
+                        vColor = aColor;
                         vAlpha = alpha;
 
                         vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);

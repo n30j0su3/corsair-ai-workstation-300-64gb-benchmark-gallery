@@ -168,7 +168,7 @@ addFace([0,1,5,4],color);
 addFace([2,3,7,6],[color[0]+20,color[1]+20,color[2]+20]);
 addFace([0,3,7,4],[color[0]+10,color[1]+10,color[2]+10]);
 addFace([1,2,6,5],[color[0]-10,color[1]-10,color[2]-10]);
-return indices;
+return vertices.length-1;
 }
 
 // ============ AIRCRAFT MODEL ============
@@ -667,7 +667,7 @@ function drawCircle3D(cx,cy,cz,radius,segments,color,alpha){
 let pts=[];
 for(let i=0;i<segments;i++){
 let a=(i/segments)*TAU;
-let p=vec3(cx+Math.cos(a)*radius,cy+Math.sin(a)*radius*0.3,z:cz+0);
+let p=vec3(cx+Math.cos(a)*radius,cy+Math.sin(a)*radius*0.3,cz+0);
 let projected=project(p,cam);
 if(projected)pts.push(projected);
 }
@@ -850,7 +850,8 @@ let transformedVerts=aircraftVerts.map(v=>mat4MulVec3(transform,v));
 let faceList=[];
 
 for(let f of aircraftFaces){
-let indices=Array.isArray(f)?f.slice(0,4):f;
+if(!Array.isArray(f)) continue;
+let indices=f.slice(0,4);
 if(indices.length<3)continue;
 
 let verts=indices.map(i=>transformedVerts[i]);
@@ -864,7 +865,7 @@ let toCam=v3norm(v3sub(cam.pos,v0));
 if(v3dot(normal,toCam)>0)continue;
 
 let depth=projected.reduce((s,p)=>s+p.z,0)/projected.length;
-let color=f.length>=5?f[4]:'#c0c0c0';
+let color=typeof f[f.length-1]==='string'?f[f.length-1]:'#c0c0c0';
 
 faceList.push({projected:projected,depth:depth,color:color});
 }

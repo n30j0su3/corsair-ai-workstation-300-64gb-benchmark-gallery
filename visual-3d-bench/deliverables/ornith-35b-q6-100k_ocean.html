@@ -109,41 +109,6 @@ const oceanMat = new THREE.ShaderMaterial({
     varying float vFoam;
     varying vec3 vViewDir;
 
-    void computeWave(in Wave w, in vec2 p, in float t,
-                     out vec3 disp, out vec3 tangentX, out vec3 tangentZ) {
-      float k = 6.2831853 / w.l;
-      float omega = k * w.s;
-      float c = w.d.x * p.x + w.d.y * p.z;
-      float phi = k * c - omega * t;
-      float s = sin(phi);
-      float cs = cos(phi);
-
-      float a = w.a;
-      float q = w.q;
-
-      // Position displacement
-      disp.x = -a * q * w.d.x * s;
-      disp.y =  a * cs;
-      disp.z = -a * q * w.d.y * s;
-
-      // Tangent vectors (derivatives of displacement)
-      // d(phi)/dx = k * d.x, d(phi)/dz = k * d.y
-      float aks = a * k * s;
-      float ack = a * q * k * cs;
-
-      tangentX = vec3(
-        -ack * w.d.x * w.d.x,
-        -aks * w.d.x,
-        -ack * w.d.x * w.d.y
-      );
-
-      tangentZ = vec3(
-        -ack * w.d.x * w.d.y,
-        -aks * w.d.y,
-        -ack * w.d.y * w.d.y
-      );
-    }
-
     void main() {
       vec2 p = position.xz;
       float t = uTime;
@@ -158,12 +123,44 @@ const oceanMat = new THREE.ShaderMaterial({
       waves[3] = uW4; waves[4] = uW5;
 
       for (int i = 0; i < 5; i++) {
-        vec3 d, tx, tz;
-        computeWave(waves[i], p, t, d, tx, tz);
-        totalDisp += d;
+        Wave w = waves[i];
+        float k = 6.2831853 / w.l;
+        float omega = k * w.s;
+        float c = w.d.x * p.x + w.d.y * p.y;
+        float phi = k * c - omega * t;
+        float s = sin(phi);
+        float cs = cos(phi);
+
+        float a = w.a;
+        float q = w.q;
+
+        // Position displacement
+        vec3 disp = vec3(
+          -a * q * w.d.x * s,
+           a * cs,
+          -a * q * w.d.y * s
+        );
+
+        // Tangent vectors (derivatives of displacement)
+        float aks = a * k * s;
+        float ack = a * q * k * cs;
+
+        vec3 tx = vec3(
+          -ack * w.d.x * w.d.x,
+          -aks * w.d.x,
+          -ack * w.d.x * w.d.y
+        );
+
+        vec3 tz = vec3(
+          -ack * w.d.x * w.d.y,
+          -aks * w.d.y,
+          -ack * w.d.y * w.d.y
+        );
+
+        totalDisp += disp;
         totalTx += tx;
         totalTz += tz;
-        totalH += d.y;
+        totalH += disp.y;
       }
 
       vec3 newPos = vec3(p + totalDisp.xz, totalDisp.y);

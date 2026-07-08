@@ -69,9 +69,6 @@ class Mat4 {
     let zl=sqrt(zx*zx+zy*zy+zz*zz);zx/=zl;zy/=zl;zz/=zl;
     let xu=up.y*zz-up.z*zy,yu=up.z*zx-up.x*zz,zu=up.x*zy-up.y*zx;
     let ul=sqrt(xu*xu+yu*yu+zu*zu);xu/=ul;yu/=ul;zu/=ul;
-    let xx=zy*zu-zu*yu,xy=zz*yu-zy*zu...wait let me redo this properly.
-    let xx=zy*zu-zu*yu,xy=zz*yu-zy*zu;
-    // Actually let me just write it cleanly:
     let ax=xu,ay=yu,az=zu;
     let bx=zy*az-zz*ay,by=zz*ax-zx*az,bz=zx*ay-zy*ax;
     this.m[0]=ax;this.m[1]=bx;this.m[2]=zx;this.m[3]=0;
@@ -118,7 +115,8 @@ class Mat4 {
 // ============ WEBGL SETUP ============
 const glCanvas = document.getElementById('gl');
 const hudCanvas = document.getElementById('hud');
-const gl = glCanvas.getContext('webgl', {antialias:true, alpha:false});
+const gl = glCanvas.getContext('webgl2', {antialias:true, alpha:false});
+if(!gl){alert('WebGL2 not supported');}
 const hudCtx = hudCanvas.getContext('2d');
 
 function resize(){
@@ -162,12 +160,10 @@ void main(){
   float diff = max(dot(n, normalize(uLightDir)), 0.0);
   float amb = 0.35;
   vec3 col = vColor * (amb + diff * 0.65);
-  // Simple specular
   vec3 viewDir = normalize(uEyePos - vWorldPos);
   vec3 halfDir = normalize(normalize(uLightDir) + viewDir);
   float spec = pow(max(dot(n, halfDir), 0.0), 32.0) * 0.3;
   col += spec;
-  // Fog
   float dist = length(uEyePos - vWorldPos);
   float fog = 1.0 - exp(-uFogDensity * dist * dist);
   col = mix(col, uFogColor, clamp(fog, 0.0, 1.0));
@@ -191,7 +187,6 @@ void main(){
   vec3 skyTop = vec3(0.2, 0.5, 0.9);
   vec3 skyBot = vec3(0.6, 0.8, 1.0);
   vec3 col = mix(skyBot, skyTop, pow(y, 0.5));
-  // Sun
   vec3 sunDir = normalize(vec3(0.5, 0.3, -0.8));
   float sunDot = max(dot(dir, sunDir), 0.0);
   col += vec3(1.0, 0.9, 0.7) * pow(sunDot, 64.0) * 0.8;
@@ -277,7 +272,6 @@ function clearMesh(){
 function makeBox(w,h,d, r,g,b){
   let p=[],n=[],c=[];
   let hw=w/2,hh=h/2,hd=d/2;
-  // 6 faces, 2 triangles each = 36 vertices
   const faces = [
     {n:[0,0,1], v:[[-hw,-hh,hd],[hw,-hh,hd],[hw,hh,hd],[-hw,hh,hd]]},
     {n:[0,0,-1], v:[[hw,-hh,-hd],[-hw,-hh,-hd],[-hw,hh,-hd],[hw,hh,-hd]]},
@@ -290,7 +284,7 @@ function makeBox(w,h,d, r,g,b){
     let [a,b2,c2,d2] = f.v;
     for(let v of [a,b2,c2, a,c2,d2]){
       for(let coord of v){p.push(coord);}
-      for(let _ of v){n.push(...f.n);}
+      for(let _ of v){n.push(f.n[0],f.n[1],f.n[2]);}
       for(let _ of v){c.push(r,g,b);}
     }
   }
@@ -303,9 +297,7 @@ function makeCylinder(r,h,segments, r2,g2,b2){
   for(let i=0;i<segments;i++){
     let a0=i/segments*TAU, a1=(i+1)/segments*TAU;
     let c0=cos(a0),s0=sin(a0), c1=cos(a1),s1=sin(a1);
-    // Side
     addQuad(p,n,c, c0*r,-hh,s0*r, c1*r,-hh,s1*r, c1*r,hh,s1*r, c0*r,hh,s0*r, c0,0,s0, r2,g2,b2);
-    // Top/Bottom caps
     addTri(p,n,c, 0,hh,0, c0*r,hh,s0*r, c1*r,hh,s1*r, 0,1,0, r2,g2,b2);
     addTri(p,n,c, 0,-hh,0, c1*r,-hh,s1*r, c0*r,-hh,s0*r, 0,-1,0, r2,g2,b2);
   }
@@ -327,14 +319,11 @@ function makeRing(radius, tubeRadius, segments, r, g, b){
     let a0=i/segments*TAU, a1=(i+1)/segments*TAU;
     let c0=cos(a0),s0=sin(a0), c1=cos(a1),s1=sin(a1);
     let R=radius, t=tubeRadius;
-    // 4 vertices for this segment ring
     let v0=[(R+t)*c0, 0, (R+t)*s0];
     let v1=[(R-t)*c0, 0, (R-t)*s0];
-    let v2=[(R-t)*c1, 0, (R-t)*c1];
-    let v3=[(R+t)*c1, 0, (R+t)*c1];
-    // Outer
-    addQuad(p,n,c, v0[0],v0[1],v0[2], v3[0],v3[1],v3[2], v2[0],v2[1],v2[2], v1[0],v1[1],v1[2], c0,0,s0, r,g,b);
-    // Top/Bottom
+    let v2=[(R+t)*c1, 0, (R+t)*s1];
+    let v3=[(R-t)*c1, 0, (R-t)*s1];
+    addQuad(p,n,c, v0[0],v0[1],v0[2], v2[0],v2[1],v2[2], v3[0],v3[1],v3[2], v1[0],v1[1],v1[2], c0,0,s0, r,g,b);
     addTri(p,n,c, v0[0],v0[1]+t,v0[2], v1[0],v1[1]+t,v1[2], v3[0],v3[1]+t,v3[2], 0,1,0, r,g,b);
     addTri(p,n,c, v1[0],v1[1]-t,v1[2], v0[0],v0[1]-t,v0[2], v2[0],v2[1]-t,v2[2], 0,-1,0, r,g,b);
   }
@@ -343,20 +332,13 @@ function makeRing(radius, tubeRadius, segments, r, g, b){
 
 function makeAircraft(){
   let p=[],n=[],c=[];
-  // Fuselage
   addQuad(p,n,c, -1,0,0.3, -1,0,-0.3, -0.5,0,-0.3, -0.5,0,0.3, 0,0,1, 0.7,0.7,0.7);
-  // Nose cone
   addTri(p,n,c, 0.8,0,0, -1,0,0.3, -1,0,-0.3, 1,0,0, 0.9,0.9,0.9);
-  // Wings
   addQuad(p,n,c, -0.2,0,-0.3, -0.2,0,0.3, 0.3,0,0.3, 0.3,0,-0.3, 0,1,0, 0.8,0.8,0.8);
-  // Wing tips (red/white)
   addQuad(p,n,c, 0.3,0,-0.3, 0.3,0,-0.5, 0.3,0,-0.5, 0.3,0,-0.3, 0,1,0, 0.9,0.1,0.1);
   addQuad(p,n,c, -0.2,0,0.3, -0.2,0,0.5, -0.2,0,0.5, -0.2,0,0.3, 0,1,0, 0.9,0.1,0.1);
-  // Tail horizontal
   addQuad(p,n,c, -1.2,0,-0.2, -1.2,0,0.2, -0.9,0,0.2, -0.9,0,-0.2, 0,1,0, 0.7,0.7,0.7);
-  // Tail vertical
   addQuad(p,n,c, -1.2,0.4,0, -1.2,-0.1,0, -0.8,-0.1,0, -0.8,0.4,0, 0,0,1, 0.6,0.6,0.9);
-  // Engine glow
   addQuad(p,n,c, -1.05,0,-0.1, -1.05,0,0.1, -1.15,0,0.1, -1.15,0,-0.1, 0,0,-1, 0.3,0.5,1.0);
   
   return {p,n,c};
@@ -386,10 +368,8 @@ function fbm(x, z, octaves){
 function getTerrainHeight(x, z){
   let nx = x / TERRAIN_SIZE, nz = z / TERRAIN_SIZE;
   let h = fbm(nx*4+100, nz*4+100, 6) * 200;
-  // Mountains
   let mx = fbm(nx*2+50, nz*2+50, 4);
   if(mx > 0.2) h += (mx - 0.2) * 400;
-  // Flatten near origin (runway area)
   let distFromCenter = sqrt(x*x + z*z);
   let flatten = clamp(1 - distFromCenter / 300, 0, 1);
   h *= (1 - flatten * 0.9);
@@ -417,22 +397,20 @@ function buildTerrainMesh(){
       let x0=(i/TERRAIN_SEG-0.5)*TERRAIN_SIZE, x1=((i+1)/TERRAIN_SEG-0.5)*TERRAIN_SIZE;
       let z0=(j/TERRAIN_SEG-0.5)*TERRAIN_SIZE, z1=((j+1)/TERRAIN_SEG-0.5)*TERRAIN_SIZE;
       
-      // Compute normals from neighbors
       let dx = x1-x0, dz = z1-z0;
       let nx1 = (terrainData[max(i-1,0)][j] - h00) / (dx/2);
       let nx2 = (terrainData[min(i+1,TERRAIN_SEG)][j] - h00) / (dx/2);
       let nz1 = (terrainData[i][max(j-1,0)] - h00) / (dz/2);
       let nz2 = (terrainData[i][min(j+1,TERRAIN_SEG)] - h00) / (dz/2);
       let nx = (nx1+nx2), nz = (nz1+nz2);
-      let nl = sqrt(nx*nx+1+tz*nz*tz...let me fix: nz = (nz1+nz2), nl = sqrt(nx*nx+1+nz*nz);
+      let nl = sqrt(nx*nx+1+nz*nz);
       nx/=nl; nz/=nl;
       
-      // Color based on height
       let cr, cg, cb;
-      if(h00 < -10){cr=0.1;cg=0.3;cb=0.6;} // Water
-      else if(h00 < 30){cr=0.2;cg=0.6;cb=0.2;} // Grass
-      else if(h00 < 80){cr=0.4;cg=0.4;cb=0.3;} // Rock
-      else{cr=0.9;cg=0.9;cb=0.95;} // Snow
+      if(h00 < -10){cr=0.1;cg=0.3;cb=0.6;}
+      else if(h00 < 30){cr=0.2;cg=0.6;cb=0.2;}
+      else if(h00 < 80){cr=0.4;cg=0.4;cb=0.3;}
+      else{cr=0.9;cg=0.9;cb=0.95;}
       
       let c1 = (cr+cg+cb)/3;
       c1 = clamp(c1 + (h00/300)*0.2, 0, 1);
@@ -445,18 +423,12 @@ function buildTerrainMesh(){
 }
 
 // ============ GAME OBJECTS ============
-// Checkpoint rings
 let checkpoints = [];
 let numCheckpoints = 10;
 let currentCheckpoint = 0;
 
-// Hazards
 let hazards = [];
-
-// Towers
 let towers = [];
-
-// Runway
 let runway = {x:0, z:0, w:40, l:200};
 
 function generateLevel(){
@@ -464,7 +436,6 @@ function generateLevel(){
   hazards = [];
   towers = [];
   
-  // Generate checkpoint path - a winding course
   let pathPoints = [];
   let px=0, pz=0, angle=0;
   for(let i=0;i<numCheckpoints;i++){
@@ -476,7 +447,6 @@ function generateLevel(){
     pathPoints.push({x:px, y:py, z:pz});
   }
   
-  // Add checkpoint rings
   for(let i=0;i<numCheckpoints;i++){
     let pp = pathPoints[i];
     let next = pathPoints[min(i+1, numCheckpoints-1)];
@@ -490,8 +460,6 @@ function generateLevel(){
     });
   }
   
-  // Generate hazards (3+ types)
-  // Type 1: Missile-like obstacles
   for(let i=0;i<8;i++){
     hazards.push({
       type: 'missile',
@@ -506,7 +474,6 @@ function generateLevel(){
     });
   }
   
-  // Type 2: Wind turbulence zones
   for(let i=0;i<5;i++){
     hazards.push({
       type: 'turbulence',
@@ -518,7 +485,6 @@ function generateLevel(){
     });
   }
   
-  // Type 3: Thunderclouds
   for(let i=0;i<4;i++){
     hazards.push({
       type: 'cloud',
@@ -529,7 +495,6 @@ function generateLevel(){
     });
   }
   
-  // Towers
   for(let i=0;i<15;i++){
     let tx = (random()-0.5) * TERRAIN_SIZE * 0.7;
     let tz = (random()-0.5) * TERRAIN_SIZE * 0.7;
@@ -542,12 +507,12 @@ function generateLevel(){
 let aircraft = {
   pos: new Vec3(0, 100, 0),
   vel: new Vec3(0, 0, -50),
-  heading: 0,     // radians
-  pitch: 0,       // radians
-  roll: 0,        // radians
-  yaw: 0,         // radians
-  throttle: 0.5,  // 0-1
-  speed: 50,      // magnitude of velocity
+  heading: 0,
+  pitch: 0,
+  roll: 0,
+  yaw: 0,
+  throttle: 0.5,
+  speed: 50,
   altitude: 100,
   angularVel: {pitch:0, roll:0, yaw:0},
   engineOn: true
@@ -565,50 +530,39 @@ const YAW_RATE = 0.8;
 const STALL_SPEED = 25;
 
 function updateAircraft(dt){
-  // Throttle affects max speed
   let targetSpeed = MIN_SPEED + aircraft.throttle * (MAX_SPEED - MIN_SPEED);
   
-  // Pitch input
   if(keys['KeyW'] || keys['ArrowDown']) aircraft.angularVel.pitch = PITCH_RATE;
   else if(keys['KeyS'] || keys['ArrowUp']) aircraft.angularVel.pitch = -PITCH_RATE;
   else aircraft.angularVel.pitch *= 0.95;
   
-  // Roll input
   if(keys['KeyA'] || keys['ArrowLeft']) aircraft.angularVel.roll = -ROLL_RATE;
   else if(keys['KeyD'] || keys['ArrowRight']) aircraft.angularVel.roll = ROLL_RATE;
   else aircraft.angularVel.roll *= 0.95;
   
-  // Yaw input
   if(keys['KeyQ']) aircraft.angularVel.yaw = -YAW_RATE;
   else if(keys['KeyE']) aircraft.angularVel.yaw = YAW_RATE;
   else aircraft.angularVel.yaw *= 0.95;
   
-  // Space - auto level
   if(keys['Space']){
     aircraft.angularVel.pitch *= 0.9;
     aircraft.angularVel.roll *= 0.9;
     aircraft.angularVel.yaw *= 0.9;
-    // Gentle throttle down for landing
     if(aircraft.throttle > 0.3) aircraft.throttle -= dt * 0.1;
   }
   
-  // Shift/Ctrl throttle
   if(keys['ShiftLeft'] || keys['ShiftRight']) aircraft.throttle = clamp(aircraft.throttle + dt*0.3, 0, 1);
   if(keys['ControlLeft'] || keys['ControlRight']) aircraft.throttle = clamp(aircraft.throttle - dt*0.3, 0, 1);
   
-  // Apply angular velocities
   aircraft.pitch += aircraft.angularVel.pitch * dt;
   aircraft.roll += aircraft.angularVel.roll * dt;
   aircraft.yaw += aircraft.angularVel.yaw * dt;
   
-  // Clamp pitch
   aircraft.pitch = clamp(aircraft.pitch, -PI/2.2, PI/2.2);
   
-  // Banking affects turning (roll creates yaw)
   let bankYaw = -sin(aircraft.roll) * 0.02 * (aircraft.speed / MAX_SPEED);
   aircraft.heading += bankYaw + aircraft.angularVel.yaw * dt * 0.3;
   
-  // Physics: thrust
   let thrust = aircraft.throttle * THRUST_POWER;
   let thrustDir = new Vec3(
     -sin(aircraft.heading)*cos(aircraft.pitch),
@@ -616,13 +570,9 @@ function updateAircraft(dt){
     -cos(aircraft.heading)*cos(aircraft.pitch)
   );
   
-  // Drag
   let dragForce = DRAG_COEFF * aircraft.speed * aircraft.speed;
-  
-  // Lift (perpendicular to velocity, depends on speed squared and angle of attack)
   let liftForce = LIFT_COEFF * aircraft.speed * aircraft.speed * cos(aircraft.roll);
   
-  // Update velocity
   let accel = thrustDir.scale(thrust / 10);
   let dragVec = aircraft.vel.norm().scale(-dragForce / 10);
   let liftVec = new Vec3(
@@ -632,7 +582,6 @@ function updateAircraft(dt){
   ).scale(liftForce / 10);
   let gravVec = new Vec3(0, -GRAVITY/10, 0);
   
-  // Turbulence from hazards
   let turbForce = new Vec3(0,0,0);
   for(let h of hazards){
     if(h.type === 'turbulence'){
@@ -647,34 +596,28 @@ function updateAircraft(dt){
   }
   
   let newVx = aircraft.vel.x + (accel.x + dragVec.x + liftVec.x + gravVec.x + turbForce.x) * dt;
-  let newVy = aircraft.vel.y + (accel.y + dragVec.y + dragVec.y + liftVec.y + gravVec.y + turbForce.y) * dt;
+  let newVy = aircraft.vel.y + (accel.y + dragVec.y + liftVec.y + gravVec.y + turbForce.y) * dt;
   let newVz = aircraft.vel.z + (accel.z + dragVec.z + liftVec.z + gravVec.z + turbForce.z) * dt;
   
   aircraft.vel.set(newVx, newVy, newVz);
   
-  // Update speed
   aircraft.speed = aircraft.vel.len();
   
-  // Stall: if too slow, lose altitude
   if(aircraft.speed < STALL_SPEED){
     aircraft.vel.y -= GRAVITY * 0.3 * dt;
   }
   
-  // Auto-level yaw toward heading
   let headingVec = new Vec3(-sin(aircraft.heading), 0, -cos(aircraft.heading));
   let velH = new Vec3(aircraft.vel.x, 0, aircraft.vel.z).norm();
   let yawCorr = headingVec.cross(velH).y * 0.5;
   aircraft.heading += yawCorr * dt;
   
-  // Update position
   aircraft.pos.x += aircraft.vel.x * dt;
   aircraft.pos.y += aircraft.vel.y * dt;
   aircraft.pos.z += aircraft.vel.z * dt;
   
-  // Altitude
   aircraft.altitude = aircraft.pos.y;
   
-  // Ground collision
   let terrainH = getTerrainHeight(aircraft.pos.x, aircraft.pos.z);
   if(aircraft.pos.y < terrainH + 2){
     aircraft.pos.y = terrainH + 2;
@@ -684,7 +627,6 @@ function updateAircraft(dt){
     }
   }
   
-  // Tower collision
   for(let t of towers){
     let d = sqrt((aircraft.pos.x-t.x)**2 + (aircraft.pos.z-t.z)**2);
     if(d < t.radius + 3 && aircraft.pos.y > t.y - t.height && aircraft.pos.y < t.y + 5){
@@ -692,7 +634,6 @@ function updateAircraft(dt){
     }
   }
   
-  // Hazard collisions
   for(let h of hazards){
     if(h.type === 'missile'){
       let hx = h.centerX + cos(h.angle) * h.radius2;
@@ -704,13 +645,11 @@ function updateAircraft(dt){
     } else if(h.type === 'cloud'){
       let d = aircraft.pos.dist(new Vec3(h.x, h.y, h.z));
       if(d < h.radius){
-        // Slow down in cloud
         aircraft.throttle *= 0.999;
       }
     }
   }
   
-  // Checkpoint checking
   if(currentCheckpoint < numCheckpoints){
     let cp = checkpoints[currentCheckpoint];
     let d = sqrt((aircraft.pos.x-cp.x)**2 + (aircraft.pos.y-cp.y)**2 + (aircraft.pos.z-cp.z)**2);
@@ -723,7 +662,6 @@ function updateAircraft(dt){
     }
   }
   
-  // Runway landing check
   let runDist = sqrt(aircraft.pos.x**2 + aircraft.pos.z**2);
   if(runDist < runway.w && abs(aircraft.pos.z) < runway.l/2){
     if(aircraft.altitude < 10 && aircraft.speed < 40 && abs(aircraft.pitch) < 0.2 && abs(aircraft.roll) < 0.2){
@@ -738,6 +676,7 @@ function updateAircraft(dt){
 let keys = {};
 let gameStarted = false;
 let gameOverState = null;
+let cameraMode = 'chase';
 
 document.addEventListener('keydown', e => {
   keys[e.code] = true;
@@ -757,7 +696,6 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keyup', e => { keys[e.code] = false; });
 
 // ============ CAMERA ============
-let cameraMode = 'chase';
 let cameraSmooth = {x:0,y:0,z:0};
 
 function getCameraPos(){
@@ -770,7 +708,6 @@ function getCameraPos(){
       )
     );
   }
-  // Chase camera
   let camDist = 25;
   let camHeight = 8;
   let ch = aircraft.heading;
@@ -804,26 +741,10 @@ function drawMesh(mvp, model, eyePos){
   if(vertexCount === 0) return;
   gl.useProgram(mainProg);
   
-  let mvpArr = new Float32Array(16);
-  let modelArr = new Float32Array(16);
+  let combined = mvp.multiply(model);
   
-  // Multiply MVP
-  let result = new Mat4();
-  // We need to multiply matrices - let's do it inline
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
-    let sum=0;
-    for(let k=0;k<4;k++){
-      sum += mvp.m[j*4+k] * model.m[k*4+i];
-    }
-    mvpArr[j*4+i] = sum;
-  }
-  
-  for(let i=0;i<16;i++){
-    modelArr[i] = model.m[i];
-  }
-  
-  gl.uniformMatrix4fv(uMVP, false, mvpArr);
-  gl.uniformMatrix4fv(uModel, false, modelArr);
+  gl.uniformMatrix4fv(uMVP, false, combined.m);
+  gl.uniformMatrix4fv(uModel, false, model.m);
   gl.uniform3f(uLightDir, 0.5, 0.8, 0.3);
   gl.uniform3f(uEyePos, eyePos.x, eyePos.y, eyePos.z);
   gl.uniform1f(uFogDensity, 0.00015);
@@ -838,12 +759,7 @@ function makeVPMatrix(eye, target, up){
   let view = new Mat4().lookAt(eye, target, up);
   let proj = new Mat4().perspective(PI/3, glCanvas.width/glCanvas.height, 1, 5000);
   let vp = new Mat4();
-  // vp = proj * view
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
-    let sum=0;
-    for(let k=0;k<4;k++) sum += proj.m[j*4+k] * view.m[k*4+i];
-    vp.m[j*4+i] = sum;
-  }
+  vp.m = proj.multiply(view).m;
   return vp;
 }
 
@@ -854,11 +770,12 @@ function makeModelMatrix(x,y,z, ry=0, rx=0, rz=0, sx=1,sy=1,sz=1){
 
 // ============ SKY RENDERING ============
 let skyVAO, skyVBO;
+let skyVertexCount = 0;
+
 function initSky(){
   skyVAO = gl.createVertexArray();
   gl.bindVertexArray(skyVAO);
   skyVBO = gl.createBuffer();
-  // Large sphere for sky
   let p=[];
   let seg=16, rings=12;
   for(let i=0;i<seg;i++){
@@ -872,10 +789,10 @@ function initSky(){
       let v2=[r*c1*cos(a1), r*s1, r*c1*sin(a1)];
       let v3=[r*c0*cos(a1), r*s0, r*c0*sin(a1)];
       for(let v of [v0,v1,v2,v3])for(let x of v)p.push(x);
-      // Back face too
-      for(let v of [v0.scale(-1),v1.scale(-1),v2.scale(-1),v3.scale(-1)])for(let x of v)p.push(x);
+      for(let v of [v0,v1,v2,v3].map(arr=>arr.map(x=>-x)))for(let x of v)p.push(x);
     }
   }
+  skyVertexCount = p.length / 3;
   gl.bindBuffer(gl.ARRAY_BUFFER, skyVBO);
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p), gl.STATIC_DRAW);
   let aPos = gl.getAttribLocation(skyProg, 'aPos');
@@ -885,7 +802,6 @@ function initSky(){
 }
 
 // ============ GAME STATE ============
-let cameraMode = 'chase';
 let gameTime = 0;
 let particles = [];
 
@@ -903,6 +819,7 @@ function initGame(){
   currentCheckpoint = 0;
   gameOverState = null;
   gameTime = 0;
+  particles = [];
   
   generateTerrain();
   buildTerrainMesh();
@@ -969,21 +886,17 @@ function renderHUD(){
   ctx.translate(horizonX, horizonY);
   ctx.rotate(-aircraft.roll);
   
-  // Sky
   ctx.fillStyle = 'rgba(0,100,200,0.3)';
   ctx.fillRect(-horizonW/2, -horizonH, horizonW, horizonH);
-  // Ground
   let pitchOffset = aircraft.pitch * 30;
   ctx.fillStyle = 'rgba(100,80,40,0.3)';
   ctx.fillRect(-horizonW/2, pitchOffset, horizonW, horizonH - pitchOffset);
-  // Horizon line
   ctx.strokeStyle = '#0f0';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-horizonW/2, pitchOffset);
   ctx.lineTo(horizonW/2, pitchOffset);
   ctx.stroke();
-  // Pitch lines
   ctx.strokeStyle = 'rgba(0,255,0,0.5)';
   ctx.lineWidth = 1;
   for(let i=-2;i<=2;i++){
@@ -1013,20 +926,17 @@ function renderHUD(){
   ctx.font = '16px Courier New';
   let yOff = 60;
   
-  // Airspeed
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(10, yOff-5, 160, 25);
   ctx.fillStyle = aircraft.speed > 180 ? '#f44' : '#0f0';
   ctx.fillText('SPD: ' + aircraft.speed.toFixed(0) + ' km/h', 20, yOff + 12);
   
-  // Altitude
   yOff += 30;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(10, yOff-5, 160, 25);
   ctx.fillStyle = '#0ff';
   ctx.fillText('ALT: ' + aircraft.altitude.toFixed(0) + ' m', 20, yOff + 12);
   
-  // Throttle
   yOff += 30;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(10, yOff-5, 160, 25);
@@ -1034,7 +944,6 @@ function renderHUD(){
   let thBar = '█'.repeat(Math.floor(aircraft.throttle * 10)) + '░'.repeat(10 - Math.floor(aircraft.throttle * 10));
   ctx.fillText('THR: [' + thBar + '] ' + (aircraft.throttle*100).toFixed(0) + '%', 20, yOff + 12);
   
-  // G-force indicator (simplified)
   yOff += 30;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(10, yOff-5, 160, 25);
@@ -1051,7 +960,6 @@ function renderHUD(){
   ctx.fillStyle = '#4af';
   ctx.fillText('CHECKPOINT: ' + currentCheckpoint + '/' + numCheckpoints, w-20, yOff + 12);
   
-  // Progress bar
   yOff += 30;
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
   ctx.fillRect(w-170, yOff-5, 160, 15);
@@ -1060,7 +968,6 @@ function renderHUD(){
   ctx.strokeStyle = '#0f0';
   ctx.strokeRect(w-170, yOff-5, 160, 15);
   
-  // Next checkpoint direction
   if(currentCheckpoint < numCheckpoints){
     let cp = checkpoints[currentCheckpoint];
     let dx = cp.x - aircraft.pos.x;
@@ -1084,7 +991,6 @@ function renderHUD(){
   ctx.font = '12px Courier New';
   ctx.fillText(cameraMode === 'chase' ? 'CHASE CAM [C]' : 'COCKPIT [C]', w/2, h-17);
   
-  // Warning indicators
   if(aircraft.speed < STALL_SPEED + 5){
     ctx.fillStyle = 'rgba(255,0,0,0.3)';
     ctx.fillRect(0, 0, w, h);
@@ -1111,20 +1017,18 @@ function renderHUD(){
   ctx.strokeStyle = '#0f0';
   ctx.strokeRect(mmX-2, mmY-2, mmSize+4, mmSize+4);
   
-  // Draw terrain on minimap (simplified)
   let mmScale = mmSize / 1000;
   for(let i=0;i<mmSize;i+=4){
     for(let j=0;j<mmSize;j+=4){
       let wx = aircraft.pos.x + (i-mmSize/2) * mmScale;
       let wz = aircraft.pos.z + (j-mmSize/2) * mmScale;
-      let h = getTerrainHeight(wx, wz);
-      let brightness = clamp(h / 200, 0, 1);
+      let hgt = getTerrainHeight(wx, wz);
+      let brightness = clamp(hgt / 200, 0, 1);
       ctx.fillStyle = `rgb(${floor(50+brightness*100)},${floor(80+brightness*50)},${floor(50+brightness*30)})`;
       ctx.fillRect(mmX+i, mmY+j, 3, 3);
     }
   }
   
-  // Checkpoints on minimap
   for(let i=0;i<checkpoints.length;i++){
     let cp = checkpoints[i];
     let cx = mmX + mmSize/2 + (cp.x - aircraft.pos.x) * mmScale;
@@ -1144,7 +1048,6 @@ function renderHUD(){
     ctx.fill();
   }
   
-  // Aircraft on minimap
   ctx.fillStyle = '#0ff';
   ctx.save();
   ctx.translate(mmX+mmSize/2, mmY+mmSize/2);
@@ -1170,7 +1073,6 @@ function render(timestamp){
     updateAircraft(dt);
     updateParticles(dt);
     
-    // Update missile positions
     for(let h of hazards){
       if(h.type === 'missile'){
         h.angle += h.speed * dt;
@@ -1178,7 +1080,6 @@ function render(timestamp){
     }
   }
   
-  // Clear
   gl.clearColor(0.7, 0.85, 1.0, 1.0);
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.enable(gl.DEPTH_TEST);
@@ -1194,7 +1095,7 @@ function render(timestamp){
   gl.uniformMatrix4fv(uSkyMVP, false, skyVP.m);
   gl.uniform1f(uTime, gameTime);
   gl.bindVertexArray(skyVAO);
-  gl.drawArrays(gl.TRIANGLES, 0, 6 * 16 * 12 * 2);
+  gl.drawArrays(gl.TRIANGLES, 0, skyVertexCount);
   gl.bindVertexArray(null);
   gl.enable(gl.DEPTH_TEST);
   
@@ -1211,8 +1112,6 @@ function render(timestamp){
   for(let i=0;i<checkpoints.length;i++){
     let cp = checkpoints[i];
     let ringModel = makeModelMatrix(cp.x, cp.y, cp.z, -cp.dir.x * 0.1, PI/2, -cp.dir.z * 0.1, cp.radius, cp.radius, 1);
-    let ringColor = i < currentCheckpoint ? [0,0.5,0] : (i === currentCheckpoint ? [1,1,0] : [0.5,0.5,1]);
-    // We need to change colors - for simplicity, just use a tinted approach
     drawMesh(vp, ringModel, eye);
   }
   

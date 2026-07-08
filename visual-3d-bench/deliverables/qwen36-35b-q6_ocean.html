@@ -173,10 +173,10 @@ const oceanVertexShader = `
             hZm += a * cos(f);
         }
 
-        vec2 Dx = (hXp - hXm) / (2.0 * radius);
-        vec2 Dz = (hZp - hZm) / (2.0 * radius);
+        float Dx = (hXp - hXm) / (2.0 * radius);
+        float Dz = (hZp - hZm) / (2.0 * radius);
 
-        return normalize(vec3(-Dx.x, 1.0, -Dx.y) * 0.5 + vec3(-Dz.x, 1.0, -Dz.y) * 0.5);
+        return normalize(vec3(-Dx, 1.0, -Dz));
     }
 
     void main() {
@@ -338,6 +338,13 @@ const clock = new THREE.Clock();
 const orbitRadius = 100;
 const orbitHeight = 35;
 
+function smoothstep(edge0, edge1, x) {
+    var t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+    return t * t * (3 - 2 * t);
+}
+
+function mix(a, b, t) { return a + (b - a) * t; }
+
 function animate() {
     requestAnimationFrame(animate);
     const elapsed = clock.getElapsedTime();
@@ -381,7 +388,6 @@ function animate() {
     renderer.render(scene, camera);
 }
 
-function mix(a, b, t) { return a + (b - a) * t; }
 animate();
 
 // ── Resize ──

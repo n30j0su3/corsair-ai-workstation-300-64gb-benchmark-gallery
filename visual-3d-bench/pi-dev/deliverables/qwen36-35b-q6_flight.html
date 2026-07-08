@@ -762,7 +762,12 @@ function setAttr(prog, name, buf, size) {
   gl.vertexAttribPointer(loc, size, gl.FLOAT, false, 0, 0);
 }
 
+function resetAttrs() {
+  for (let i = 0, n = gl.getParameter(gl.MAX_VERTEX_ATTRIBS); i < n; i++) gl.disableVertexAttribArray(i);
+}
+
 function drawMesh(prog, vBuf, nBuf, cBuf, iBuf, count, mvp, model, uniforms) {
+  resetAttrs();
   gl.useProgram(prog);
   setAttr(prog, 'aPos', vBuf, 3);
   setAttr(prog, 'aNorm', nBuf, 3);
@@ -771,9 +776,11 @@ function drawMesh(prog, vBuf, nBuf, cBuf, iBuf, count, mvp, model, uniforms) {
   gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uModel'), false, model);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuf);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+  resetAttrs();
 }
 
 function drawRingMesh(prog, vBuf, nBuf, cBuf, iBuf, count, model, uniforms) {
+  resetAttrs();
   gl.useProgram(prog);
   setAttr(prog, 'aPos', vBuf, 3);
   setAttr(prog, 'aNorm', nBuf, 3);
@@ -781,6 +788,7 @@ function drawRingMesh(prog, vBuf, nBuf, cBuf, iBuf, count, model, uniforms) {
   gl.uniformMatrix4fv(gl.getUniformLocation(prog, 'uModel'), false, model);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuf);
   gl.drawElements(gl.TRIANGLES, count, gl.UNSIGNED_SHORT, 0);
+  resetAttrs();
 }
 
 // ============================================================
@@ -1275,6 +1283,7 @@ function render(timestamp) {
   gl.disable(gl.CULL_FACE);
   const skyModel = mat4Translate(cam.eye[0], cam.eye[1], cam.eye[2]);
   const skyMVP = mat4Multiply(vp, skyModel);
+  resetAttrs();
   gl.useProgram(skyProg);
   const skyAPos = gl.getAttribLocation(skyProg, 'aPos');
   gl.bindBuffer(gl.ARRAY_BUFFER, skyVBuf);
@@ -1284,6 +1293,7 @@ function render(timestamp) {
   gl.uniformMatrix4fv(gl.getUniformLocation(skyProg, 'uSkyModel'), false, skyModel);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skyIBuf);
   gl.drawElements(gl.TRIANGLES, 36, gl.UNSIGNED_SHORT, 0);
+  resetAttrs();
   gl.enable(gl.DEPTH_TEST);
   gl.enable(gl.CULL_FACE);
 
@@ -1309,6 +1319,7 @@ function render(timestamp) {
   const rwN = createBuffer(rwNorms);
   const rwC = createBuffer(rwCols);
   const rwMVP = mat4Multiply(vp, mat4Identity());
+  resetAttrs();
   gl.useProgram(mainProg);
   const rwLoc = gl.getAttribLocation(mainProg, 'aPos');
   gl.bindBuffer(gl.ARRAY_BUFFER, rwV);
@@ -1329,6 +1340,7 @@ function render(timestamp) {
   gl.uniform1f(gl.getUniformLocation(mainProg, 'uFogDist'), 2500);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, rwI);
   gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  resetAttrs();
   gl.deleteBuffer(rwV); gl.deleteBuffer(rwN); gl.deleteBuffer(rwC); gl.deleteBuffer(rwI);
 
   // ---- DRAW CHECKPOINT RINGS ----
@@ -1347,6 +1359,7 @@ function render(timestamp) {
     gl.uniform1f(gl.getUniformLocation(ringProg, 'uTime'), gameState.time);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ringBuffers[i].iBuf);
     gl.drawElements(gl.TRIANGLES, ringBuffers[i].count, gl.UNSIGNED_SHORT, 0);
+    resetAttrs();
   }
 
   // ---- DRAW HAZARDS ----

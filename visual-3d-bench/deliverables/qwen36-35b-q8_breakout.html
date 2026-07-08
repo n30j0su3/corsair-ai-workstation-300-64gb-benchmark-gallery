@@ -240,6 +240,7 @@ lasers.push({ x: paddle.x + paddle.w / 2 - 5 - 4, y: paddle.y, w: 4, h: 12, dy: 
 playLaser();
 }, 250);
 setTimeout(() => clearInterval(interval), 6000);
+}, 0);
 break;
 case POWER_TYPES.SLOW:
 balls.forEach(b => {

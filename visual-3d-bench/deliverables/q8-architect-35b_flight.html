@@ -363,7 +363,7 @@ function renderCheckpoints(viewMatrix, projMatrix) {
         if(center) {
             const radius = project(new Vec3(cp.pos.x + cp.radius, cp.pos.y, cp.pos.z), viewMatrix, projMatrix);
             if(radius) {
-                const dist = radius.x - center.x;
+                const dist = Math.abs(radius.x - center.x);
                 ctx.strokeStyle = cp.passed ? '#00ff00' : '#ff0000';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
@@ -385,7 +385,7 @@ function renderObstacles(viewMatrix, projMatrix) {
         if(center) {
             const radius = project(new Vec3(o.pos.x + o.radius, o.pos.y, o.pos.z), viewMatrix, projMatrix);
             if(radius) {
-                const dist = radius.x - center.x;
+                const dist = Math.abs(radius.x - center.x);
                 ctx.fillStyle = '#ff0000';
                 ctx.beginPath();
                 ctx.arc(center.x, center.y, dist, 0, Math.PI*2);

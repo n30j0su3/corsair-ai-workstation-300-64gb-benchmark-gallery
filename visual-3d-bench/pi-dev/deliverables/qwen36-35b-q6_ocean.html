@@ -323,7 +323,7 @@ scene.add(sky);
 const sunGeo = new THREE.SphereGeometry(4, 32, 32);
 const sunMat = new THREE.MeshBasicMaterial({ color: 0xfff8e0 });
 const sun = new THREE.Mesh(sunGeo, sunMat);
-const sunPos = uniforms.uSunDir.clone().multiplyScalar(600);
+const sunPos = uniforms.uSunDir.value.clone().multiplyScalar(600);
 sun.position.copy(sunPos);
 scene.add(sun);
 

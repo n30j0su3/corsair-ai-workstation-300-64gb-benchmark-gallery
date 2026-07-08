@@ -1,1499 +1,1326 @@
-We need answer raw complete HTML only. Need build playable FPS browser local, one HTML, Canvas procedural 2.5D raycasting. Need implement features. Need be careful. We need produce code reasonably. Need no explanations. Need start <!DOCTYPE html>. Need include CSS JS inline.
-
-We need design a game. Need robust playable. Let's plan.
-
-We need first-person view using 2.5D raycasting. Walls, floor ceiling, enemies, projectiles, weapon HUD, depth-aware drawing, fog. Procedurally generated level corridors/rooms/collision/minimap toggle, enemies, ammo, health pickups, exit. WASD movement with strafing, mouse aiming pointer lock, shoot/reload/sprint, pause. At least one weapon ammo/fire-rate/damage/reload, hit detection, 3+ enemies health/AI/attack, wall-aware enemy movement. Output only HTML.
-
-Need decide implementation.
-
-We can implement raycaster with fixed map grid. Use canvas render. Player 2D movement, yaw/pitch. Collision AABB vs grid. Raycasting walls: cast rays from player to each vertical slice. Draw walls with FOV. Draw floor/ceiling as gradient maybe procedural. Depth sorting enemies and pickups with ray angle/distance. Projectiles? Could implement bullets as particles/tracers; enemy projectiles maybe? Requirement enemies/projectiles. Need include bullets/tracers. Weapon HUD.
-
-Minimap toggle: canvas overlay or small canvas. Need implement.
-
-Enemies AI: grid-based wall-aware movement toward player if line-of-sight not blocked, or path via simple BFS? Need wall-aware enemy movement. Could implement BFS over free cells to player each frame, enemy moves one cell every 0.5 sec. Also can attack if adjacent. Need enemies health. They can attack when close. 3+ enemies.
-
-Projectile: player bullets can be raycast hit enemy if aiming within cone and LOS. Ammo, fire rate, damage, reload. Enemies maybe fire projectiles? Requirement projectiles plural maybe bullets/tracers enough. But "enemies, projectiles" maybe include enemy projectiles. We can implement enemy bullets as simple line from enemy to player if LOS, spawn projectile with damage over time; wall collision? Could draw red projectiles. That adds. Need implement wall-aware.
-
-Exit: maybe glowing exit door on map; if player reaches, win. Need include.
-
-Pause: key P/Esc toggles pause; pointer lock on click.
-
-Controls: WASD movement with strafing, mouse aim pointer lock, shoot/reload/sprint. Key states. Need pointer lock. Click canvas to shoot and request pointer lock. Mouse movement yaw/pitch. Need not use external.
-
-2.5D renderer:
-Map array 0 floor, 1 wall, 2 exit? We'll map strings.
-Grid maybe 24x24. Need corridors/rooms. Could hardcode procedural pattern? "procedurally generated" can use seeded generation. Need ensure playable. We'll generate from template? Or random seeded. Simpler: define a base map with corridors/rooms and random decorations/walls? But "procedurally generated" maybe enough with seeded map using LCG. Need guarantee exit/enemies. We can generate a grid with rooms connected by corridors.
-
-Maybe implement generation:
-- N=24, M=20.
-- Fill with 1 walls.
-- Generate 4 rooms rectangles at corners/center: random x,y,w,h but not too small. Set 0 inside.
-- Connect room centers with corridors horizontal/vertical, carve 1 wide.
-- Add some branching corridors/rooms.
-- Set player start in first room, exit in last room.
-- Enemies in rooms away.
-- Pickups.
-But deterministic seeded. Need map valid.
-
-Alternatively hard-coded map with generated enemy/pickup positions. But "procedurally generated level" maybe use seeded random to place decorations/pickups/enemies. Let's do generation with fixed seed.
-
-Need collision with walls and maybe exit? Player collision with walls only. Enemies move grid step if free.
-
-Raycasting:
-Canvas internal 800x600 maybe CSS full. Use FOV e.g. 70 deg. Player yaw/pitch. For each x slice, cast ray angle = yaw + (x/width -0.5)*fov. Need handle fish-eye correction: ray angle adjusted by cos? In raycasting, step length = distance * cos(angle - yaw) for wall distance. We can compute rayDir = [cos(angle), sin(angle)]. Then cast DDA. wallDist = sqrt(dx*dx+dy*dy); projected = wallDist * cos(angle - yaw). Draw wall height = h / projected * scale. Wall x = x. Draw vertical stripes from top to bottom. Depth shading based projected.
-
-Ceiling/floor: draw horizontal stripes based on distance from center? For 2.5D, fill half screen with colors. Could draw floor with perspective stripes for y > mid: for each y, depth = mid / (y-mid) maybe. Draw floor stripes every 0.5 world units. Use shade. Ceiling similar. Maybe draw floor grid lines.
-
-Walls: DDA returns cell x,y and side. Color by type: wall grey, exit green. Use shade = max(0,1 - dist/45), fog = mix color with fog color. Side darkening. Draw vertical line.
-
-Depth-aware drawing of sprites/enemies:
-Sprites include enemies, pickups. Need sort by distance descending (far to near). For each, compute dx,dy, invDet = 1/(camX*dirY - camY*dirX) (raycaster math). spriteX = invDet * ((player.x - sprite.x)*dirY - (player.y - sprite.y)*dirX). If spriteX <=0 skip. transformPlaneX = invDet * (-dirY*(player.y-sprite.y)+dirX*(player.x-sprite.x)); transformPlaneY = invDet * (dirX*(player.y-sprite.y)-dirY*(player.x-sprite.x)); cameraDist = transformPlaneY. If <=0 skip. screenX = (w/2)*(1+spriteX). spriteHeight = abs(h/cameraDist); lineHeight. Draw enemy rectangle/triangular? Procedural: body with health bar, color. Need draw after walls? In raycasting, sprites should be drawn after walls to appear behind? Actually sprites need be drawn after walls if occluded by walls; but if drawn after all walls, sprites behind walls will overlay. Need depth-aware drawing with walls: either draw sprites before walls? But then walls occlude if drawn after; sprites in front of wall would be hidden incorrectly. Better implement wall drawing per slice and draw sprites behind wall? Complex. We can approximate: draw sprites after walls; they appear in front of walls, but okay? Requirement depth-aware drawing. Better implement sprite collision with wall: For each sprite, compute distance to nearest wall along ray from player to sprite; if wall distance < sprite distance - epsilon, skip (occluded). That handles occlusion. Draw after walls. Need implement nearestWallDistance along sprite angle. Use ray step to wall. Then if distToWall < spriteDist*0.92 skip.
-
-Enemies: Use sprites; draw body, face, health. Need hit detection. Shooting: ray from player yaw+pitch? Mouse aim. We can compute aim angle = yaw + mouseAimX? Actually mouse movement changes yaw/pitch; aimDir = [cos(yaw), sin(yaw)]. Pitch affects vertical. For hit detection, for each enemy, compute dx,dy, dist. angleDiff = atan2(sin(aimAng - ang), cos(...)); if abs(angleDiff) < 0.035 + enemySize/dist maybe and vertical? We don't track vertical pitch for enemy body; use pitch within ±0.12? Mouse movement changes pitch but maybe no crosshair? We'll draw reticle at center, pitch changes view but not aim? Pointer lock movement should aim. For simplicity, yaw controls aim and pitch affects vertical view/weapon. Hit if angular diff < hitRadius = 0.035 + 0.6/dist. LOS ray to enemy center not blocked. Damage. Reload key R. Ammo. Fire rate. Need projectile? Could spawn muzzle flash/tracer from center to hit point. For visual, draw a line from center to hit point (screen coords) with alpha. Also maybe projectile particle moving along ray. Need implement projectiles array.
-
-Player health, ammo, sprint. Sprint holds Shift: faster, no recoil maybe.
-
-Reload: If ammo < max and clips > 0? Simpler ammo count, reload time 1.3 sec, ammo = mag. Keydown R.
-
-Enemies AI:
-Enemy object {x,y, hp, attackCd, alive, type}. Map free cells. Movement:
-- If player not in line of sight? BFS from enemy to player each maybe 0.3 sec. Need wall-aware. Implement BFS on grid: start enemy cell; goal player cell. Neighbors 4-dir; free if map[y][x]!=1 and in bounds. Track parent. If path found, enemy move along next cell. If adjacent (Manhattan 1 or same), attack if cd <=0; damage player. If LOS maybe direct move. Wall-aware because BFS avoids walls. If no path, wander. Enemies attack if adjacent; damage with cooldown.
-- Also enemy projectiles: if LOS and cd, spawn red projectile at enemy + offset toward player. Projectiles move, damage if hits player. Wall collision: projectile ray step through grid, if wall hit remove; maybe damage over time. This satisfies projectiles. Need not overcomplicate.
-- Enemies health. Hit detection by player.
-
-Pickups: ammo, health. Draw as sprites. Pickup if player distance < 0.4.
-
-Exit: In map cell maybe exit cell. If player in cell, win. Draw exit sprite? Wall/door? We'll set exit cell 3 maybe. Raycast treats as wall but colored green. Exit sprite. If player reaches, show win overlay.
-
-Map:
-Need grid dimensions. Could use N=24, M=20. Use map as strings. Let's define base map with walls and corridors.
-
-Maybe easier use hard-coded map with rooms/corridors. But procedural generation requested. We'll implement generation but also define corridors? Need ensure. Let's design generation.
-
-Option: Use seeded LCG:
-function rand() { seed = (seed*1664525+1013904223)>>>0; return seed/4294967296;}
-function generateMap(){
-const W=24,H=20; grid fill 1.
-rooms = [
-{x:1,y:1,w:6,h:4}, {x:16,y:1,w:7,h:5}, {x:1,y:12,w:7,h:5}, {x:16,y:12,w:6,h:4}, {x:8,y:5,w:8,h:5} maybe center
-]
-Need connect all with corridors. But random rooms? Could generate random rooms but ensure. Maybe use fixed seed and positions.
-
-If random:
-for i 0..5, w=3-6,h=3-5, x=1+r*(W-w-1), y=1+...
-Need ensure not overlapping too much? okay.
-Then connect center points greedily sorted by x/y; carve corridors.
-Set start = first room center, exit = last farthest center.
-But random could produce inaccessible? Corridors connect.
-Need maybe avoid exit in wall? Centers in room free.
-Need ensure player start not in enemy.
-We'll generate. But deterministic.
-
-However collisions and raycasting need walls. Good.
-
-Let's choose fixed 24x20. Generate rooms:
-seeded random. Place 5 rooms:
-- start room left top
-- center room
-- right top
-- left bottom
-- right bottom
-- storage room maybe
-Connect in star: center to all others; maybe start to center.
-Carve corridors between centers.
-Add branch corridors and small alcoves.
-This yields corridors/rooms.
-
-Potential issue corridors width 1; player needs move through; okay.
-
-Set exit cell at center of last room. Map cell 3.
-
-Need minimap: small canvas 220x160 maybe. Draw grid cells, player, enemies, pickups, exit. Toggle with M or button? Requirement minimap toggle. Add key M. Also show in HUD. Need canvas minimap maybe overlay.
-
-HTML structure:
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset...>
-<title>...
-<style>
-html,body { margin:0; overflow:hidden; background:#050505; font-family...}
-#gameWrap { position:fixed; inset:0; }
-canvas#game { width:100vw;height:100vh;display:block; image-rendering:auto; cursor:none; }
-#minimap { position:absolute; right:12px; top:12px; width:220px; height:160px; border...; background...; display:none; }
-#crosshair, #hud, #overlay maybe.
-</style>
-</head>
-<body>
-<div id=gameWrap>
-<canvas id=game></canvas>
-<canvas id=minimap></canvas>
-<div id=hud>...</div>
-<div id=crosshair>...</div>
-<div id=overlay>...</div>
-</div>
-<script>
-...
-</script>
-</body>
-</html>
-
-Need canvas high DPI maybe. Renderer uses CSS size and internal scale. We can set canvas.width = innerWidth*dpr; style; ctx.setTransform(dpr,0,0,dpr,0,0); use viewW = innerWidth, viewH=innerHeight. Minimap too.
-
-Pointer lock:
-canvas.addEventListener('click', () => { if(!paused) canvas.requestPointerLock(); });
-document.addEventListener('mousemove', e => { if(pointerLockElement===canvas && !paused) { yaw -= e.movementX*0.0022; pitch -= e.movementY*0.0022; clamp; }});
-Keydown:
-if e.code==='KeyP'||e.code==='Escape' pause toggle. But Escape exits pointer lock; still pause maybe.
-if e.repeat ignore.
-if KeyM toggle minimap.
-if KeyR reload.
-Movement states: Arrow/WASD. Sprint key Shift.
-Shoot: left mouse or Space? mouse down. Need if pointer lock click. We'll implement mouse down shoot.
-Potential issue on first click request pointer lock; shoot after lock? We'll call shoot() in click if not paused.
-
-HUD: ammo, health, enemy count, status. Update DOM.
-
-Game loop:
-let last = performance.now();
-function loop(now){ dt=(now-last)/1000; clamp; update(dt); render(); requestAnimationFrame(loop);}
-Need update even paused? if paused maybe not.
-
-Renderer:
-function render(){
-const ctx=gameCtx; ctx.setTransform(dpr,...); // if dpr changes.
-clear.
-drawCeilingFloor(ctx)
-castWalls()
-drawSprites(ctx) // enemies/pickups/exit/projectiles?
-drawHUDOverlay maybe crosshair, muzzle flash, damage overlay, reload overlay.
-drawMinimap maybe after render.
-}
-Need draw projectiles maybe after walls? Projectiles should be visible in front? Could draw before sprites? They are 3D? Simpler draw after sprites? Projectiles as glowing dots along line; draw after walls maybe. But if behind walls, maybe skip by ray wall. We'll draw projectiles after sprites with occlusion.
-Need draw walls before sprites. For sprites occlusion compute nearestWallDistance; if wallDist < spriteDist*0.94 skip. For exit as sprite? If exit cell has wall, should draw as sprite on wall? Maybe draw as glowing vertical plane at exit. Since map exit cell is wall; raycast will draw wall. Draw exit sprite at distance with occlusion? It should be visible.
-
-World-to-screen:
-function projectSprite(s) {
-dx=s.x-player.x; dy=s.y-player.y;
-dirX=cos(yaw), dirY=sin(yaw);
-camX=player.x, camY=player.y;
-invDet = 1/(camX*dirY - camY*dirX);
-transformX = invDet*(dx*dirY - dy*dirX);
-transformY = invDet*(-dirY*dx + dirX*dy); // same formula
-if transformY <=0.05 return null;
-screenX = (w/2)*(1+transformX/transformY)
-angle = atan2(dy,dx)
-return {dist: sqrt(dx^2+dy^2), angle, screenX, transformY}
-}
-Need use yaw only not pitch for sprites.
-
-Sprites:
-enemies: draw body. Use spriteHeight = Math.min(viewH*0.9, 180 / dist); maybe 180 world height. spriteWidth = spriteHeight*0.55. Draw shadow ellipse. Body rectangle with color; health bar. Need depth-aware; far smaller.
-Pickups: ammo/health as small boxes/cross. Exit: door/gate.
-
-2.5D floor/ceiling:
-function drawCeilingFloor() {
-const mid = viewH/2;
-const fogColor = [10,14,20];
-for (let y=0; y<viewH; y++) {
-const t = y/viewH;
-const shade = t<0.5 ? 1 - t*0.8 : 0.2 + (t-0.5)*0.5;
-// Ceiling color gradient
-ctx.fillStyle = ...
-ctx.fillRect(0,y,viewW,1)
-}
-Maybe use horizontal stripes based on world y? Need more 2.5D:
-for each y, depth = mid / Math.max(1, Math.abs(y-mid));
-grid offset = (depth * (player.y? maybe) + time) % 1;
-draw floor stripes:
-if y>=mid: for x? Could fill entire row with color depending on x and depth.
-We can draw floor in two triangles:
-for y mid..viewH:
-z = mid/(y-mid);
-const stripe = Math.floor((player.y + z*Math.sin(yaw)+time*player.speed) % 4?) Hard.
-Simpler fill row with fog gradient and grid lines every N pixels.
-
-Walls DDA:
-function castWall(x) {
-let rayAngle = player.yaw + (x/w - .5)*fov;
-let rayCos = cos(rayAngle), raySin = sin(rayAngle);
-let mapX=Math.floor(player.x), mapY=Math.floor(player.y);
-let deltaDistX = abs(1/rayCos), deltaDistY=abs(1/raySinNow produce the final answer. Be concrete and complete.</think>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canvas FPS Raycaster</title>
-<style>
-  html, body {
-    margin: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #050506;
-    color: #e7e7e7;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    user-select: none;
-  }
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FPS Raycaster</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #05070a;
+      color: #e8f4ff;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      user-select: none;
+    }
 
-  #gameWrap {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
-    background: #050506;
-  }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: #05070a;
+      cursor: crosshair;
+    }
 
-  #game {
-    position: absolute;
-    inset: 0;
-    width: 100vw;
-    height: 100vh;
-    display: block;
-    cursor: none;
-    background: #000;
-  }
+    #hud {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+    }
 
-  #minimap {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 220px;
-    height: 160px;
-    border: 1px solid rgba(180, 220, 255, 0.35);
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.55);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-    display: none;
-  }
+    #topLeft {
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba(120, 210, 255, 0.25);
+      border-radius: 10px;
+      background: rgba(0, 10, 18, 0.45);
+      backdrop-filter: blur(4px);
+      font-size: 13px;
+      line-height: 1.45;
+      color: #dff7ff;
+    }
 
-  #hud {
-    position: absolute;
-    left: 16px;
-    bottom: 14px;
-    display: flex;
-    align-items: flex-end;
-    gap: 12px;
-    pointer-events: none;
-    text-shadow: 0 2px 8px #000;
-  }
+    #healthPanel {
+      position: absolute;
+      left: 14px;
+      bottom: 18px;
+      width: 260px;
+      padding: 10px 12px;
+      border: 1px solid rgba(255, 120, 120, 0.25);
+      border-radius: 10px;
+      background: rgba(0, 10, 18, 0.45);
+    }
 
-  .hudPanel {
-    min-width: 142px;
-    padding: 10px 12px;
-    border: 1px solid rgba(180, 220, 255, 0.22);
-    border-radius: 10px;
-    background: rgba(5, 8, 12, 0.56);
-    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.32);
-    backdrop-filter: blur(2px);
-  }
+    #healthLabel {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 13px;
+      color: #ffd8d8;
+    }
 
-  .hudLabel {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    color: #9fb8ce;
-    text-transform: uppercase;
-    margin-bottom: 2px;
-  }
+    #healthFill {
+      height: 14px;
+      border-radius: 4px;
+      background: #221010;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      overflow: hidden;
+    }
 
-  .hudValue {
-    font-size: 28px;
-    line-height: 1;
-    font-weight: 800;
-    color: #fff;
-  }
+    #healthFillInner {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff3030, #ffb030, #70ff70);
+      transition: width 0.12s linear;
+    }
 
-  #crosshair {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 34px;
-    height: 34px;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-    opacity: 0.92;
-    filter: drop-shadow(0 1px 3px #000);
-  }
+    #weaponPanel {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      min-width: 360px;
+      padding: 12px 16px;
+      border: 1px solid rgba(120, 210, 255, 0.25);
+      border-radius: 12px;
+      background: rgba(0, 10, 18, 0.45);
+      text-align: center;
+    }
 
-  #crosshair::before,
-  #crosshair::after {
-    content: "";
-    position: absolute;
-    background: rgba(230, 245, 255, 0.92);
-    border-radius: 2px;
-  }
+    #weaponName {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: #bfefff;
+      font-size: 14px;
+    }
 
-  #crosshair::before {
-    left: 16px;
-    top: 3px;
-    width: 2px;
-    height: 28px;
-  }
+    #ammoText {
+      margin-top: 4px;
+      font-size: 24px;
+      font-weight: 800;
+      color: #fff3a0;
+    }
 
-  #crosshair::after {
-    left: 3px;
-    top: 16px;
-    width: 28px;
-    height: 2px;
-  }
+    #reloadBar {
+      height: 6px;
+      margin-top: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
 
-  #reloadOverlay {
-    position: absolute;
-    left: 50%;
-    top: 58%;
-    transform: translate(-50%, -50%);
-    padding: 9px 15px;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.45);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    color: #fff;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.12s linear;
-    text-shadow: 0 2px 8px #000;
-  }
+    #reloadFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #64d7ff, #ffffff);
+      transition: width 0.05s linear;
+    }
 
-  #reloadOverlay.show {
-    opacity: 1;
-  }
+    #crosshair {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 34px;
+      height: 34px;
+      transform: translate(-50%, -50%);
+      opacity: 0.85;
+    }
 
-  #damageFlash {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: radial-gradient(circle, rgba(255, 0, 0, 0) 50%, rgba(255, 0, 0, 0.36) 100%);
-    opacity: 0;
-  }
+    #crosshair::before,
+    #crosshair::after {
+      content: "";
+      position: absolute;
+      background: rgba(230, 250, 255, 0.9);
+      box-shadow: 0 0 8px rgba(100, 220, 255, 0.8);
+    }
 
-  #damageFlash.show {
-    opacity: 1;
-  }
+    #crosshair::before {
+      left: 16px;
+      top: 3px;
+      width: 2px;
+      height: 28px;
+    }
 
-  #overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.48);
-    pointer-events: none;
-  }
+    #crosshair::after {
+      left: 3px;
+      top: 16px;
+      width: 28px;
+      height: 2px;
+    }
 
-  #messageBox {
-    width: min(620px, calc(100vw - 36px));
-    padding: 28px 30px;
-    border: 1px solid rgba(180, 220, 255, 0.28);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgba(8, 13, 20, 0.92), rgba(3, 5, 8, 0.88));
-    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.55);
-    text-align: center;
-  }
+    #message {
+      position: absolute;
+      left: 50%;
+      top: 18%;
+      transform: translateX(-50%);
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(0, 10, 18, 0.55);
+      color: #ffffff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      opacity: 0;
+      transition: opacity 0.18s linear;
+    }
 
-  #messageTitle {
-    margin: 0 0 12px;
-    font-size: clamp(34px, 6vw, 64px);
-    line-height: 0.95;
-    letter-spacing: 0.04em;
-    color: #fff;
-    text-shadow: 0 4px 22px rgba(0, 0, 0, 0.65), 0 0 24px rgba(80, 170, 255, 0.28);
-  }
+    #message.show {
+      opacity: 1;
+    }
 
-  #messageText {
-    margin: 0 auto 18px;
-    max-width: 520px;
-    color: #c9d7e4;
-    line-height: 1.45;
-    font-size: 15px;
-  }
+    .overlay {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.55);
+      color: #ffffff;
+      text-align: center;
+      padding: 24px;
+      pointer-events: auto;
+    }
 
-  #messageHint {
-    display: inline-block;
-    padding: 8px 12px;
-    border-radius: 999px;
-    color: #071017;
-    background: linear-gradient(180deg, #aee8ff, #57b8ff);
-    font-weight: 900;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    box-shadow: 0 8px 26px rgba(80, 180, 255, 0.32);
-  }
+    .overlay.hidden {
+      display: none;
+    }
 
-  #toast {
-    position: absolute;
-    left: 50%;
-    top: 18px;
-    transform: translateX(-50%);
-    padding: 8px 14px;
-    border: 1px solid rgba(180, 220, 255, 0.22);
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.48);
-    color: #dcecff;
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s linear;
-    text-shadow: 0 2px 8px #000;
-  }
+    .panel {
+      max-width: 560px;
+      padding: 28px 32px;
+      border: 1px solid rgba(120, 210, 255, 0.35);
+      border-radius: 18px;
+      background: rgba(4, 12, 22, 0.88);
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.55);
+    }
 
-  #toast.show {
-    opacity: 1;
-  }
-</style>
+    .panel h1 {
+      margin: 0 0 12px;
+      font-size: 34px;
+      letter-spacing: 0.08em;
+    }
+
+    .panel p {
+      margin: 8px 0;
+      color: #cfe8f5;
+      line-height: 1.45;
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 18px;
+      margin-top: 18px;
+      text-align: left;
+      color: #dff7ff;
+      font-size: 14px;
+    }
+
+    .keys kbd {
+      display: inline-block;
+      min-width: 28px;
+      margin-right: 6px;
+      padding: 2px 7px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+      font-family: inherit;
+      font-weight: 700;
+    }
+  </style>
 </head>
 <body>
-<div id="gameWrap">
-  <canvas id="game"></canvas>
-  <canvas id="minimap"></canvas>
-
-  <div id="crosshair"></div>
-  <div id="reloadOverlay">RELOAD</div>
-  <div id="damageFlash"></div>
-  <div id="toast"></div>
+  <canvas id="gameCanvas" width="1280" height="720" aria-label="First person raycasting shooter"></canvas>
 
   <div id="hud">
-    <div class="hudPanel">
-      <div class="hudLabel">Ammo</div>
-      <div class="hudValue" id="ammoText">30</div>
+    <div id="topLeft">
+      <div>Health <span id="healthText">100</span></div>
+      <div>Enemies <span id="enemyText">0</span></div>
+      <div>Exit <span id="exitText">locked</span></div>
+      <div>WASD move · Shift sprint · Mouse aim · Space shoot · R reload · P pause · M minimap</div>
     </div>
-    <div class="hudPanel">
-      <div class="hudLabel">Health</div>
-      <div class="hudValue" id="healthText">100</div>
+
+    <div id="healthPanel">
+      <div id="healthLabel"><span>PLAYER HEALTH</span><span id="healthLabelText">100%</span></div>
+      <div id="healthFill"><div id="healthFillInner"></div></div>
     </div>
-    <div class="hudPanel">
-      <div class="hudLabel">Enemies</div>
-      <div class="hudValue" id="enemyText">4</div>
+
+    <div id="weaponPanel">
+      <div id="weaponName">PULSE CARBINE</div>
+      <div id="ammoText">30 / 30</div>
+      <div id="reloadBar"><div id="reloadFill"></div></div>
     </div>
-    <div class="hudPanel">
-      <div class="hudLabel">Status</div>
-      <div class="hudValue" id="statusText">READY</div>
+
+    <div id="crosshair"></div>
+    <div id="message"></div>
+  </div>
+
+  <div id="startOverlay" class="overlay">
+    <div class="panel">
+      <h1>RAYCASTER FPS</h1>
+      <p>Explore a procedurally generated corridor and room complex. Find the glowing exit while avoiding enemies.</p>
+      <p>Click the canvas to lock the mouse, then use WASD, Shift, Space, R, P, and M.</p>
+      <div class="keys">
+        <div><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move / strafe</div>
+        <div><kbd>Shift</kbd> Sprint</div>
+        <div><kbd>Mouse</kbd> Aim with pointer lock</div>
+        <div><kbd>Space</kbd> Shoot</div>
+        <div><kbd>R</kbd> Reload</div>
+        <div><kbd>P</kbd><kbd>M</kbd> Pause / minimap</div>
+      </div>
     </div>
   </div>
 
-  <div id="overlay">
-    <div id="messageBox">
-      <h1 id="messageTitle">SIGNAL EXIT</h1>
-      <p id="messageText">
-        Escape the generated facility. Move with WASD, sprint with Shift, aim with the mouse,
-        shoot with left click, reload with R, toggle minimap with M, and pause with P or Esc.
-      </p>
-      <span id="messageHint">Click to Start / Lock Mouse</span>
+  <div id="pauseOverlay" class="overlay hidden">
+    <div class="panel">
+      <h1>PAUSED</h1>
+      <p>Press P to resume, or Esc to release the mouse lock.</p>
     </div>
   </div>
-</div>
 
-<script>
-(() => {
-  "use strict";
+  <div id="gameOverOverlay" class="overlay hidden">
+    <div class="panel">
+      <h1>GAME OVER</h1>
+      <p>The corridor took its toll.</p>
+      <p>Press R to restart the run.</p>
+    </div>
+  </div>
 
-  const gameCanvas = document.getElementById("game");
-  const gameCtx = gameCanvas.getContext("2d", { alpha: false });
-  const minimapCanvas = document.getElementById("minimap");
-  const minimapCtx = minimapCanvas.getContext("2d");
-  const ammoText = document.getElementById("ammoText");
-  const healthText = document.getElementById("healthText");
-  const enemyText = document.getElementById("enemyText");
-  const statusText = document.getElementById("statusText");
-  const reloadOverlay = document.getElementById("reloadOverlay");
-  const damageFlash = document.getElementById("damageFlash");
-  const overlay = document.getElementById("overlay");
-  const messageTitle = document.getElementById("messageTitle");
-  const messageText = document.getElementById("messageText");
-  const messageHint = document.getElementById("messageHint");
-  const toast = document.getElementById("toast");
+  <script>
+    (() => {
+      "use strict";
 
-  const TAU = Math.PI * 2;
-  const FOV = Math.PI / 2.65;
-  const MAP_W = 24;
-  const MAP_H = 20;
-  const WALL = 1;
-  const EXIT_CELL = 3;
+      const canvas = document.getElementById("gameCanvas");
+      const ctx = canvas.getContext("2d", { alpha: false });
 
-  let dpr = 1;
-  let viewW = 1;
-  let viewH = 1;
-  let minimapW = 220;
-  let minimapH = 160;
+      const healthText = document.getElementById("healthText");
+      const healthLabelText = document.getElementById("healthLabelText");
+      const healthFillInner = document.getElementById("healthFillInner");
+      const enemyText = document.getElementById("enemyText");
+      const exitText = document.getElementById("exitText");
+      const ammoText = document.getElementById("ammoText");
+      const reloadFill = document.getElementById("reloadFill");
+      const message = document.getElementById("message");
+      const startOverlay = document.getElementById("startOverlay");
+      const pauseOverlay = document.getElementById("pauseOverlay");
+      const gameOverOverlay = document.getElementById("gameOverOverlay");
 
-  let seed = 1337;
-  let minimapVisible = true;
-  let paused = true;
-  let gameOver = false;
-  let won = false;
-  let toastTimer = 0;
-  let lastToast = "";
-  let lastTime = performance.now();
+      const TAU = Math.PI * 2;
+      const FOV = Math.PI / 3;
+      const MAP_W = 36;
+      const MAP_H = 26;
 
-  const keys = Object.create(null);
-  const pressed = Object.create(null);
+      let map = [];
+      let width = 1280;
+      let height = 720;
+      let dpr = 1;
 
-  const rand = (() => {
-    let s = seed;
-    return () => {
-      s = (s * 1664525 + 1013904223) >>> 0;
-      return s / 4294967296;
-    };
-  })();
+      const keys = Object.create(null);
+      const projectiles = [];
+      const enemies = [];
+      const pickups = [];
+      let particles = [];
 
-  function clamp(v, a, b) {
-    return Math.max(a, Math.min(b, v));
-  }
+      let player = {};
+      let weapon = {};
+      let game = {};
+      let minimapVisible = false;
+      let messageTimer = 0;
+      let lastTime = performance.now();
 
-  function lerp(a, b, t) {
-    return a + (b - a) * t;
-  }
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
 
-  function dist2(ax, ay, bx, by) {
-    const dx = ax - bx;
-    const dy = ay - by;
-    return Math.hypot(dx, dy);
-  }
+      function lerp(a, b, t) {
+        return a + (b - a) * t;
+      }
 
-  function modAngle(a) {
-    a %= TAU;
-    if (a < 0) a += TAU;
-    return a;
-  }
+      function angleDiff(a, b) {
+        let d = a - b;
+        while (d > Math.PI) d -= TAU;
+        while (d < -Math.PI) d += TAU;
+        return d;
+      }
 
-  function angleDiff(a, b) {
-    return Math.atan2(Math.sin(a - b), Math.cos(a - b));
-  }
+      function showTemporaryMessage(text) {
+        message.textContent = text;
+        message.classList.add("show");
+        messageTimer = 1.8;
+      }
 
-  function setCanvasSize() {
-    dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    viewW = window.innerWidth;
-    viewH = window.innerHeight;
-    gameCanvas.width = Math.floor(viewW * dpr);
-    gameCanvas.height = Math.floor(viewH * dpr);
-    gameCanvas.style.width = viewW + "px";
-    gameCanvas.style.height = viewH + "px";
-    gameCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      function hideTemporaryMessage() {
+        message.classList.remove("show");
+      }
 
-    minimapW = minimapCanvas.width = 220;
-    minimapH = minimapCanvas.height = 160;
-    minimapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
+      function seededRandom(seed) {
+        let s = seed >>> 0;
+        return function random() {
+          s = (s * 1664525 + 1013904223) >>> 0;
+          return s / 4294967296;
+        };
+      }
 
-  window.addEventListener("resize", setCanvasSize);
-  setCanvasSize();
+      function generateLevel() {
+        const rand = seededRandom(20260215);
+        map = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(1));
 
-  function generateMap() {
-    const grid = Array.from({ length: MAP_H }, () => Array(MAP_W).fill(WALL));
-    const rooms = [];
+        const rooms = [
+          { x: 2, y: 2, w: 7, h: 5 },
+          { x: 11, y: 2, w: 6, h: 6 },
+          { x: 20, y: 2, w: 7, h: 5 },
+          { x: 2, y: 11, w: 8, h: 6 },
+          { x: 12, y: 11, w: 7, h: 7 },
+          { x: 22, y: 11, w: 8, h: 6 },
+          { x: 2, y: 20, w: 7, h: 5 },
+          { x: 12, y: 20, w: 8, h: 5 },
+          { x: 23, y: 20, w: 7, h: 5 }
+        ];
 
-    const addRoom = (x, y, w, h) => {
-      for (let yy = y; yy < y + h; yy++) {
-        for (let xx = x; xx < x + w; xx++) {
-          if (xx > 0 && yy > 0 && xx < MAP_W - 1 && yy < MAP_H - 1) {
-            grid[yy][xx] = 0;
+        function carveRoom(r) {
+          for (let y = r.y; y < r.y + r.h; y++) {
+            for (let x = r.x; x < r.x + r.w; x++) {
+              if (x > 0 && y > 0 && x < MAP_W - 1 && y < MAP_H - 1) {
+                map[y][x] = 0;
+              }
+            }
           }
         }
-      }
-      const cx = Math.floor(x + w / 2);
-      const cy = Math.floor(y + h / 2);
-      rooms.push({ x, y, w, h, cx, cy });
-    };
 
-    addRoom(1, 1, 6, 5);
-    addRoom(16, 1, 7, 5);
-    addRoom(1, 12, 7, 5);
-    addRoom(16, 12, 6, 5);
-    addRoom(8, 5, 8, 5);
-    addRoom(10, 9, 4, 4);
+        rooms.forEach(carveRoom);
 
-    const centers = rooms.map(r => ({ x: r.cx, y: r.cy }));
-    for (let i = 1; i < centers.length; i++) {
-      carveCorridor(centers[i - 1].x, centers[i - 1].y, centers[i].x, centers[i].y);
-    }
-
-    for (let i = 0; i < 8; i++) {
-      const a = rooms[Math.floor(rand() * rooms.length)];
-      const b = rooms[Math.floor(rand() * rooms.length)];
-      if (a !== b) carveCorridor(a.cx, a.cy, b.cx, b.cy);
-    }
-
-    for (let y = 0; y < MAP_H; y++) {
-      for (let x = 0; x < MAP_W; x++) {
-        if (grid[y][x] === 0) {
-          if (rand() < 0.18) grid[y][x] = 1;
-        }
-      }
-    }
-
-    for (let i = 0; i < 10; i++) {
-      const r = rooms[Math.floor(rand() * rooms.length)];
-      grid[r.cy][r.cx] = 0;
-    }
-
-    const start = rooms[0];
-    const exit = rooms[rooms.length - 1];
-    grid[exit.cy][exit.cx] = EXIT_CELL;
-
-    return { grid, start, exit };
-  }
-
-  function carveCorridor(x1, y1, x2, y2) {
-    let x = x1;
-    let y = y1;
-    gridSet(x, y, 0);
-
-    while (x !== x2) {
-      x += Math.sign(x2 - x);
-      gridSet(x, y, 0);
-    }
-    while (y !== y2) {
-      y += Math.sign(y2 - y);
-      gridSet(x, y, 0);
-    }
-  }
-
-  const generated = generateMap();
-  const map = generated.grid;
-
-  const player = {
-    x: generated.start.cx + 0.5,
-    y: generated.start.cy + 0.5,
-    yaw: -Math.PI / 2,
-    pitch: 0,
-    health: 100,
-    ammo: 30,
-    maxAmmo: 30,
-    reloadTimer: 0,
-    fireTimer: 0,
-    sprinting: false,
-    damageTimer: 0
-  };
-
-  let exit = {
-    x: generated.exit.cx + 0.5,
-    y: generated.exit.cy + 0.5,
-    xMap: generated.exit.cx,
-    yMap: generated.exit.cy
-  };
-
-  const enemies = [];
-  const pickups = [];
-  const projectiles = [];
-
-  function addEnemy(x, y, hp) {
-    enemies.push({
-      x,
-      y,
-      hp,
-      maxHp: hp,
-      attackTimer: 0.4 + rand() * 0.5,
-      moveTimer: 0,
-      attackCooldown: 1.25 + rand() * 0.4,
-      alive: true,
-      color: `hsl(${220 + rand() * 45}, 90%, ${45 + rand() * 12}%)`
-    });
-  }
-
-  function addPickup(x, y, type) {
-    pickups.push({
-      x,
-      y,
-      type,
-      taken: false,
-      bob: rand() * TAU
-    });
-  }
-
-  function initEntities() {
-    enemies.length = 0;
-    pickups.length = 0;
-    projectiles.length = 0;
-
-    addEnemy(19, 3, 45);
-    addEnemy(12, 9, 55);
-    addEnemy(3, 16, 45);
-    addEnemy(19, 16, 65);
-    addEnemy(10, 11, 35);
-
-    addPickup(5, 3, "ammo");
-    addPickup(18, 3, "health");
-    addPickup(12, 16, "ammo");
-    addPickup(4, 14, "health");
-    addPickup(18, 13, "ammo");
-    addPickup(8, 7, "health");
-  }
-
-  initEntities();
-
-  function gridSet(x, y, v) {
-    if (x >= 0 && y >= 0 && x < MAP_W && y < MAP_H) map[y][x] = v;
-  }
-
-  function isWallCell(x, y) {
-    return x < 0 || y < 0 || x >= MAP_W || y >= MAP_H || map[y][x] === WALL;
-  }
-
-  function isFreeCell(x, y) {
-    if (x < 0 || y < 0 || x >= MAP_W || y >= MAP_H) return false;
-    return map[y][x] !== WALL;
-  }
-
-  function playerCollides(px, py) {
-    const r = 0.24;
-    const pts = [
-      [px - r, py - r],
-      [px + r, py - r],
-      [px - r, py + r],
-      [px + r, py + r]
-    ];
-    for (const p of pts) {
-      if (isWallCell(Math.floor(p[0]), Math.floor(p[1]))) return true;
-    }
-    return false;
-  }
-
-  function enemyCollides(e, nx, ny) {
-    const r = 0.31;
-    const pts = [
-      [nx - r, ny - r],
-      [nx + r, ny - r],
-      [nx - r, ny + r],
-      [nx + r, ny + r]
-    ];
-    for (const p of pts) {
-      if (isWallCell(Math.floor(p[0]), Math.floor(p[1]))) return true;
-    }
-    return false;
-  }
-
-  function showOverlay(title, text, hint) {
-    messageTitle.textContent = title;
-    messageText.textContent = text;
-    messageHint.textContent = hint || "Click to Continue";
-    overlay.style.display = "flex";
-  }
-
-  function hideOverlay() {
-    overlay.style.display = "none";
-  }
-
-  function toastMessage(text) {
-    if (text === lastToast) return;
-    lastToast = text;
-    toast.textContent = text;
-    toast.classList.add("show");
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("show"), 1500);
-  }
-
-  function togglePause(force) {
-    if (gameOver) return;
-    paused = typeof force === "boolean" ? force : !paused;
-    if (paused) {
-      showOverlay("PAUSED", "The facility is quiet for the moment.", "Press P or Esc to Resume");
-      if (document.pointerLockElement === gameCanvas) document.exitPointerLock();
-    } else {
-      hideOverlay();
-      gameCanvas.requestPointerLock();
-    }
-  }
-
-  gameCanvas.addEventListener("click", () => {
-    if (paused) {
-      togglePause(false);
-      return;
-    }
-    if (document.pointerLockElement !== gameCanvas) gameCanvas.requestPointerLock();
-    tryShoot();
-  });
-
-  document.addEventListener("pointerlockchange", () => {
-    if (!paused && document.pointerLockElement === gameCanvas) {
-      toastMessage("MOUSE LOCKED — AIM WITH MOUSE");
-    }
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if (paused || document.pointerLockElement !== gameCanvas) return;
-    player.yaw -= e.movementX * 0.0022;
-    player.pitch -= e.movementY * 0.0022;
-    player.pitch = clamp(player.pitch, -Math.PI / 2.45, Math.PI / 2.45);
-  });
-
-  document.addEventListener("keydown", (e) => {
-    pressed[e.code] = true;
-    keys[e.code] = true;
-
-    if (e.code === "KeyM") {
-      minimapVisible = !minimapVisible;
-      minimapCanvas.style.display = minimapVisible ? "block" : "none";
-      toastMessage(minimapVisible ? "MINIMAP ON" : "MINIMAP OFF");
-    }
-
-    if (e.code === "KeyR") reload();
-
-    if (e.code === "KeyP" || e.code === "Escape") {
-      e.preventDefault();
-      togglePause();
-    }
-  });
-
-  document.addEventListener("keyup", (e) => {
-    keys[e.code] = false;
-  });
-
-  window.addEventListener("blur", () => {
-    for (const k in keys) keys[k] = false;
-    if (!gameOver) togglePause(true);
-  });
-
-  function updateHUD() {
-    ammoText.textContent = player.ammo;
-    healthText.textContent = Math.max(0, Math.ceil(player.health));
-    enemyText.textContent = enemies.filter(e => e.alive).length;
-    statusText.textContent = player.reloadTimer > 0 ? "RELOAD" : player.sprinting ? "SPRINT" : "READY";
-    reloadOverlay.classList.toggle("show", player.reloadTimer > 0 && player.reloadTimer < 1.25);
-  }
-
-  function tryShoot() {
-    if (paused || gameOver) return;
-    if (player.reloadTimer > 0 || player.fireTimer > 0) return;
-    if (player.ammo <= 0) {
-      reload();
-      return;
-    }
-
-    player.ammo--;
-    player.fireTimer = 0.155;
-    muzzleFlash = 0.08;
-    recoil = 0.08;
-
-    const hit = findHitEnemy();
-    if (hit) {
-      const { enemy, dist, x, y, z } = hit;
-      enemy.hp -= 22;
-      enemy.hitTimer = 0.18;
-      spawnTracer({
-        sx: viewW / 2,
-        sy: viewH / 2,
-        ex: x,
-        ey: y,
-        ez: z,
-        life: 0.055,
-        maxLife: 0.055,
-        hit: true
-      });
-      if (enemy.hp <= 0) {
-        enemy.alive = false;
-        toastMessage("ENEMY DOWN");
-      }
-    } else {
-      spawnTracer({
-        sx: viewW / 2,
-        sy: viewH / 2,
-        ex: viewW / 2 + Math.cos(player.yaw) * 120,
-        ey: viewH / 2 + Math.sin(player.yaw) * 120,
-        ez: viewH / 2,
-        life: 0.055,
-        maxLife: 0.055,
-        hit: false
-      });
-    }
-  }
-
-  function reload() {
-    if (paused || gameOver || player.reloadTimer > 0) return;
-    if (player.ammo >= player.maxAmmo) return;
-    player.reloadTimer = 1.25;
-    toastMessage("RELOADING");
-  }
-
-  function findHitEnemy() {
-    const aim = {
-      x: Math.cos(player.yaw),
-      y: Math.sin(player.yaw),
-      yaw: player.yaw
-    };
-    let best = null;
-
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      const dx = e.x - player.x;
-      const dy = e.y - player.y;
-      const d = Math.hypot(dx, dy);
-      if (d <= 0.01) continue;
-
-      const ang = Math.atan2(dy, dx);
-      const diff = Math.abs(angleDiff(ang, aim.yaw));
-      const hitRadius = clamp(0.045 + 0.62 / d, 0.035, 0.085);
-      if (diff > hitRadius) continue;
-
-      if (!lineOfSight(player.x, player.y, e.x, e.y, 0.08)) continue;
-
-      const v = 0.14 + e.maxHp / 170;
-      const pitchRadius = clamp(0.12 + 0.28 / d, 0.07, 0.14);
-      if (Math.abs(player.pitch) > pitchRadius) continue;
-
-      const closest = Math.min(
-        Math.abs(player.x - e.x),
-        Math.abs(player.y - e.y)
-      );
-      const score = d * 0.01 - closest * 0.002;
-
-      if (!best || score < best.score) {
-        best = { enemy: e, score, d };
-      }
-    }
-
-    return best ? {
-      enemy: best.enemy,
-      dist: best.d,
-      x: best.enemy.x + Math.cos(player.yaw) * 0.03,
-      y: best.enemy.y + Math.sin(player.yaw) * 0.03,
-      z: viewH / 2
-    } : null;
-  }
-
-  function lineOfSight(x1, y1, x2, y2, radius) {
-    const dx = x2 - x1;
-    const dy = y2 - y1;
-    const len = Math.hypot(dx, dy);
-    const steps = Math.max(2, Math.ceil(len / 0.18));
-
-    for (let i = 1; i < steps; i++) {
-      const t = i / steps;
-      const x = x1 + dx * t;
-      const y = y1 + dy * t;
-      const cx = Math.floor(x + Math.cos(player.yaw) * radius);
-      const cy = Math.floor(y + Math.sin(player.yaw) * radius);
-      if (isWallCell(cx, cy)) return false;
-    }
-    return true;
-  }
-
-  function spawnTracer(p) {
-    projectiles.push({
-      type: "player",
-      x: p.sx,
-      y: p.sy,
-      z: p.sx,
-      tx: p.ex,
-      ty: p.ey,
-      tz: p.ez,
-      life: p.life,
-      maxLife: p.maxLife,
-      hit: p.hit
-    });
-  }
-
-  function updateEnemies(dt) {
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      e.hitTimer = Math.max(0, (e.hitTimer || 0) - dt);
-
-      if (lineOfSight(player.x, player.y, e.x, e.y, 0.05)) {
-        e.moveTimer -= dt;
-        if (e.moveTimer <= 0) {
-          const dx = player.x - e.x;
-          const dy = player.y - e.y;
-          const d = Math.hypot(dx, dy);
-          if (d > 0.55) {
-            const nx = e.x + dx / d;
-            const ny = e.y + dy / d;
-            const step = Math.min(0.34, dt * 1.15);
-            if (!enemyCollides(e, e.x + Math.sign(nx - e.x) * step, e.y)) e.x += Math.sign(nx - e.x) * step;
-            if (!enemyCollides(e, e.x, e.y + Math.sign(ny - e.y) * step)) e.y += Math.sign(ny - e.y) * step;
+        function carveCorridor(x1, y1, x2, y2) {
+          let x = x1;
+          let y = y1;
+          map[y][x] = 0;
+          while (x !== x2) {
+            x += x < x2 ? 1 : -1;
+            map[y][x] = 0;
           }
-          e.moveTimer = 0.22 + rand() * 0.2;
-        }
-      } else {
-        moveEnemyByPath(e, dt);
-      }
-
-      const d = dist2(e.x, e.y, player.x, player.y);
-      if (d < 0.58) {
-        e.attackCooldown -= dt;
-        e.attackTimer -= dt;
-        if (e.attackCooldown <= 0) {
-          e.attackCooldown = 1.25;
-          e.attackTimer = 0.55;
-          player.health = Math.max(0, player.health - 12);
-          player.damageTimer = 0.35;
-          damageFlash.classList.add("show");
-          setTimeout(() => damageFlash.classList.remove("show"), 220);
-          toastMessage("ENEMY BITE -12 HP");
-        }
-      } else {
-        e.attackTimer = 0;
-      }
-    }
-  }
-
-  function moveEnemyByPath(e, dt) {
-    e.moveTimer -= dt;
-    if (e.moveTimer > 0) return;
-    e.moveTimer = 0.42;
-
-    const path = bfsPath(Math.floor(e.x), Math.floor(e.y), Math.floor(player.x), Math.floor(player.y));
-    if (!path || path.length < 2) {
-      wanderEnemy(e);
-      return;
-    }
-
-    const next = path[1];
-    const dx = next.x + 0.5 - e.x;
-    const dy = next.y + 0.5 - e.y;
-    const d = Math.hypot(dx, dy);
-    if (d < 0.25) {
-      e.x = next.x + 0.5;
-      e.y = next.y + 0.5;
-      return;
-    }
-
-    const step = Math.min(0.42, dt * 1.55);
-    if (!enemyCollides(e, e.x + Math.sign(dx) * step, e.y)) e.x += Math.sign(dx) * step;
-    if (!enemyCollides(e, e.x, e.y + Math.sign(dy) * step)) e.y += Math.sign(dy) * step;
-  }
-
-  function wanderEnemy(e) {
-    const dirs = [
-      [1, 0],
-      [-1, 0],
-      [0, 1],
-      [0, -1]
-    ];
-    dirs.sort(() => rand() - 0.5);
-    for (const [dx, dy] of dirs) {
-      const nx = e.x + dx;
-      const ny = e.y + dy;
-      if (!enemyCollides(e, nx, ny)) {
-        e.x = nx;
-        e.y = ny;
-        return;
-      }
-    }
-  }
-
-  function bfsPath(sx, sy, gx, gy) {
-    const q = [];
-    const parent = new Map();
-    const visited = new Set();
-    q.push([sx, sy]);
-    visited.add(`${sx},${sy}`);
-
-    while (q.length) {
-      const [x, y] = q.shift();
-      if (x === gx && y === gy) break;
-
-      const dirs = [
-        [1, 0],
-        [-1, 0],
-        [0, 1],
-        [0, -1]
-      ];
-      for (const [dx, dy] of dirs) {
-        const nx = x + dx;
-        const ny = y + dy;
-        const key = `${nx},${ny}`;
-        if (visited.has(key) || isWallCell(nx, ny)) continue;
-        visited.add(key);
-        parent.set(key, [x, y]);
-        q.push([nx, ny]);
-      }
-    }
-
-    if (!parent.has(`${gx},${gy}`)) return null;
-
-    const path = [];
-    let cur = [gx, gy];
-    path.push(cur);
-    while (cur[0] !== sx || cur[1] !== sy) {
-      cur = parent.get(`${cur[0]},${cur[1]}`);
-      path.push(cur);
-    }
-    path.reverse();
-    return path;
-  }
-
-  function updateProjectiles(dt) {
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-      const p = projectiles[i];
-      p.life -= dt;
-      if (p.life <= 0) {
-        projectiles.splice(i, 1);
-        continue;
-      }
-
-      if (p.type === "enemy") {
-        const dx = p.tx - p.x;
-        const dy = p.ty - p.y;
-        const dz = p.tz - p.z;
-        const len = Math.hypot(dx, dy, dz) || 1;
-        p.x += dx / len * p.speed * dt;
-        p.y += dy / len * p.speed * dt;
-        p.z += dz / len * p.speed * dt;
-
-        const cx = Math.floor(p.x);
-        const cy = Math.floor(p.y);
-        if (isWallCell(cx, cy)) {
-          projectiles.splice(i, 1);
-          continue;
+          while (y !== y2) {
+            y += y < y2 ? 1 : -1;
+            map[y][x] = 0;
+          }
         }
 
-        if (dist2(p.x, p.y, player.x, player.y) < 0.35) {
-          player.health = Math.max(0, player.health - 8);
-          player.damageTimer = 0.25;
-          damageFlash.classList.add("show");
-          setTimeout(() => damageFlash.classList.remove("show"), 180);
-          projectiles.splice(i, 1);
+        const centers = rooms.map((r) => ({
+          x: Math.floor(r.x + r.w / 2),
+          y: Math.floor(r.y + r.h / 2)
+        }));
+
+        for (let i = 0; i < centers.length - 1; i++) {
+          carveCorridor(centers[i].x, centers[i].y, centers[i + 1].x, centers[i + 1].y);
         }
-      } else {
-        const dx = p.tx - p.x;
-        const dy = p.ty - p.y;
-        const dz = p.tz - p.z;
-        const len = Math.hypot(dx, dy, dz) || 1;
-        p.x += dx / len * 1.15 * dt;
-        p.y += dy / len * 1.15 * dt;
-        p.z += dz / len * 1.15 * dt;
-      }
-    }
-  }
 
-  function updatePlayer(dt) {
-    const forward =
-      (keys["KeyW"] || keys["ArrowUp"] ? 1 : 0) -
-      (keys["KeyS"] || keys["ArrowDown"] ? 1 : 0);
-    const strafe =
-      (keys["KeyD"] || keys["ArrowRight"] ? 1 : 0) -
-      (keys["KeyA"] || keys["ArrowLeft"] ? 1 : 0);
-
-    player.sprinting = !!keys["ShiftLeft"] || !!keys["ShiftRight"];
-    const speed = player.sprinting ? 3.2 : 2.35;
-    const len = Math.hypot(forward, strafe);
-    if (len > 0) {
-      const nx = forward * Math.cos(player.yaw) + strafe * Math.sin(player.yaw);
-      const ny = forward * Math.sin(player.yaw) - strafe * Math.cos(player.yaw);
-      const dx = nx / len * speed * dt;
-      const dy = ny / len * speed * dt;
-
-      if (!playerCollides(player.x + dx, player.y)) player.x += dx;
-      if (!playerCollides(player.x, player.y + dy)) player.y += dy;
-    }
-
-    player.fireTimer = Math.max(0, player.fireTimer - dt);
-    player.reloadTimer = Math.max(0, player.reloadTimer - dt);
-    player.damageTimer = Math.max(0, player.damageTimer - dt);
-  }
-
-  function updatePickups() {
-    for (const p of pickups) {
-      if (p.taken) continue;
-      if (dist2(p.x, p.y, player.x, player.y) < 0.42) {
-        p.taken = true;
-        if (p.type === "ammo") {
-          player.ammo = Math.min(player.maxAmmo, player.ammo + 12);
-          toastMessage("AMMO +12");
-        } else {
-          player.health = Math.min(100, player.health + 25);
-          toastMessage("HEALTH +25");
+        if (rand() > 0.45) {
+          carveCorridor(centers[3].x, centers[3].y, centers[6].x, centers[6].y);
         }
-      }
-    }
-  }
+        if (rand() > 0.35) {
+          carveCorridor(centers[1].x, centers[1].y, centers[4].x, centers[4].y);
+        }
+        if (rand() > 0.35) {
+          carveCorridor(centers[5].x, centers[5].y, centers[8].x, centers[8].y);
+        }
 
-  function updateEnemiesProjectiles(dt) {
-    if (gameOver) return;
-    const alive = enemies.filter(e => e.alive);
-    if (!alive.length) {
-      won = true;
-      gameOver = true;
-      paused = true;
-      showOverlay("EXIT REACHED", "All hostile units are down. The exit beacon is open.", "Click to Restart");
-      return;
-    }
+        const exit = centers[centers.length - 1];
+        map[exit.y][exit.x] = 2;
 
-    for (const e of alive) {
-      e.attackCooldown -= dt;
-      if (lineOfSight(player.x, player.y, e.x, e.y, 0.05) && e.attackCooldown <= 0) {
-        const dx = player.x - e.x;
-        const dy = player.y - e.y;
-        const dz = 0;
-        const len = Math.hypot(dx, dy, dz) || 1;
-        projectiles.push({
-          type: "enemy",
-          x: e.x,
-          y: e.y,
-          z: viewH * 0.55,
-          tx: player.x,
-          ty: player.y,
-          tz: viewH * 0.52,
-          speed: 13,
-          life: 1.8,
-          maxLife: 1.8,
-          hit: false
+        const start = centers[0];
+        player = {
+          x: centers[0].x + 0.5,
+          y: centers[0].y + 0.5,
+          angle: Math.PI,
+          radius: 0.22,
+          health: 100,
+          speed: 3.15,
+          sprintSpeed: 5.1,
+          invulnerable: 0
+        };
+
+        weapon = {
+          name: "Pulse Carbine",
+          ammo: 30,
+          maxAmmo: 30,
+          fireRate: 0.18,
+          damage: 25,
+          reloadDuration: 1.25,
+          cooldown: 0,
+          reloadTimer: 0
+        };
+
+        enemies.length = 0;
+        const enemyPositions = [
+          { x: centers[1].x + 0.5, y: centers[1].y + 0.5, hp: 45 },
+          { x: centers[3].x + 0.5, y: centers[3].y + 0.5, hp: 55 },
+          { x: centers[4].x + 0.5, y: centers[4].y + 0.5, hp: 65 },
+          { x: centers[5].x + 0.5, y: centers[5].y + 0.5, hp: 50 },
+          { x: centers[7].x + 0.5, y: centers[7].y + 0.5, hp: 70 }
+        ];
+
+        enemyPositions.forEach((p, index) => {
+          enemies.push({
+            x: p.x,
+            y: p.y,
+            angle: index * 0.7,
+            radius: 0.34,
+            hp: p.hp,
+            maxHp: p.hp,
+            speed: 1.05 + index * 0.08,
+            attackCooldown: 0.4 + index * 0.15,
+            wanderTimer: 0.5 + rand() * 1.2,
+            wanderAngle: rand() * TAU,
+            alive: true
+          });
         });
-        e.attackCooldown = 1.75;
-      }
-    }
-  }
 
-  function update(dt) {
-    if (paused || gameOver) return;
-    updatePlayer(dt);
-    updateEnemies(dt);
-    updateEnemiesProjectiles(dt);
-    updatePickups();
-    updateProjectiles(dt);
+        pickups.length = 0;
+        pickups.push({ x: centers[2].x + 0.5, y: centers[2].y + 0.5, type: "ammo" });
+        pickups.push({ x: centers[4].x + 1.5, y: centers[4].y + 0.5, type: "health" });
+        pickups.push({ x: centers[6].x + 0.5, y: centers[6].y + 1.5, type: "ammo" });
+        pickups.push({ x: centers[8].x + 0.5, y: centers[8].y + 0.5, type: "health" });
 
-    if (player.health <= 0) {
-      gameOver = true;
-      paused = true;
-      showOverlay("YOU FELL", "The facility lights flicker out.", "Click to Restart");
-    }
+        game = {
+          over: false,
+          won: false,
+          time: 0
+        };
 
-    if (dist2(player.x, player.y, exit.x, exit.y) < 0.42) {
-      won = true;
-      gameOver = true;
-      paused = true;
-      showOverlay("EXIT SECURED", "You reached the exit. The generated level is complete.", "Click to Play Again");
-    }
-
-    updateHUD();
-  }
-
-  function drawCeilingFloor() {
-    const mid = viewH / 2;
-    const time = performance.now() / 1000;
-
-    for (let y = 0; y < mid; y++) {
-      const t = y / mid;
-      const shade = 1 - t * 0.75;
-      const g = Math.floor(8 + t * 20);
-      const b = Math.floor(18 + t * 48);
-      gameCtx.fillStyle = `rgb(${Math.floor(3 * shade)}, ${g}, ${b})`;
-      gameCtx.fillRect(0, y, viewW, 1);
-    }
-
-    for (let y = mid; y < viewH; y++) {
-      const t = (y - mid) / (viewH - mid);
-      const depth = mid / Math.max(0.01, y - mid);
-      const stripe = Math.floor((time * 0.35 + depth * 0.08) % 6);
-      const g = Math.floor(26 + stripe * 4 + t * 20);
-      const b = Math.floor(32 + stripe * 2 + t * 35);
-      gameCtx.fillStyle = `rgb(${Math.floor(12 + t * 14)}, ${g}, ${b})`;
-      gameCtx.fillRect(0, y, viewW, 1);
-    }
-
-    gameCtx.strokeStyle = "rgba(180, 220, 255, 0.045)";
-    gameCtx.lineWidth = 1;
-    const gridStep = 34;
-    for (let y = mid + 16; y < viewH; y += gridStep) {
-      gameCtx.beginPath();
-      gameCtx.moveTo(0, y);
-      gameCtx.lineTo(viewW, y);
-      gameCtx.stroke();
-    }
-    for (let x = 0; x < viewW; x += gridStep) {
-      gameCtx.beginPath();
-      gameCtx.moveTo(x, mid);
-      gameCtx.lineTo(x, viewH);
-      gameCtx.stroke();
-    }
-  }
-
-  function castWalls() {
-    const fogColor = [8, 12, 18];
-    const fog = [14, 20, 28];
-    const scale = viewH * 0.74;
-    const rayDirX = Math.cos(player.yaw);
-    const rayDirY = Math.sin(player.yaw);
-    const camX = player.x;
-    const camY = player.y;
-
-    for (let x = 0; x < viewW; x++) {
-      const rayAngle = player.yaw + (x / viewW - 0.5) * FOV;
-      const cos = Math.cos(rayAngle);
-      const sin = Math.sin(rayAngle);
-      const invCos = Math.abs(1 / cos);
-      const invSin = Math.abs(1 / sin);
-
-      let mapX = Math.floor(player.x);
-      let mapY = Math.floor(player.y);
-
-      let deltaDistX = invCos;
-      let deltaDistY = invSin;
-      let stepX;
-      let stepY;
-      let sideDistX;
-      let sideDistY;
-
-      if (cos < 0) {
-        stepX = -1;
-        sideDistX = (player.x - mapX) * invCos;
-      } else {
-        stepX = 1;
-        sideDistX = (mapX + 1.0 - player.x) * invCos;
+        hideTemporaryMessage();
       }
 
-      if (sin < 0) {
-        stepY = -1;
-        sideDistY = (player.y - mapY) * invSin;
-      } else {
-        stepY = 1;
-        sideDistY = (mapY + 1.0 - player.y) * invSin;
+      function isBlocked(x, y) {
+        const gx = Math.floor(x);
+        const gy = Math.floor(y);
+        if (gx < 0 || gy < 0 || gx >= MAP_W || gy >= MAP_H) return true;
+        return map[gy][gx] === 1;
       }
 
-      let side = 0;
-      let hit = false;
-      let wallType = WALL;
+      function canMove(x, y, radius) {
+        const r = radius || 0.2;
+        return (
+          !isBlocked(x - r, y - r) &&
+          !isBlocked(x + r, y - r) &&
+          !isBlocked(x - r, y + r) &&
+          !isBlocked(x + r, y + r)
+        );
+      }
 
-      while (!hit && sideDistX < 80 && sideDistY < 80) {
-        if (sideDistX < sideDistY) {
-          sideDistX += deltaDistX;
-          mapX += stepX;
-          side = 0;
-        } else {
-          sideDistY += deltaDistY;
-          mapY += stepY;
-          side = 1;
+      function castRay(angle) {
+        const sin = Math.sin(angle);
+        const cos = Math.cos(angle);
+        let dist = 0;
+        const step = 0.025;
+        const maxDist = 42;
+
+        for (let i = 0; i < maxDist / step; i++) {
+          dist = i * step;
+          const x = player.x + cos * dist;
+          const y = player.y + sin * dist;
+          if (isBlocked(x, y)) {
+            const gx = Math.floor(x);
+            const gy = Math.floor(y);
+            const side = Math.abs((x - gx) - (y - gy)) < 0.001 ? 0 : Math.abs(x - gx) < Math.abs(y - gy) ? 1 : 2;
+            return { dist, side, gx, gy };
+          }
         }
-        if (mapX < 0 || mapY < 0 || mapX >= MAP_W || mapY >= MAP_H || map[mapY][mapX] === WALL) {
-          hit = true;
-          wallType = map[mapY][mapX];
+
+        return { dist: maxDist, side: 0, gx: -1, gy: -1 };
+      }
+
+      function lineOfSight(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const len = Math.hypot(dx, dy);
+        for (let t = 0.04; t < 0.96; t += 0.045) {
+          if (isBlocked(x1 + dx * t, y1 + dy * t)) return false;
+        }
+        return true;
+      }
+
+      function damagePlayer(amount) {
+        if (game.over || player.invulnerable > 0) return;
+        player.health = clamp(player.health - amount, 0, 100);
+        player.invulnerable = 0.45;
+        if (player.health <= 0) {
+          game.over = true;
+          gameOverOverlay.classList.remove("hidden");
+          if (document.pointerLockElement === canvas) document.exitPointerLock();
         }
       }
 
-      let perpWallDist;
-      if (side === 0) {
-        perpWallDist = (mapX - player.x + (1 - stepX) / 2) / cos;
-      } else {
-        perpWallDist = (mapY - player.y + (1 - stepY) / 2) / sin;
+      function damageEnemy(enemy, amount) {
+        enemy.hp -= amount;
+        spawnHitParticles(enemy.x, enemy.y, "#ff6b6b");
+        if (enemy.hp <= 0) {
+          enemy.alive = false;
+          spawnHitParticles(enemy.x, enemy.y, "#78f7ff");
+          showTemporaryMessage("Enemy down");
+        }
       }
 
-      const corrected = Math.max(0.01, perpWallDist * Math.cos(rayAngle - player.yaw));
-      const wallH = scale / corrected;
-      const start = Math.floor(mid - wallH / 2);
-      const end = Math.floor(mid + wallH / 2);
-
-      const shade = clamp(1.28 - corrected / 38, 0.08, 1.0);
-      let r = 72, g = 82, b = 94;
-      if (wallType === EXIT_CELL) {
-        r = 55 + Math.sin(performance.now() / 180) * 22;
-        g = 160 + Math.sin(performance.now() / 160) * 35;
-        b = 88;
-      }
-      if (side) {
-        r = Math.floor(r * 0.72);
-        g = Math.floor(g * 0.72);
-        b = Math.floor(b * 0.72);
+      function spawnHitParticles(x, y, color) {
+        for (let i = 0; i < 10; i++) {
+          const a = Math.random() * TAU;
+          const s = 1.2 + Math.random() * 2.8;
+          particles.push({
+            x,
+            y,
+            vx: Math.cos(a) * s,
+            vy: Math.sin(a) * s,
+            life: 0.25 + Math.random() * 0.25,
+            maxLife: 0.5,
+            color
+          });
+        }
       }
 
-      const fogT = clamp(corrected / 52, 0, 1);
-      r = Math.floor(lerp(r, fog[0], fogT));
-      g = Math.floor(lerp(g, fog[1], fogT));
-      b = Math.floor(lerp(b, fog[2], fogT));
+      function spawnProjectile() {
+        const a = player.angle;
+        const dirX = Math.cos(a);
+        const dirY = Math.sin(a);
+        const start = {
+          x: player.x + dirX * 0.48,
+          y: player.y + dirY * 0.48
+        };
+        projectiles.push({
+          x: start.x,
+          y: start.y,
+          vx: dirX * 30,
+          vy: dirY * 30,
+          life: 0.55,
+          maxLife: 0.55,
+          trail: [],
+          damage: weapon.damage
+        });
+      }
 
-      const stripe = Math.floor(((player.x * 0.35 + player.y * 0.15 + x * 0.012) % 1) * 5);
-      r = Math.floor(r * (1 - stripe * 0.018));
-      g = Math.floor(g * (1 - stripe * 0.018));
-      b = Math.floor(b * (1 - stripe * 0.018));
+      function updateProjectiles(dt) {
+        for (let i = projectiles.length - 1; i >= 0; i--) {
+          const p = projectiles[i];
+          p.life -= dt;
+          p.trail.push({ x: p.x, y: p.y });
+          if (p.trail.length > 8) p.trail.shift();
 
-      gameCtx.fillStyle = `rgb(${Math.max(0, Math.floor(r * shade))}, ${Math.max(0, Math.floor(g * shade))}, ${Math.max(0, Math.floor(b * shade))})`;
-      gameCtx.fillRect(x, Math.max(0, start), 1, Math.max(1, end - start + 1));
-    }
-  }
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
 
-  function projectSprite(x, y) {
-    const dx = x - player.x;
-    const dy = y - player.y;
-    const dirX = Math.cos(player.yaw);
-    const dirY = Math.sin(player.yaw);
-    const invDet = 1 / (player.x * dirY - player.y * dirX);
-    const transformX = invDet * (dx * dirY - dy * dirX);
-    const transformY = invDet * (-dirY * dx + dirX * dy);
-    if (transformY <= 0.045) return null;
+          if (p.life <= 0 || isBlocked(p.x, p.y)) {
+            spawnHitParticles(p.x, p.y, "#bfefff");
+            projectiles.splice(i, 1);
+            continue;
+          }
 
-    return {
-      dist: Math.hypot(dx, dy),
-      angle: Math.atan2(dy, dx),
-      screenX: viewW / 2 * (1 + transformX / transformY),
-      depth: transformY
-    };
-  }
+          let hit = false;
+          for (const enemy of enemies) {
+            if (!enemy.alive) continue;
+            const dx = p.x - enemy.x;
+            const dy = p.y - enemy.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < enemy.radius + 0.16 && lineOfSight(p.x, p.y, enemy.x, enemy.y)) {
+              damageEnemy(enemy, p.damage);
+              hit = true;
+              break;
+            }
+          }
 
-  function nearestWallDistanceAlongAngle(angle, radius) {
-    const dx = Math.cos(angle);
-    const dy = Math.sin(angle);
-    let x = player.x;
-    let y = player.y;
-    const step = 0.055;
-    const maxD = 18;
+          if (hit) {
+            projectiles.splice(i, 1);
+          }
+        }
+      }
 
-    while (maxD > 0) {
-      x += dx * step;
-      y += dy * step;
-      maxD -= step;
-      if (isWallCell(Math.floor(x), Math.floor(y))) return maxD;
-    }
-    return 18;
-  }
+      function updateEnemies(dt) {
+        for (const enemy of enemies) {
+          if (!enemy.alive) continue;
 
-  function drawSpriteRect(ctx, x, y, w, h, color, alpha = 1) {
-    ctx.save();
-    ctx.globalAlpha *= alpha;
-    ctx.fillStyle = color;
-    ctx.fillRect(x, y, w, h);
-    ctx.restore();
-  }
+          const dx = player.x - enemy.x;
+          const dy = player.y - enemy.y;
+          const dist = Math.hypot(dx, dy);
+          const enemyAngle = Math.atan2(dy, dx);
+          const diff = angleDiff(enemyAngle, player.angle);
+          const inFov = Math.abs(diff) < FOV / 2;
+          const los = lineOfSight(enemy.x, enemy.y, player.x, player.y);
 
-  function drawSprites() {
-    const items = [];
+          enemy.attackCooldown = Math.max(0, enemy.attackCooldown - dt);
 
-    for (const e of enemies) {
-      if (!e.alive) continue;
-      const p = projectSprite(e.x, e.y);
-      if (!p) continue;
-      const wallDist = nearestWallDistanceAlongAngle(p.angle, 0.08);
-      if (wallDist < p.dist * 0.92) continue;
-      items.push({ kind: "enemy", sprite: p, obj: e });
-    }
+          if (dist < 1.18 && enemy.attackCooldown <= 0) {
+            damagePlayer(10);
+            enemy.attackCooldown = 1.25;
+          }
 
-    for (const p of pickups) {
-      if (p.taken) continue;
-      const s = projectSprite(p.x, p.y);
-      if (!s) continue;
-      const wallDist = nearestWallDistanceAlongAngle(s.angle, 0.05);
-      if (wallDist < s.dist * 0.92) continue;
-      items.push({ kind: "pickup", sprite: s, obj: p });
-    }
+          if (inFov && los && dist < 13) {
+            const desired = Math.atan2(dy, dx);
+            const turn = clamp(angleDiff(desired, enemy.angle), -1, 1) * 7 * dt;
+            enemy.angle += turn;
 
-    const ep = projectSprite(exit.x, exit.y);
-    if (ep) {
-      const wallDist = nearestWallDistanceAlongAngle(ep.angle, 0.05);
-      if (wallDist >= ep.dist * 0.92) items.push({ kind: "exit", sprite: ep });
-    }
+            const nx = enemy.x + Math.cos(desired) * enemy.speed * dt;
+            const ny = enemy.y + Math.sin(desired) * enemy.speed * dt;
 
-    items.sort((a, b) => b.sprite.depth - a.sprite.depth);
+            if (canMove(enemy.x, ny, enemy.radius)) enemy.y = ny;
+            if (canMove(nx, enemy.y, enemy.radius)) enemy.x = nx;
 
-    for (const item of items) {
-      if (item.kind === "enemy") drawEnemySprite(item.sprite, item.obj);
-      else if (item.kind === "pickup") drawPickupSprite(item.sprite, item.obj);
-      else drawExitSprite(item.sprite);
-    }
-  }
+            if (Math.hypot(enemy.x - player.x, enemy.y - player.y) < 0.72) {
+              damagePlayer(8);
+            }
+          } else {
+            enemy.wanderTimer -= dt;
+            if (enemy.wanderTimer <= 0) {
+              enemy.wanderAngle += (Math.random() - 0.5) * 2.2;
+              enemy.wanderTimer = 0.5 + Math.random() * 1.4;
+            }
 
-  function drawEnemySprite(p, e) {
-    const midY = viewH / 2;
-    const h = clamp(220 / p.depth, 28, viewH * 0.82);
-    const w = h * 0.58;
-    const x = p.screenX - w / 2;
-    const y = midY - h * 0.62;
-    const alpha = clamp(1.1 - p.depth / 55, 0.25, 1);
-    const bob = Math.sin(performance.now() / 260 + e.x * 3) * 4;
-    const hitPulse = e.hitTimer > 0 ? 1.15 : 1;
+            const desired = enemy.wanderAngle;
+            const turn = clamp(angleDiff(desired, enemy.angle), -1, 1) * 5 * dt;
+            enemy.angle += turn;
 
-    gameCtx.save();
-    gameCtx.globalAlpha = alpha;
+            const nx = enemy.x + Math.cos(enemy.angle) * enemy.speed * 0.55 * dt;
+            const ny = enemy.y + Math.sin(enemy.angle) * enemy.speed * 0.55 * dt;
 
-    gameCtx.fillStyle = "rgba(0,0,0,0.35)";
-    gameCtx.beginPath();
-    gameCtx.ellipse(p.screenX, viewH - 10, w * 0.42, h * 0
+            if (canMove(enemy.x, ny, enemy.radius)) enemy.y = ny;
+            if (canMove(nx, enemy.y, enemy.radius)) enemy.x = nx;
+
+            if (!canMove(enemy.x, enemy.y, enemy.radius)) {
+              enemy.wanderAngle = Math.atan2(player.y - enemy.y, player.x - enemy.x);
+              enemy.wanderTimer = 0.2;
+            }
+          }
+        }
+      }
+
+      function updatePickups(dt) {
+        for (let i = pickups.length - 1; i >= 0; i--) {
+          const p = pickups[i];
+          const dx = player.x - p.x;
+          const dy = player.y - p.y;
+          if (Math.hypot(dx, dy) < 0.55) {
+            if (p.type === "ammo") {
+              weapon.ammo = clamp(weapon.ammo + 12, 0, weapon.maxAmmo);
+              showTemporaryMessage("Ammo +12");
+            } else {
+              player.health = clamp(player.health + 25, 0, 100);
+              showTemporaryMessage("Health +25");
+            }
+            pickups.splice(i, 1);
+          }
+        }
+      }
+
+      function updatePlayer(dt) {
+        let moveX = 0;
+        let moveY = 0;
+
+        if (keys["KeyW"]) moveY -= 1;
+        if (keys["KeyS"]) moveY += 1;
+        if (keys["KeyA"]) moveX -= 1;
+        if (keys["KeyD"]) moveX += 1;
+
+        const len = Math.hypot(moveX, moveY);
+        if (len > 0) {
+          moveX /= len;
+          moveY /= len;
+        }
+
+        const sprinting = keys["ShiftLeft"] || keys["ShiftRight"];
+        const speed = player.speed * (sprinting ? 1.55 : 1);
+
+        const nx = player.x + Math.cos(player.angle) * moveY * speed * dt + Math.cos(player.angle + Math.PI / 2) * moveX * speed * dt;
+        const ny = player.y + Math.sin(player.angle) * moveY * speed * dt + Math.sin(player.angle + Math.PI / 2) * moveX * speed * dt;
+
+        if (canMove(nx, player.y, player.radius)) player.x = nx;
+        if (canMove(player.x, ny, player.radius)) player.y = ny;
+
+        player.invulnerable = Math.max(0, player.invulnerable - dt);
+      }
+
+      function updateWeapon(dt) {
+        weapon.cooldown = Math.max(0, weapon.cooldown - dt);
+
+        if (weapon.reloadTimer > 0) {
+          weapon.reloadTimer -= dt;
+          const progress = 1 - weapon.reloadTimer / weapon.reloadDuration;
+          if (progress >= 1) {
+            weapon.ammo = clamp(weapon.ammo + 1, 0, weapon.maxAmmo);
+            weapon.reloadTimer = 0;
+          } else {
+            weapon.ammo = clamp(weapon.ammo + progress * 0.08, 0, weapon.maxAmmo);
+          }
+        }
+      }
+
+      function shoot() {
+        if (game.over || game.won || weapon.reloadTimer > 0) return;
+        if (weapon.cooldown > 0) return;
+        if (weapon.ammo <= 0) {
+          reload();
+          return;
+        }
+
+        weapon.ammo--;
+        weapon.cooldown = weapon.fireRate;
+        spawnProjectile();
+      }
+
+      function reload() {
+        if (game.over || game.won || weapon.reloadTimer > 0) return;
+        if (weapon.ammo >= weapon.maxAmmo) return;
+        weapon.reloadTimer = weapon.reloadDuration;
+        showTemporaryMessage("Reloading");
+      }
+
+      function updateGame(dt) {
+        if (game.over || game.won) return;
+
+        updatePlayer(dt);
+        updateEnemies(dt);
+        updatePickups(dt);
+        updateProjectiles(dt);
+        updateWeapon(dt);
+
+        const exit = map.find((row, y) => row.includes(2)) ? map.find((row, y) => row.includes(2)).indexOf(2) : -1;
+        const exitY = map.findIndex((row) => row.includes(2));
+        if (exitY >= 0 && exit >= 0) {
+          const ex = exit + 0.5;
+          const ey = exitY + 0.5;
+          if (Math.hypot(player.x - ex, player.y - ey) < 0.75) {
+            game.won = true;
+            showTemporaryMessage("Exit secured");
+            if (document.pointerLockElement === canvas) document.exitPointerLock();
+          }
+        }
+
+        const aliveEnemies = enemies.filter((e) => e.alive).length;
+        enemyText.textContent = String(aliveEnemies);
+      }
+
+      function resize() {
+        dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        width = Math.floor(window.innerWidth * dpr);
+        height = Math.floor(window.innerHeight * dpr);
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.width = window.innerWidth + "px";
+        canvas.style.height = window.innerHeight + "px";
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+
+      function drawBackground() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+
+        const horizon = h * 0.48;
+        const ceilingGradient = ctx.createLinearGradient(0, 0, 0, horizon);
+        ceilingGradient.addColorStop(0, "#02030a");
+        ceilingGradient.addColorStop(1, "#07111d");
+        ctx.fillStyle = ceilingGradient;
+        ctx.fillRect(0, 0, w, horizon);
+
+        const floorGradient = ctx.createLinearGradient(0, horizon, 0, h);
+        floorGradient.addColorStop(0, "#15100b");
+        floorGradient.addColorStop(0.55, "#24170f");
+        floorGradient.addColorStop(1, "#070504");
+        ctx.fillStyle = floorGradient;
+        ctx.fillRect(0, horizon, w, h - horizon);
+
+        ctx.strokeStyle = "rgba(120, 210, 255, 0.08)";
+        ctx.lineWidth = 1;
+        for (let i = 0; i < 18; i++) {
+          const y = horizon + Math.pow(i / 17, 2.2) * (h - horizon);
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(w, y);
+          ctx.stroke();
+        }
+
+        ctx.strokeStyle = "rgba(120, 210, 255, 0.12)";
+        for (let i = -8; i <= 8; i++) {
+          const x = w / 2 + i * w * 0.055;
+          ctx.beginPath();
+          ctx.moveTo(w / 2, horizon);
+          ctx.lineTo(x, h);
+          ctx.stroke();
+        }
+
+        const fog = ctx.createRadialGradient(w / 2, h * 0.5, h * 0.15, w / 2, h * 0.5, Math.max(w, h) * 0.75);
+        fog.addColorStop(0, "rgba(0,0,0,0)");
+        fog.addColorStop(1, "rgba(0,0,0,0.55)");
+        ctx.fillStyle = fog;
+        ctx.fillRect(0, 0, w, h);
+      }
+
+      function drawWalls() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const step = 2;
+
+        for (let x = 0; x < w; x += step) {
+          const cameraX = (2 * x / w) - 1;
+          const rayAngle = player.angle + Math.atan(cameraX * Math.tan(FOV / 2));
+          const ray = castRay(rayAngle);
+          const corrected = ray.dist * Math.cos(rayAngle - player.angle);
+          const wallHeight = (h / corrected) * 0.9;
+          const shade = clamp(1 - corrected / 34, 0.08, 1);
+          const gx = ray.gx;
+          const gy = ray.gy;
+          const wallType = map[gy] && map[gy][gx];
+
+          let base = wallType === 2 ? [120, 220, 255] : [118, 92, 70];
+          base = base.map((v, i) => clamp(Math.floor(v * shade + (i === 2 ? 18 : 0)), 0, 255));
+
+          const stripe = Math.floor(corrected * 4.2) % 9 === 0;
+          if (stripe) {
+            base[0] = clamp(base[0] - 22, 0, 255);
+            base[1] = clamp(base[1] - 18, 0, 255);
+            base[2] = clamp(base[2] - 20, 0, 255);
+          }
+
+          ctx.fillStyle = "rgb(" + base.join(",") + ")";
+          ctx.fillRect(x - 0.5, h * 0.5 - wallHeight * 0.5, step + 1, wallHeight);
+
+          ctx.fillStyle = "rgba(255,255,255,0.08)";
+          ctx.fillRect(x - 0.5, h * 0.5 - wallHeight * 0.5, step + 1, Math.max(1, wallHeight * 0.08));
+
+          ctx.fillStyle = "rgba(0,0,0,0.22)";
+          ctx.fillRect(x - 0.5, h * 0.5 + wallHeight * 0.62, step + 1, wallHeight * 0.38);
+        }
+      }
+
+      function drawExit() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const dx = player.x - map.find((row, y) => row.includes(2)).indexOf(2) - 0.5;
+        const dy = player.y - map.findIndex((row) => row.includes(2)) - 0.5;
+        const dist = Math.hypot(dx, dy);
+        const diff = angleDiff(Math.atan2(dy, dx), player.angle);
+
+        if (Math.abs(diff) > FOV / 2 || dist > 18) return;
+        if (!lineOfSight(player.x, player.y, map.find((row, y) => row.includes(2)).indexOf(2) + 0.5, map.findIndex((row) => row.includes(2)) + 0.5)) return;
+
+        const spriteH = Math.min(h * 1.35 / dist, h);
+        const spriteW = spriteH * 0.55;
+        const x = w / 2 + (diff / FOV) * w;
+        const y = h * 0.5 - spriteH * 0.5;
+
+        ctx.save();
+        ctx.translate(x, y + spriteH * 0.5);
+        const pulse = 0.5 + Math.sin(performance.now() * 0.008) * 0.5;
+        ctx.shadowColor = "rgba(80, 240, 255, 0.9)";
+        ctx.shadowBlur = 22 + pulse * 18;
+        ctx.fillStyle = "rgba(80, 240, 255, 0.9)";
+        ctx.fillRect(-spriteW * 0.5, -spriteH * 0.55, spriteW, spriteH * 0.55);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.fillRect(-spriteW * 0.18, -spriteH * 0.35, spriteW * 0.36, spriteH * 0.12);
+        ctx.fillStyle = "rgba(0,0,0,0.35)";
+        ctx.fillRect(-spriteW * 0.35, -spriteH * 0.1, spriteW * 0.7, spriteH * 0.1);
+        ctx.restore();
+      }
+
+      function drawPickups() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const sorted = pickups
+          .map((p) => {
+            const dx = p.x - player.x;
+            const dy = p.y - player.y;
+            return { p, dist: Math.hypot(dx, dy), diff: angleDiff(Math.atan2(dy, dx), player.angle) };
+          })
+          .filter((s) => Math.abs(s.diff) < FOV / 2 && s.dist < 18 && lineOfSight(player.x, player.y, s.p.x, s.p.y))
+          .sort((a, b) => b.dist - a.dist);
+
+        for (const s of sorted) {
+          const spriteH = Math.min(h * 0.9 / s.dist, h);
+          const spriteW = spriteH * 0.55;
+          const x = w / 2 + (s.diff / FOV) * w;
+          const y = h * 0.5 - spriteH * 0.5;
+
+          ctx.save();
+          ctx.translate(x, y + spriteH * 0.5);
+          ctx.shadowColor = s.p.type === "health" ? "rgba(80,255,120,0.8)" : "rgba(255,220,80,0.8)";
+          ctx.shadowBlur = 18;
+          ctx.fillStyle = s.p.type === "health" ? "#55ff77" : "#ffd855";
+          ctx.fillRect(-spriteW * 0.5, -spriteH * 0.5, spriteW, spriteH);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(0,0,0,0.35)";
+          ctx.fillRect(-spriteW * 0.18, -spriteH * 0.18, spriteW * 0.36, spriteH * 0.36);
+          ctx.restore();
+        }
+      }
+
+      function drawEnemies() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const sorted = enemies
+          .filter((e) => e.alive)
+          .map((e) => {
+            const dx = e.x - player.x;
+            const dy = e.y - player.y;
+            return {
+              e,
+              dist: Math.hypot(dx, dy),
+              diff: angleDiff(Math.atan2(dy, dx), player.angle)
+            };
+          })
+          .filter((s) => Math.abs(s.diff) < FOV / 2 && s.dist < 28 && lineOfSight(player.x, player.y, s.e.x, s.e.y))
+          .sort((a, b) => b.dist - a.dist);
+
+        for (const s of sorted) {
+          const e = s.e;
+          const spriteH = Math.min(h * 1.25 / s.dist, h);
+          const spriteW = spriteH * 0.62;
+          const x = w / 2 + (s.diff / FOV) * w;
+          const y = h * 0.5 - spriteH * 0.5;
+
+          ctx.save();
+          ctx.translate(x, y + spriteH * 0.5);
+
+          const bob = Math.sin(performance.now() * 0.006 + e.x * 3) * 4;
+          ctx.fillStyle = "#2b1020";
+          ctx.fillRect(-spriteW * 0.28, -spriteH * 0.12, spriteW * 0.22, spriteH * 0.25);
+          ctx.fillRect(spriteW * 0.06, -spriteH * 0.12, spriteW * 0.22, spriteH * 0.25);
+
+          ctx.fillStyle = "#d84444";
+          ctx.fillRect(-spriteW * 0.42, -spriteH * 0.42, spriteW * 0.84, spriteH * 0.42);
+
+          ctx.fillStyle = "#ff6b6b";
+          ctx.fillRect(-spriteW * 0.34, -spriteH * 0.56, spriteW * 0.68, spriteH * 0.14);
+
+          ctx.fillStyle = "#f2c08a";
+          ctx.fillRect(-spriteW * 0.34, -spriteH * 0.68, spriteW * 0.68, spriteH * 0.18);
+
+          ctx.fillStyle = "#ff2020";
+          ctx.fillRect(-spriteW * 0.28, -spriteH * 0.5, spriteW * 0.12, spriteH * 0.04);
+          ctx.fillRect(spriteW * 0.16, -spriteH * 0.5, spriteW * 0.12, spriteH * 0.04);
+
+          ctx.fillStyle = "rgba(0,0,0,0.45)";
+          ctx.fillRect(-spriteW * 0.5, -spriteH * 0.08, spriteW, spriteH * 0.08);
+
+          const hpW = spriteW * 0.9;
+          ctx.fillStyle = "rgba(0,0,0,0.55)";
+          ctx.fillRect(-hpW / 2, -spriteH * 0.82, hpW, 4);
+          ctx.fillStyle = "#ff3030";
+          ctx.fillRect(-hpW / 2, -spriteH * 0.82, hpW * clamp(e.hp / e.maxHp, 0, 1), 4);
+
+          ctx.restore();
+        }
+      }
+
+      function drawProjectiles() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+
+        const sorted = projectiles
+          .map((p) => ({
+            p,
+            dist: Math.hypot(p.x - player.x, p.y - player.y),
+            diff: angleDiff(Math.atan2(p.y - player.y, p.x - player.x), player.angle)
+          }))
+          .filter((s) => Math.abs(s.diff) < FOV / 2 && s.dist < 24 && lineOfSight(player.x, player.y, s.p.x, s.p.y))
+          .sort((a, b) => b.dist - a.dist);
+
+        for (const s of sorted) {
+          const p = s.p;
+          const spriteH = Math.min(h * 0.55 / s.dist, h * 0.35);
+          const spriteW = spriteH * 0.55;
+          const x = w / 2 + (s.diff / FOV) * w;
+          const y = h * 0.5 - spriteH * 0.5;
+
+          ctx.save();
+          ctx.translate(x, y + spriteH * 0.5);
+          ctx.shadowColor = "#bfefff";
+          ctx.shadowBlur = 22;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(-spriteW * 0.5, -spriteH * 0.5, spriteW, spriteH);
+          ctx.shadowBlur = 0;
+          ctx.fillStyle = "rgba(120,210,255,0.55)";
+          ctx.fillRect(-spriteW * 1.2, -spriteH * 0.18, spriteW * 0.7, spriteH * 0.36);
+          ctx.restore();
+        }
+      }
+
+      function drawWeapon() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const reloadProgress = weapon.reloadTimer > 0 ? 1 - weapon.reloadTimer / weapon.reloadDuration : 0;
+
+        ctx.save();
+        ctx.translate(w / 2, h + 10);
+
+        ctx.shadowColor = "rgba(100, 220, 255, 0.45)";
+        ctx.shadowBlur = 18;
+
+        ctx.fillStyle = "#101820";
+        ctx.fillRect(-170, -210, 340, 210);
+
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#202b36";
+        ctx.fillRect(-120, -170, 240, 150);
+
+        ctx.fillStyle = "#344454";
+        ctx.fillRect(-70, -210, 140, 40);
+
+        ctx.fillStyle = "#0b1016";
+        ctx.fillRect(-38, -235, 76, 70);
+
+        ctx.fillStyle = "#64d7ff";
+        ctx.fillRect(-12, -230, 24, 58);
+
+        ctx.fillStyle = "#111820";
+        ctx.fillRect(-150, -150, 300, 30);
+
+        ctx.fillStyle = "#536575";
+        ctx.fillRect(-130, -130, 260, 18);
+
+        ctx.fillStyle = "#0b0f14";
+        ctx.fillRect(-170, -120, 340, 120);
+
+        ctx.fillStyle = "#344454";
+        ctx.fillRect(-145, -95, 290, 28);
+
+        ctx.fillStyle = "#111820";
+        ctx.fillRect(-120, -70, 240, 24);
+
+        ctx.fillStyle = "#64d7ff";
+        ctx.fillRect(-120, -70, 240 * reloadProgress, 24);
+
+        ctx.fillStyle = "#d8e6ef";
+        ctx.font = "700 18px system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(weapon.name, 0, -245);
+
+        ctx.fillStyle = "#fff3a0";
+        ctx.font = "800 28px system-ui, sans-serif";
+        ctx.fillText(String(Math.max(0, Math.floor(weapon.ammo))) + " / " + weapon.maxAmmo, 0, -270);
+
+        ctx.restore();
+      }
+
+      function drawCrosshair() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const x = w / 2;
+        const y = h / 2;
+
+        ctx.save();
+        ctx.strokeStyle = "rgba(230, 250, 255, 0.9)";
+        ctx.lineWidth = 2;
+        ctx.shadowColor = "rgba(100, 220, 255, 0.8)";
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(x - 18, y);
+        ctx.lineTo(x - 7, y);
+        ctx.moveTo(x + 7, y);
+        ctx.lineTo(x + 18, y);
+        ctx.moveTo(x, y - 18);
+        ctx.lineTo(x, y - 7);
+        ctx.moveTo(x, y + 7);
+        ctx.lineTo(x, y + 18);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawMinimap() {
+        if (!minimapVisible) return;
+
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+        const scale = 5;
+        const mw = MAP_W * scale;
+        const mh = MAP_H * scale;
+        const x = 14;
+        const y = 112;
+
+        ctx.save();
+        ctx.fillStyle = "rgba(0, 10, 18, 0.62)";
+        ctx.fillRect(x - 8, y - 8, mw + 16, mh + 16);
+        ctx.strokeStyle = "rgba(120, 210, 255, 0.35)";
+        ctx.strokeRect(x - 8, y - 8, mw + 16, mh + 16);
+
+        for (let gy = 0; gy < MAP_H; gy++) {
+          for (let gx = 0; gx < MAP_W; gx++) {
+            if (map[gy][gx] === 1) {
+              ctx.fillStyle = "#101820";
+              ctx.fillRect(x + gx * scale, y + gy * scale, scale, scale);
+            }
+          }
+        }
+
+        for (const p of pickups) {
+          ctx.fillStyle = p.type === "health" ? "#55ff77" : "#ffd855";
+          ctx.fillRect(x + p.x * scale - 2, y + p.y * scale - 2, 4, 4);
+        }
+
+        const exitY = map.findIndex((row) => row.includes(2));
+        const exitX = map[exitY].indexOf(2);
+        ctx.fillStyle = "#64d7ff";
+        ctx.fillRect(x + exitX * scale - 3, y + exitY * scale - 3, 6, 6);
+
+        for (const e of enemies) {
+          if (!e.alive) continue;
+          ctx.fillStyle = "#ff4040";
+          ctx.fillRect(x + e.x * scale - 3, y + e.y * scale - 3, 6, 6);
+        }
+
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(x + player.x * scale, y + player.y * scale, 4, 0, TAU);
+        ctx.fill();
+
+        ctx.fillStyle = "#dff7ff";
+        ctx.font = "12px system-ui, sans-serif";
+        ctx.fillText("MINIMAP", x, y - 14);
+        ctx.restore();
+      }
+
+      function drawParticles() {
+        for (const p of particles) {
+          p.life -= 1 / 60;
+          p.x += p.vx / 60;
+          p.y += p.vy / 60;
+          const alpha = clamp(p.life / 0.5, 0, 1);
+          ctx.fillStyle = p.color.replace(")", "," + alpha + ")").replace("rgb", "rgba");
+          ctx.fillRect(p.x, p.y, 3, 3);
+        }
+        particles = particles.filter((p) => p.life > 0);
+      }
+
+      function render() {
+        const w = canvas.width / dpr;
+        const h = canvas.height / dpr;
+
+        ctx.clearRect(0, 0, w, h);
+        drawBackground();
+        drawWalls();
+        drawExit();
+        drawPickups();
+        drawEnemies();
+        drawProjectiles();
+        drawParticles();
+        drawWeapon();
+        drawCrosshair();
+        drawMinimap();
+
+        if (player.invulnerable > 0) {
+          ctx.save();
+          ctx.globalAlpha = 0.12 + Math.sin(performance.now() * 0.02) * 0.05;
+          ctx.fillStyle = "#ff3030";
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
+        }
+      }
+
+      function updateHud() {
+        healthText.textContent = String(Math.ceil(player.health));
+        healthLabelText.textContent = Math.ceil(player.health) + "%";
+        healthFillInner.style.width = clamp(player.health, 0, 100) + "%";
+        ammoText.textContent = Math.max(0, Math.floor(weapon.ammo)) + " / " + weapon.maxAmmo;
+        reloadFill.style.width = (weapon.reloadTimer > 0 ? (1 - weapon.reloadTimer / weapon.reloadDuration) * 100 : 0) + "%";
+
+        const exitY = map.findIndex((row) => row.includes(2));
+        const exitX = map[exitY].indexOf(2);
+        const distExit = Math.hypot(player.x - (exitX + 0.5), player.y - (exitY + 0.5));
+        exitText.textContent = distExit < 8 ? "near" : "locked";
+      }
+
+      function update(dt) {
+        if (messageTimer > 0) {
+          messageTimer -= dt;
+          if (messageTimer <= 0) hideTemporaryMessage();
+        }
+
+        updateGame(dt);
+        updateHud();
+      }
+
+      function loop(now) {
+        const dt = Math.min(0.033, (now - lastTime) / 1000);
+        lastTime = now;
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      function restart() {
+        generateLevel();
+        game.over = false;
+        game.won = false;
+        projectiles.length = 0;
+        particles.length = 0;
+        startOverlay.classList.add("hidden");
+        pauseOverlay.classList.add("hidden");
+        gameOverOverlay.classList.add("hidden");
+        showTemporaryMessage("Run started");
+      }
+
+      function togglePause() {
+        if (game.over || game.won) return;
+        game.paused = !game.paused;
+        pauseOverlay.classList.toggle("hidden", !game.paused);
+        if (game.paused) {
+          if (document.pointerLockElement === canvas) document.exitPointerLock();
+        } else if (document.pointerLockElement !== canvas) {
+          canvas.requestPointerLock();
+        }
+      }
+
+      canvas.addEventListener("click", () => {
+        if (game.over || game.won) return;
+        if (document.pointerLockElement !== canvas && canvas.requestPointerLock) {
+          canvas.requestPointerLock();
+        }
+      });
+
+      document.addEventListener("mousemove", (event) => {
+        if (document.pointerLockElement !== canvas || game.paused || game.over || game.won) return;
+        player.angle += event.movementX * 0.0022;
+      });
+
+      document.addEventListener("keydown", (event) => {
+        keys[event.code] = true;
+
+        if (event.code === "Space") {
+          event.preventDefault();
+          shoot();
+        }
+
+        if (event.code === "KeyR") {
+          event.preventDefault();
+          if (game.over) restart();
+          else reload();
+        }
+
+        if (event.code === "KeyP") {
+          event.preventDefault();
+          togglePause();
+        }
+
+        if (event.code === "KeyM") {
+          event.preventDefault();
+          minimapVisible = !minimapVisible;
+        }
+      });
+
+      document.addEventListener("keyup", (event) => {
+        keys[event.code] = false;
+      });
+
+      document.addEventListener("pointerlockchange", () => {
+        if (document.pointerLockElement !== canvas && !game.paused && !game.over && !game.won) {
+          showTemporaryMessage("Mouse locked");
+        }
+      });
+
+      window.addEventListener("resize", resize);
+
+      resize();
+      generateLevel();
+      restart();
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>

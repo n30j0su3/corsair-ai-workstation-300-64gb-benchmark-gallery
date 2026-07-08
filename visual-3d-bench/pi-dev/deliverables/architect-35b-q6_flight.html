@@ -510,7 +510,7 @@ function drawAircraft(pos, heading, pitch, roll, proj, view) {
   // Engine glow
   const enginePos = mat4MulVec3(rot, vec3Add(pos, vec3(0, 0, -3.2)));
   const engineSp = project(enginePos, proj, view, canvas.width, canvas.height);
-  if(engineSp) {
+  if(engineSp && Number.isFinite(engineSp.x) && Number.isFinite(engineSp.y)) {
     const glow = ctx.createRadialGradient(engineSp.x, engineSp.y, 0, engineSp.x, engineSp.y, 15);
     glow.addColorStop(0, 'rgba(255,100,0,0.8)');
     glow.addColorStop(0.5, 'rgba(255,50,0,0.3)');
@@ -744,7 +744,7 @@ function drawSky(proj, view) {
 
   // Sun
   const sunPos = project(vec3(500, 200, -800), proj, view, canvas.width, canvas.height);
-  if(sunPos) {
+  if(sunPos && Number.isFinite(sunPos.x) && Number.isFinite(sunPos.y)) {
     const sunGlow = ctx.createRadialGradient(sunPos.x, sunPos.y, 0, sunPos.x, sunPos.y, 60);
     sunGlow.addColorStop(0, 'rgba(255,255,200,0.8)');
     sunGlow.addColorStop(0.3, 'rgba(255,200,100,0.3)');
