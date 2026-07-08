@@ -2,584 +2,631 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>3D Flight Simulator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Flight Sim</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; color: #0f0; }
 canvas { display: block; }
 #hud { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
-#message { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: #0f0; font-size: 36px; text-align: center; text-shadow: 2px 2px 4px #000; display: none; pointer-events: none; }
-#minimap { position: absolute; bottom: 20px; right: 20px; width: 200px; height: 200px; border: 2px solid #0f0; background: rgba(0,0,0,0.5); }
+#crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; border: 2px solid #0f0; transform: translate(-50%, -50%); border-radius: 50%; }
+#crosshair::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: #0f0; transform: translate(-50%, -50%); border-radius: 50%; }
+.hud-text { position: absolute; color: #0f0; font-size: 16px; text-shadow: 1px 1px 2px #000; }
+#airspeed { top: 20px; left: 20px; }
+#altitude { top: 50px; left: 20px; }
+#throttle { top: 80px; left: 20px; }
+#heading { top: 110px; left: 20px; }
+#checkpoint { top: 140px; left: 20px; }
+#message { top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 32px; text-align: center; display: none; }
+#controls { bottom: 20px; left: 20px; font-size: 12px; }
 </style>
 </head>
 <body>
-<canvas id="canvas"></canvas>
-<canvas id="hud"></canvas>
-<canvas id="minimap"></canvas>
+<canvas id="game"></canvas>
+<div id="hud">
+<div id="crosshair"></div>
+<div id="airspeed" class="hud-text">AIRSPEED: 0 m/s</div>
+<div id="altitude" class="hud-text">ALTITUDE: 0 m</div>
+<div id="throttle" class="hud-text">THROTTLE: 0%</div>
+<div id="heading" class="hud-text">HEADING: 0°</div>
+<div id="checkpoint" class="hud-text">CHECKPOINT: 0/8</div>
 <div id="message"></div>
+<div id="controls" class="hud-text">W/S: Pitch | A/D: Roll | Q/E: Yaw | Space: Throttle | Shift: Brake | C: Camera | R: Restart</div>
+</div>
+
 <script>
-// ============ MATH UTILITIES ============
-const PI = Math.PI, TAU = PI * 2;
-const DEG = PI / 180;
-const sin = Math.sin, cos = Math.cos, tan = Math.tan, sqrt = Math.sqrt, abs = Math.abs, min = Math.min, max = Math.max, floor = Math.floor, random = Math.random, atan2 = Math.atan2;
-
-function vec3(x,y,z){ return {x,y,z}; }
-function v3add(a,b){ return vec3(a.x+b.x,a.y+b.y,a.z+b.z); }
-function v3sub(a,b){ return vec3(a.x-b.x,a.y-b.y,a.z-b.z); }
-function v3scale(v,s){ return vec3(v.x*s,v.y*s,v.z*s); }
-function v3dot(a,b){ return a.x*b.x+a.y*b.y+a.z*b.z; }
-function v3cross(a,b){ return vec3(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x); }
-function v3len(v){ return sqrt(v.x*v.x+v.y*v.y+v.z*v.z); }
-function v3norm(v){ const l=v3len(v); return l>0?vec3(v.x/l,v.y/l,v.z/l):vec3(0,0,0); }
-function v3lerp(a,b,t){ return vec3(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t,a.z+(b.z-a.z)*t); }
-function v3dist(a,b){ return v3len(v3sub(a,b)); }
-
-function mat4(){ return [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]; }
-function mat4rotX(a){ const c=cos(a),s=sin(a); return [1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1]; }
-function mat4rotY(a){ const c=cos(a),s=sin(a); return [c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1]; }
-function mat4rotZ(a){ const c=cos(a),s=sin(a); return [c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1]; }
-function mat4mul(a,b){
-  const r=new Array(16);
-  for(let i=0;i<4;i++)for(let j=0;j<4;j++){r[i*4+j]=0;for(let k=0;k<4;k++)r[i*4+j]+=a[i*4+k]*b[k*4+j];}
-  return r;
-}
-function mat4mulV(m,v){
-  return vec3(m[0]*v.x+m[1]*v.y+m[2]*v.z+m[3],m[4]*v.x+m[5]*v.y+m[6]*v.z+m[7],m[8]*v.x+m[9]*v.y+m[10]*v.z+m[11]);
-}
-function mat4mulP(m,v){
-  const w=m[12]*v.x+m[13]*v.y+m[14]*v.z+m[15];
-  return vec3((m[0]*v.x+m[1]*v.y+m[2]*v.z+m[3])/w,(m[4]*v.x+m[5]*v.y+m[6]*v.z+m[7])/w,(m[8]*v.x+m[9]*v.y+m[10]*v.z+m[11])/w);
-}
-
-// ============ NOISE ============
-function hash(x,z){let h=x*374761393+z*668265263;h=(h^(h>>13))*1274126177;return((h^(h>>16))&0x7fffffff)/0x7fffffff;}
-function noise2d(x,z){
-  const ix=floor(x),iz=floor(z),fx=x-ix,fz=z-iz;
-  const sx=fx*fx*(3-2*fx),sz=fz*fz*(3-2*fz);
-  const a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);
-  return a+(b-a)*sx+(c-a)*sz+(a-b-c+d)*sx*sz;
-}
-function fbm(x,z,oct){let v=0,a=1,f=1,t=0;for(let i=0;i<oct;i++){v+=noise2d(x*f,z*f)*a;t+=a;a*=0.5;f*=2;}return v/t;}
-
-// ============ CANVAS SETUP ============
-const canvas = document.getElementById('canvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const hudCanvas = document.getElementById('hud');
-const hctx = hudCanvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimap');
-const mctx = minimapCanvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-function resize(){
-  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  hudCanvas.width = window.innerWidth; hudCanvas.height = window.innerHeight;
-  minimapCanvas.width = 200; minimapCanvas.height = 200;
-}
-resize();
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
 
-// ============ INPUT ============
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if(e.key.toLowerCase()==='c') toggleCamera(); e.preventDefault(); });
-window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-// ============ CAMERA ============
-let cameraMode = 0; // 0=chase, 1=cockpit
-function toggleCamera(){ cameraMode = 1 - cameraMode; }
+class Vec3 {
+    constructor(x=0, y=0, z=0) { this.x = x; this.y = y; this.z = z; }
+    add(v) { return new Vec3(this.x+v.x, this.y+v.y, this.z+v.z); }
+    sub(v) { return new Vec3(this.x-v.x, this.y-v.y, this.z-v.z); }
+    scale(s) { return new Vec3(this.x*s, this.y*s, this.z*s); }
+    dot(v) { return this.x*v.x + this.y*v.y + this.z*v.z; }
+    cross(v) { return new Vec3(this.y*v.z - this.z*v.y, this.z*v.x - this.x*v.z, this.x*v.y - this.y*v.x); }
+    length() { return Math.sqrt(this.x*this.x + this.y*this.y + this.z*this.z); }
+    normalize() { let l = this.length(); return l > 0 ? new Vec3(this.x/l, this.y/l, this.z/l) : new Vec3(0,0,0); }
+    clone() { return new Vec3(this.x, this.y, this.z); }
+}
 
-// ============ AIRCRAFT ============
-const aircraft = {
-  pos: vec3(0, 200, 0),
-  vel: vec3(0, 0, 200),
-  pitch: 0, roll: 0, yaw: 0,
-  throttle: 0.5,
-  fuel: 100,
-  alive: true,
-  crashed: false,
-  landed: false,
-  checkpoints: [],
-  checkpointCount: 0,
-  totalCheckpoints: 8,
-  contrails: [],
-  contrailTimer: 0,
-  spin: false,
-  spinTimer: 0,
-  spinAxis: vec3(0,0,0),
-  spinSpeed: 0
+class Mat4 {
+    constructor() { this.m = new Float32Array(16); this.identity(); }
+    identity() { this.m.fill(0); this.m[0]=1; this.m[5]=1; this.m[10]=1; this.m[15]=1; return this; }
+    perspective(fov, aspect, near, far) {
+        const f = 1/Math.tan(fov/2);
+        this.identity();
+        this.m[0] = f/aspect; this.m[5] = f; this.m[10] = (far+near)/(near-far); this.m[11] = -1;
+        this.m[14] = 2*far*near/(near-far);
+        return this;
+    }
+    lookAt(eye, center, up) {
+        const z = eye.sub(center).normalize();
+        const x = up.cross(z).normalize();
+        const y = z.cross(x).normalize();
+        this.identity();
+        this.m[0] = x.x; this.m[1] = x.y; this.m[2] = x.z;
+        this.m[4] = y.x; this.m[5] = y.y; this.m[6] = y.z;
+        this.m[8] = z.x; this.m[9] = z.y; this.m[10] = z.z;
+        this.m[12] = -x.dot(eye); this.m[13] = -y.dot(eye); this.m[14] = -z.dot(eye);
+        return this;
+    }
+    multiply(m) {
+        const a = this.m, b = m.m, c = new Float32Array(16);
+        for(let i=0; i<4; i++) for(let j=0; j<4; j++) {
+            c[j*4+i] = 0;
+            for(let k=0; k<4; k++) c[j*4+i] += a[k*4+i] * b[j*4+k];
+        }
+        this.m = c;
+        return this;
+    }
+    transformPoint(p) {
+        const v = this.m;
+        const w = v[3]*p.x + v[7]*p.y + v[11]*p.z + v[15];
+        return new Vec3(
+            (v[0]*p.x + v[4]*p.y + v[8]*p.z + v[12])/w,
+            (v[1]*p.x + v[5]*p.y + v[9]*p.z + v[13])/w,
+            (v[2]*p.x + v[6]*p.y + v[10]*p.z + v[14])/w
+        );
+    }
+}
+
+const game = {
+    aircraft: {
+        pos: new Vec3(0, 100, 0),
+        vel: new Vec3(0, 0, 0),
+        pitch: 0,
+        roll: 0,
+        yaw: 0,
+        throttle: 0,
+        speed: 0,
+        crashed: false,
+        landed: false
+    },
+    camera: {
+        isCockpit: false,
+        offset: new Vec3(0, 5, 20)
+    },
+    checkpoints: [],
+    obstacles: [],
+    terrain: [],
+    mountains: [],
+    towers: [],
+    runway: null,
+    currentCheckpoint: 0,
+    gameWon: false,
+    gameOver: false,
+    time: 0
 };
 
-// ============ WORLD ============
-const WORLD_SIZE = 8000;
-const TERRAIN_RES = 120;
-const terrainData = [];
-const obstacles = [];
-const checkpoints = [];
-const runway = { pos: vec3(0, 0, -WORLD_SIZE/2 + 500), width: 60, length: 800 };
-const mountains = [];
-const towers = [];
-
-function generateWorld(){
-  // Terrain
-  for(let iz=0;iz<=TERRAIN_RES;iz++){
-    terrainData[iz]=[];
-    for(let ix=0;ix<=TERRAIN_RES;ix++){
-      const x=(ix/TERRAIN_RES-0.5)*WORLD_SIZE;
-      const z=(iz/TERRAIN_RES-0.5)*WORLD_SIZE;
-      const dist = sqrt(x*x+z*z);
-      let h = fbm(x*0.0008+100,z*0.0008+100,6)*200;
-      h += fbm(x*0.003,z*0.003,4)*40;
-      // Flatten near origin for takeoff
-      const flatDist = 2000;
-      if(dist < flatDist){
-        const t = dist/flatDist;
-        h = h*t + (1-t)*50;
-      }
-      // Mountains
-      const mx = sin(x*0.001)*cos(z*0.001)*200;
-      const mz = cos(x*0.0007)*sin(z*0.0009)*200;
-      const mDist = sqrt((x-mx)*(x-mx)+(z-mz)*(z-mz));
-      if(mDist < 800){
-        const mt = 1-mDist/800;
-        h += mt*mt*600;
-      }
-      if(dist < 500) h = 50; // takeoff area flat
-      terrainData[iz][ix] = h;
-    }
-  }
-
-  // Generate obstacles (towers, buildings)
-  for(let i=0;i<40;i++){
-    const ox = (random()-0.5)*WORLD_SIZE*0.8;
-    const oz = (random()-0.5)*WORLD_SIZE*0.8;
-    const dist = sqrt(ox*ox+oz*oz);
-    if(dist < 1500) continue;
-    const h = getTerrainHeight(ox,oz);
-    const height = 50+random()*150;
-    const width = 15+random()*30;
-    obstacles.push({pos:vec3(ox,h+height/2,oz),height,width,depth:width+random()*20});
-  }
-
-  // Generate checkpoints (rings)
-  const cpAngles = [0,45,90,135,180,225,270,315];
-  for(let i=0;i<8;i++){
-    const angle = cpAngles[i]*DEG;
-    const radius = 1500+random()*800;
-    const cx = cos(angle)*radius;
-    const cz = sin(angle)*radius;
-    const ch = 100+random()*100;
-    checkpoints.push({pos:vec3(cx,ch,cz),radius:60,active:true,passed:false});
-  }
-
-  // Generate hazards (lightning towers, storm zones)
-  for(let i=0;i<6;i++){
-    const hx = (random()-0.5)*WORLD_SIZE*0.6;
-    const hz = (random()-0.5)*WORLD_SIZE*0.6;
-    const hh = getTerrainHeight(hx,hz)+200;
-    obstacles.push({pos:vec3(hx,hh,hz),height:100,width:10,depth:10,hazard:true,lightning:random()>0.5});
-  }
+function init() {
+    game.aircraft.pos = new Vec3(0, 100, 0);
+    game.aircraft.vel = new Vec3(0, 0, 0);
+    game.aircraft.pitch = 0;
+    game.aircraft.roll = 0;
+    game.aircraft.yaw = 0;
+    game.aircraft.throttle = 0;
+    game.aircraft.crashed = false;
+    game.aircraft.landed = false;
+    game.camera.isCockpit = false;
+    game.currentCheckpoint = 0;
+    game.gameWon = false;
+    game.gameOver = false;
+    game.time = 0;
+    generateLevel();
 }
 
-function getTerrainHeight(x,z){
-  const ix = ((x/WORLD_SIZE)+0.5)*TERRAIN_RES;
-  const iz = ((z/WORLD_SIZE)+0.5)*TERRAIN_RES;
-  if(ix<0||ix>TERRAIN_RES||iz<0||iz>TERRAIN_RES) return 0;
-  const i1=floor(ix),j1=floor(iz);
-  const i2=min(i1+1,TERRAIN_RES),j2=min(j1+1,TERRAIN_RES);
-  const fx=ix-i1,fz=iz-j1;
-  const h1=terrainData[j1][i1]*(1-fx)+terrainData[j1][i2]*fx;
-  const h2=terrainData[j2][i1]*(1-fx)+terrainData[j2][i2]*fx;
-  return h1*(1-fz)+h2*fz;
+function generateLevel() {
+    game.checkpoints = [];
+    game.obstacles = [];
+    game.terrain = [];
+    game.mountains = [];
+    game.towers = [];
+    
+    const pathLength = 3000;
+    for(let i=0; i<8; i++) {
+        const x = (i - 4) * 200;
+        const z = pathLength/2 - i * (pathLength/8);
+        const y = 100 + Math.sin(i) * 30;
+        game.checkpoints.push({
+            pos: new Vec3(x, y, z),
+            radius: 40,
+            passed: false
+        });
+    }
+    
+    for(let i=0; i<500; i++) {
+        const x = (Math.random()-0.5) * 4000;
+        const z = (Math.random()-0.5) * 4000;
+        const y = -10 + Math.sin(x*0.01)*10 + Math.cos(z*0.01)*10;
+        game.terrain.push({x, y, z, size: 50});
+    }
+    
+    for(let i=0; i<20; i++) {
+        const x = (Math.random()-0.5) * 3000;
+        const z = (Math.random()-0.5) * 3000;
+        const height = 100 + Math.random()*200;
+        game.mountains.push({
+            pos: new Vec3(x, -10 + Math.sin(x*0.01)*10 + Math.cos(z*0.01)*10, z),
+            height: height,
+            radius: 50 + Math.random()*50
+        });
+    }
+    
+    for(let i=0; i<10; i++) {
+        const x = (Math.random()-0.5) * 3000;
+        const z = (Math.random()-0.5) * 3000;
+        game.towers.push({
+            pos: new Vec3(x, -10 + Math.sin(x*0.01)*10 + Math.cos(z*0.01)*10, z),
+            height: 50 + Math.random()*100,
+            width: 20
+        });
+    }
+    
+    for(let i=0; i<15; i++) {
+        const x = (Math.random()-0.5) * 2000;
+        const z = (Math.random()-0.5) * 2000;
+        const y = 50 + Math.random()*150;
+        game.obstacles.push({
+            pos: new Vec3(x, y, z),
+            radius: 15,
+            type: 'drone',
+            speed: 2 + Math.random()*3,
+            angle: Math.random()*Math.PI*2
+        });
+    }
+    
+    game.runway = {
+        pos: new Vec3(0, -10, -1500),
+        width: 60,
+        length: 300
+    };
 }
 
-// ============ AIRCRAFT PHYSICS ============
-function updateAircraft(dt){
-  if(!aircraft.alive) return;
+function project(pos, viewMatrix, projMatrix) {
+    const clip = projMatrix.multiply(viewMatrix).transformPoint(pos);
+    if(clip.z < 0 || clip.z > 1) return null;
+    return {
+        x: (clip.x + 1) * canvas.width / 2,
+        y: (1 - clip.y) * canvas.height / 2
+    };
+}
 
-  const mass = 5000;
-  const grav = 9.81;
-  const airDensity = 1.225;
-
-  // Throttle response
-  const targetThrottle = aircraft.throttle;
-  const throttleRate = 0.8;
-  aircraft.throttle += (targetThrottle - aircraft.throttle) * throttleRate * dt;
-
-  // Control inputs
-  const pitchInput = -((keys['w']||keys['arrowup'])?1:0) + ((keys['s']||keys['arrowdown'])?1:0);
-  const rollInput = ((keys['a']||keys['arrowleft'])?1:0) - ((keys['d']||keys['arrowright'])?1:0);
-  const yawInput = ((keys['q'])?1:0) - ((keys['e'])?1:0);
-  const throttleUp = keys['r'];
-  const throttleDown = keys['f'];
-
-  if(throttleUp) aircraft.throttle = min(1, aircraft.throttle + 0.5*dt);
-  if(throttleDown) aircraft.throttle = max(0, aircraft.throttle - 0.5*dt);
-
-  // Fuel consumption
-  aircraft.fuel -= aircraft.throttle * 2 * dt;
-  if(aircraft.fuel <= 0){ aircraft.fuel = 0; aircraft.throttle = 0; }
-
-  // Rotation
-  const pitchRate = pitchInput * 1.5;
-  const rollRate = rollInput * 2.5;
-  const yawRate = yawInput * 0.5;
-
-  aircraft.pitch += pitchRate * dt;
-  aircraft.roll += rollRate * dt;
-  aircraft.yaw += yawRate * dt;
-
-  // Bank angle limits
-  aircraft.roll = max(-PI/2.5, min(PI/2.5, aircraft.roll));
-  aircraft.pitch = max(-PI/3, min(PI/3, aircraft.pitch));
-
-  // Auto-rudder for coordinated turns
-  const turnRate = rollRate * 0.3;
-  aircraft.yaw += turnRate * dt;
-
-  // Attitude recovery (slow auto-level when no input)
-  if(!rollInput) aircraft.roll *= (1 - 0.5*dt);
-  if(!pitchInput) aircraft.pitch *= (1 - 0.3*dt);
-
-  // Velocity direction (heading)
-  const heading = atan2(aircraft.vel.x, aircraft.vel.z);
-
-  // Thrust
-  const thrust = aircraft.throttle * 80000;
-
-  // Drag
-  const speed = v3len(aircraft.vel);
-  const dragCoeff = 0.02;
-  const dragArea = 15;
-  const dragForce = 0.5 * airDensity * dragCoeff * dragArea * speed * speed;
-  const dragVec = speed > 0 ? v3scale(v3norm(aircraft.vel), -dragForce) : vec3(0,0,0);
-
-  // Lift
-  const angleOfAttack = aircraft.pitch + (speed > 50 ? 0.15 : 0);
-  const liftCoeff = 0.8 * sin(angleOfAttack * 2) + 0.1;
-  const liftForce = 0.5 * airDensity * dragArea * liftCoeff * speed * speed;
-  const liftDir = v3norm(v3cross(vec3(1,0,0), aircraft.vel));
-  const liftVec = v3scale(liftDir, liftForce);
-
-  // Gravity
-  const gravForce = vec3(0, -grav * mass, 0);
-
-  // Net force
-  const thrustDir = v3norm(aircraft.vel);
-  const thrustVec = v3scale(thrustDir, thrust);
-
-  // Spin condition (stall)
-  if(speed < 80 && aircraft.pitch > 0.5){
-    if(!aircraft.spin){
-      aircraft.spin = true;
-      aircraft.spinAxis = v3norm(v3cross(aircraft.vel, vec3(0,1,0)));
-      aircraft.spinSpeed = 3 + random()*2;
+function renderSky() {
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#001133');
+    gradient.addColorStop(0.5, '#002244');
+    gradient.addColorStop(1, '#003355');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    for(let i=0; i<100; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height * 0.6;
+        const size = Math.random() * 2;
+        ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random()*0.7})`;
+        ctx.fillRect(x, y, size, size);
     }
-  }
+}
 
-  if(aircraft.spin){
-    aircraft.spinTimer += dt;
-    const spinAngle = aircraft.spinSpeed * dt;
-    const spinQuat = mat4rotZ(spinAngle);
-    aircraft.vel = mat4mulV(spinQuat, aircraft.vel);
-    aircraft.pitch += spinAngle * 0.5;
-    if(aircraft.spinTimer > 3 || speed > 100){
-      aircraft.spin = false;
-      aircraft.spinTimer = 0;
-    }
-  }
-
-  const netForce = v3add(v3add(v3add(thrustVec, dragVec), liftVec), gravForce);
-  const accel = v3scale(netForce, 1/mass);
-
-  // Update velocity
-  aircraft.vel = v3add(aircraft.vel, v3scale(accel, dt));
-
-  // Clamp speed
-  const maxSpeed = 500;
-  const minSpeed = 30;
-  const newSpeed = v3len(aircraft.vel);
-  if(newSpeed > maxSpeed) aircraft.vel = v3scale(v3norm(aircraft.vel), maxSpeed);
-  if(newSpeed < minSpeed) aircraft.vel = v3scale(v3norm(aircraft.vel), minSpeed);
-
-  // Update position
-  aircraft.pos = v3add(aircraft.pos, v3scale(aircraft.vel, dt));
-
-  // Ground collision
-  const groundHeight = getTerrainHeight(aircraft.pos.x, aircraft.pos.z);
-  if(aircraft.pos.y < groundHeight + 5){
-    if(aircraft.pos.y < groundHeight + 100){
-      // Check if landing on runway
-      const runDist = v3dist(aircraft.pos, runway.pos);
-      if(runDist < 200 && abs(aircraft.pos.z - runway.pos.z) < 50 && speed < 100 && aircraft.pitch < 0.1){
-        aircraft.landed = true;
-        aircraft.alive = false;
-        showMessage("MISSION COMPLETE! You landed successfully!", "#0f0");
-        return;
-      }
-    }
-    // Crash
-    aircraft.alive = false;
-    aircraft.crashed = true;
-    showMessage("CRASHED! Press R to restart", "#f00");
-    return;
-  }
-
-  // Obstacle collision
-  for(const obs of obstacles){
-    const dx = abs(aircraft.pos.x - obs.pos.x);
-    const dy = abs(aircraft.pos.y - obs.pos.y);
-    const dz = abs(aircraft.pos.z - obs.pos.z);
-    if(dx < obs.width/2 + 5 && dy < obs.height/2 + 5 && dz < obs.depth/2 + 5){
-      aircraft.alive = false;
-      aircraft.crashed = true;
-      showMessage("HIT OBSTACLE! Press R to restart", "#f00");
-      return;
-    }
-  }
-
-  // Checkpoint collision
-  for(const cp of checkpoints){
-    if(!cp.passed){
-      const dist = v3dist(aircraft.pos, cp.pos);
-      if(dist < cp.radius + 20){
-        cp.passed = true;
-        aircraft.checkpointCount++;
-        if(aircraft.checkpointCount >= aircraft.totalCheckpoints){
-          // All checkpoints passed - fly to runway
-          const runDist = v3dist(aircraft.pos, runway.pos);
-          if(runDist < 500){
-            // Bonus for landing
-          }
+function renderTerrain(viewMatrix, projMatrix) {
+    for(const t of game.terrain) {
+        const p1 = project(new Vec3(t.x, t.y, t.z), viewMatrix, projMatrix);
+        const p2 = project(new Vec3(t.x+t.size, t.y, t.z), viewMatrix, projMatrix);
+        const p3 = project(new Vec3(t.x, t.y, t.z+t.size), viewMatrix, projMatrix);
+        const p4 = project(new Vec3(t.x+t.size, t.y, t.z+t.size), viewMatrix, projMatrix);
+        
+        if(p1 && p2 && p3 && p4) {
+            const height = Math.sin(t.x*0.01)*10 + Math.cos(t.z*0.01)*10;
+            const brightness = Math.max(0.1, 0.3 + height*0.01);
+            ctx.fillStyle = `rgb(${Math.floor(50*brightness)}, ${Math.floor(100*brightness)}, ${Math.floor(50*brightness)})`;
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.lineTo(p4.x, p4.y);
+            ctx.lineTo(p3.x, p3.y);
+            ctx.closePath();
+            ctx.fill();
         }
-      }
     }
-  }
-
-  // Contrails
-  aircraft.contrailTimer += dt;
-  if(aircraft.contrailTimer > 0.05 && speed > 100){
-    aircraft.contrailTimer = 0;
-    const contrailPos = v3add(aircraft.pos, v3scale(aircraft.vel, -2));
-    aircraft.contrails.push({pos: vec3(contrailPos.x, contrailPos.y, contrailPos.z), life: 3});
-  }
-  // Update contrails
-  for(let i=aircraft.contrails.length-1;i>=0;i--){
-    aircraft.contrails[i].life -= dt;
-    if(aircraft.contrails[i].life <= 0) aircraft.contrails.splice(i,1);
-  }
-  if(aircraft.contrails.length > 200) aircraft.contrails.splice(0, aircraft.contrails.length - 200);
-
-  // Speed indicator
-  const speedKnots = speed * 1.944;
-  const altFeet = aircraft.pos.y * 3.281;
 }
 
-// ============ RENDERING ============
-const FOV = 75 * DEG;
-const NEAR = 1;
-const FAR = 15000;
-const projMatrix = mat4();
-
-function project(point, camPos, camRot, camRoll){
-  // Camera transform
-  const camX = -camRot.x, camY = -camRot.y, camZ = -camRot.z;
-  const cx = cos(camX), sx = sin(camX);
-  const cy = cos(camY), sy = sin(camY);
-  const cz = cos(camZ), sz = sin(camZ);
-
-  // Translate point relative to camera
-  let dx = point.x - camPos.x;
-  let dy = point.y - camPos.y;
-  let dz = point.z - camPos.z;
-
-  // Rotate around Y (yaw)
-  const rx = dx*cz + dz*sz;
-  const rz = -dx*sz + dz*cz;
-  let px = rx, py = dy, pz = rz;
-
-  // Rotate around X (pitch)
-  const rpy = py*cx - pz*sx;
-  const rpz = py*sx + pz*cx;
-  px = px; py = rpy; pz = rpz;
-
-  // Rotate around Z (roll)
-  const rpx = px*cz - py*sz;
-  const rpy2 = px*sz + py*cz;
-  px = rpx; py = rpy2; pz = rpz;
-
-  if(pz < NEAR) return null;
-
-  const aspect = canvas.width / canvas.height;
-  const fovScale = 1 / tan(FOV/2);
-
-  const screenX = (rpx * fovScale / aspect) / pz;
-  const screenY = -(rpy * fovScale) / pz;
-
-  return {
-    x: canvas.width/2 + screenX * canvas.width/2,
-    y: canvas.height/2 + screenY * canvas.height/2,
-    depth: pz
-  };
+function renderMountains(viewMatrix, projMatrix) {
+    for(const m of game.mountains) {
+        const base = project(m.pos, viewMatrix, projMatrix);
+        const top = project(new Vec3(m.pos.x, m.pos.y + m.height, m.pos.z), viewMatrix, projMatrix);
+        
+        if(base && top) {
+            const width = m.radius * 0.5;
+            const left = project(new Vec3(m.pos.x - width, m.pos.y, m.pos.z), viewMatrix, projMatrix);
+            const right = project(new Vec3(m.pos.x + width, m.pos.y, m.pos.z), viewMatrix, projMatrix);
+            
+            if(left && right) {
+                ctx.fillStyle = '#224433';
+                ctx.beginPath();
+                ctx.moveTo(top.x, top.y);
+                ctx.lineTo(left.x, left.y);
+                ctx.lineTo(right.x, right.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.fillStyle = '#335544';
+                ctx.beginPath();
+                ctx.moveTo(top.x, top.y);
+                ctx.lineTo(right.x, right.y);
+                ctx.lineTo(right.x + 20, left.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    }
 }
 
-function drawLine3D(p1, p2, camPos, camRot, camRoll, color, width){
-  const a = project(p1, camPos, camRot, camRoll);
-  const b = project(p2, camPos, camRot, camRoll);
-  if(!a || !b) return;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width || 1;
-  ctx.beginPath();
-  ctx.moveTo(a.x, a.y);
-  ctx.lineTo(b.x, b.y);
-  ctx.stroke();
+function renderTowers(viewMatrix, projMatrix) {
+    for(const t of game.towers) {
+        const base = project(t.pos, viewMatrix, projMatrix);
+        const top = project(new Vec3(t.pos.x, t.pos.y + t.height, t.pos.z), viewMatrix, projMatrix);
+        
+        if(base && top) {
+            const w = t.width * 0.5;
+            const left = project(new Vec3(t.pos.x - w, t.pos.y, t.pos.z), viewMatrix, projMatrix);
+            const right = project(new Vec3(t.pos.x + w, t.pos.y, t.pos.z), viewMatrix, projMatrix);
+            const topL = project(new Vec3(t.pos.x - w, t.pos.y + t.height, t.pos.z), viewMatrix, projMatrix);
+            const topR = project(new Vec3(t.pos.x + w, t.pos.y + t.height, t.pos.z), viewMatrix, projMatrix);
+            
+            if(left && right && topL && topR) {
+                ctx.fillStyle = '#444444';
+                ctx.beginPath();
+                ctx.moveTo(base.x, base.y);
+                ctx.lineTo(left.x, left.y);
+                ctx.lineTo(topL.x, topL.y);
+                ctx.lineTo(top.x, top.y);
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.fillStyle = '#555555';
+                ctx.beginPath();
+                ctx.moveTo(base.x, base.y);
+                ctx.lineTo(right.x, right.y);
+                ctx.lineTo(topR.x, topR.y);
+                ctx.lineTo(top.x, top.y);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    }
 }
 
-function drawTriangle3D(v1, v2, v3, camPos, camRot, camRoll, color, depth){
-  const a = project(v1, camPos, camRot, camRoll);
-  const b = project(v2, camPos, camRot, camRoll);
-  const c = project(v3, camPos, camRot, camRoll);
-  if(!a || !b || !c) return;
-
-  const avgDepth = (depth || (a.depth+b.depth+c.depth)/3);
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(a.x, a.y);
-  ctx.lineTo(b.x, b.y);
-  ctx.lineTo(c.x, c.y);
-  ctx.closePath();
-  ctx.fill();
-  return avgDepth;
+function renderRunway(viewMatrix, projMatrix) {
+    const r = game.runway;
+    const corners = [
+        project(new Vec3(r.pos.x - r.width/2, r.pos.y, r.pos.z - r.length/2), viewMatrix, projMatrix),
+        project(new Vec3(r.pos.x + r.width/2, r.pos.y, r.pos.z - r.length/2), viewMatrix, projMatrix),
+        project(new Vec3(r.pos.x + r.width/2, r.pos.y, r.pos.z + r.length/2), viewMatrix, projMatrix),
+        project(new Vec3(r.pos.x - r.width/2, r.pos.y, r.pos.z + r.length/2), viewMatrix, projMatrix)
+    ];
+    
+    if(corners.every(c => c)) {
+        ctx.fillStyle = '#333333';
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        for(let i=1; i<4; i++) ctx.lineTo(corners[i].x, corners[i].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#666666';
+        for(let i=0; i<5; i++) {
+            const t = i/5;
+            const x1 = corners[0].x + (corners[1].x - corners[0].x)*t;
+            const y1 = corners[0].y + (corners[1].y - corners[0].y)*t;
+            const x2 = corners[3].x + (corners[2].x - corners[3].x)*t;
+            const y2 = corners[3].y + (corners[2].y - corners[3].y)*t;
+            ctx.fillRect((x1+x2)/2 - 2, (y1+y2)/2 - 2, 4, 4);
+        }
+    }
 }
 
-function drawFilledCircle3D(center, radius, normal, camPos, camRot, camRoll, color, segments){
-  const segs = segments || 32;
-  const points = [];
-  for(let i=0;i<=segs;i++){
-    const angle = i/segs * TAU;
-    const x = center.x + cos(angle)*radius*normal.z - sin(angle)*radius*normal.y;
-    const y = center.y + sin(angle)*radius*normal.x - cos(angle)*radius*normal.z;
-    const z = center.z + cos(angle)*radius*normal.y + sin(angle)*radius*normal.x;
-    points.push(vec3(x,y,z));
-  }
-
-  const projected = points.map(p => project(p, camPos, camRot, camRoll));
-  if(projected.some(p => !p)) return;
-
-  const avgDepth = projected.reduce((s,p)=>s+p.depth,0)/projected.length;
-
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(projected[0].x, projected[0].y);
-  for(let i=1;i<projected.length;i++){
-    ctx.lineTo(projected[i].x, projected[i].y);
-  }
-  ctx.closePath();
-  ctx.fill();
-  return avgDepth;
+function renderCheckpoints(viewMatrix, projMatrix) {
+    for(const cp of game.checkpoints) {
+        const center = project(cp.pos, viewMatrix, projMatrix);
+        if(center) {
+            const radius = project(new Vec3(cp.pos.x + cp.radius, cp.pos.y, cp.pos.z), viewMatrix, projMatrix);
+            if(radius) {
+                const dist = radius.x - center.x;
+                ctx.strokeStyle = cp.passed ? '#00ff00' : '#ff0000';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, dist, 0, Math.PI*2);
+                ctx.stroke();
+                
+                if(!cp.passed) {
+                    ctx.fillStyle = 'rgba(255,0,0,0.1)';
+                    ctx.fill();
+                }
+            }
+        }
+    }
 }
 
-function drawRing3D(center, radius, normal, camPos, camRot, camRoll, color, segments, lineWidth){
-  const segs = segments || 48;
-  const points = [];
-  for(let i=0;i<=segs;i++){
-    const angle = i/segs * TAU;
-    const x = center.x + cos(angle)*radius*normal.z - sin(angle)*radius*normal.y;
-    const y = center.y + sin(angle)*radius*normal.x - cos(angle)*radius*normal.z;
-    const z = center.z + cos(angle)*radius*normal.y + sin(angle)*radius*normal.x;
-    points.push(vec3(x,y,z));
-  }
-
-  const projected = points.map(p => project(p, camPos, camRot, camRoll));
-  if(projected.some(p => !p)) return;
-
-  ctx.strokeStyle = color;
-  ctx.lineWidth = lineWidth || 2;
-  ctx.beginPath();
-  ctx.moveTo(projected[0].x, projected[0].y);
-  for(let i=1;i<projected.length;i++){
-    ctx.lineTo(projected[i].x, projected[i].y);
-  }
-  ctx.closePath();
-  ctx.stroke();
+function renderObstacles(viewMatrix, projMatrix) {
+    for(const o of game.obstacles) {
+        const center = project(o.pos, viewMatrix, projMatrix);
+        if(center) {
+            const radius = project(new Vec3(o.pos.x + o.radius, o.pos.y, o.pos.z), viewMatrix, projMatrix);
+            if(radius) {
+                const dist = radius.x - center.x;
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, dist, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(center.x, center.y, dist*0.3, 0, Math.PI*2);
+                ctx.fill();
+            }
+        }
+    }
 }
 
-// ============ RENDER AIRCRAFT ============
-function drawAircraft(camPos, camRot, camRoll){
-  if(!aircraft.alive) return;
+function renderAircraft(viewMatrix, projMatrix) {
+    const ac = game.aircraft;
+    const forward = new Vec3(Math.sin(ac.yaw)*Math.cos(ac.pitch), Math.sin(ac.pitch), Math.cos(ac.yaw)*Math.cos(ac.pitch));
+    const right = new Vec3(Math.cos(ac.yaw), 0, -Math.sin(ac.yaw));
+    const up = forward.cross(right);
+    
+    const points = [
+        ac.pos.add(forward.scale(5)), // nose
+        ac.pos.add(right.scale(3)),   // right wing
+        ac.pos.add(right.scale(-3)),  // left wing
+        ac.pos.add(up.scale(1)),      // top
+        ac.pos.sub(forward.scale(5))  // tail
+    ];
+    
+    const projected = points.map(p => project(p, viewMatrix, projMatrix));
+    
+    if(projected.every(p => p)) {
+        ctx.fillStyle = '#444444';
+        ctx.beginPath();
+        ctx.moveTo(projected[0].x, projected[0].y);
+        ctx.lineTo(projected[1].x, projected[1].y);
+        ctx.lineTo(projected[2].x, projected[2].y);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#555555';
+        ctx.beginPath();
+        ctx.moveTo(projected[0].x, projected[0].y);
+        ctx.lineTo(projected[1].x, projected[1].y);
+        ctx.lineTo(projected[3].x, projected[3].y);
+        ctx.closePath();
+        ctx.fill();
+    }
+}
 
-  // Aircraft body as simple shape
-  const fwd = v3norm(aircraft.vel);
-  const right = v3norm(v3cross(fwd, vec3(0,1,0)));
-  const up = v3cross(right, fwd);
+function renderHUD() {
+    const ac = game.aircraft;
+    const speed = ac.vel.length();
+    const altitude = ac.pos.y;
+    const heading = ((ac.yaw * 180 / Math.PI) % 360 + 360) % 360;
+    
+    document.getElementById('airspeed').textContent = `AIRSPEED: ${Math.floor(speed)} m/s`;
+    document.getElementById('altitude').textContent = `ALTITUDE: ${Math.floor(altitude)} m`;
+    document.getElementById('throttle').textContent = `THROTTLE: ${Math.floor(ac.throttle*100)}%`;
+    document.getElementById('heading').textContent = `HEADING: ${Math.floor(heading)}°`;
+    document.getElementById('checkpoint').textContent = `CHECKPOINT: ${game.currentCheckpoint}/8`;
+    
+    const message = document.getElementById('message');
+    if(game.gameWon) {
+        message.style.display = 'block';
+        message.innerHTML = '<div>MISSION COMPLETE!</div><div style="font-size:16px">Press R to Restart</div>';
+    } else if(game.gameOver) {
+        message.style.display = 'block';
+        message.innerHTML = '<div style="color:red">CRASHED!</div><div style="font-size:16px">Press R to Restart</div>';
+    }
+    
+    const horizon = document.getElementById('crosshair');
+    const pitchOffset = ac.pitch * 50;
+    const rollOffset = ac.roll * 50;
+    horizon.style.transform = `translate(-50%, -50%) rotate(${ac.roll}rad) translateY(${pitchOffset}px)`;
+}
 
-  // Transform local vertices to world space
-  function lvtx(x,y,z){ return v3add(aircraft.pos, v3add(v3add(v3scale(right,x), v3scale(up,y)), v3scale(fwd,z))); }
+function updatePhysics(dt) {
+    const ac = game.aircraft;
+    if(ac.crashed || ac.landed) return;
+    
+    const forward = new Vec3(Math.sin(ac.yaw)*Math.cos(ac.pitch), Math.sin(ac.pitch), Math.cos(ac.yaw)*Math.cos(ac.pitch));
+    const right = new Vec3(Math.cos(ac.yaw), 0, -Math.sin(ac.yaw));
+    const up = forward.cross(right);
+    
+    const gravity = new Vec3(0, -9.81, 0);
+    const thrust = forward.scale(ac.throttle * 200);
+    const drag = ac.vel.scale(-ac.vel.length() * 0.01);
+    const lift = up.scale(ac.vel.length() * 1.5 * Math.cos(ac.pitch));
+    
+    const totalForce = gravity.add(thrust).add(drag).add(lift);
+    ac.vel = ac.vel.add(totalForce.scale(dt));
+    
+    ac.pos = ac.pos.add(ac.vel.scale(dt));
+    
+    if(keys['w']) ac.pitch += dt * 0.5;
+    if(keys['s']) ac.pitch -= dt * 0.5;
+    if(keys['a']) ac.roll += dt * 0.8;
+    if(keys['d']) ac.roll -= dt * 0.8;
+    if(keys['q']) ac.yaw += dt * 0.3;
+    if(keys['e']) ac.yaw -= dt * 0.3;
+    
+    ac.roll *= 0.95;
+    ac.pitch *= 0.95;
+    
+    if(keys[' ']) ac.throttle = Math.min(1, ac.throttle + dt * 0.5);
+    if(keys['shift']) ac.throttle = Math.max(0, ac.throttle - dt * 0.5);
+    
+    ac.yaw += ac.roll * dt * 0.8;
+    
+    const speed = ac.vel.length();
+    if(speed > 0) {
+        ac.vel = ac.vel.normalize().scale(speed);
+    }
+    
+    checkCollisions();
+    checkCheckpoints();
+}
 
-  // Fuselage
-  const fuselage = [
-    lvtx(0,0,5), lvtx(0,0,-4), lvtx(0,0.5,-4), lvtx(0,0.5,5),
-    lvtx(0.3,0,-4), lvtx(-0.3,0,-4), lvtx(0.3,0.5,-4), lvtx(-0.3,0.5,-4),
-  ];
+function checkCollisions() {
+    const ac = game.aircraft;
+    
+    if(ac.pos.y < -10) {
+        ac.crashed = true;
+        game.gameOver = true;
+    }
+    
+    for(const t of game.towers) {
+        const dist = ac.pos.sub(t.pos).length();
+        if(dist < t.width + 5 && ac.pos.y < t.pos.y + t.height) {
+            ac.crashed = true;
+            game.gameOver = true;
+        }
+    }
+    
+    for(const o of game.obstacles) {
+        const dist = ac.pos.sub(o.pos).length();
+        if(dist < o.radius + 5) {
+            ac.crashed = true;
+            game.gameOver = true;
+        }
+    }
+    
+    if(ac.landed) {
+        const runway = game.runway;
+        if(ac.pos.x > runway.pos.x - runway.width/2 - 10 &&
+           ac.pos.x < runway.pos.x + runway.width/2 + 10 &&
+           ac.pos.z > runway.pos.z - runway.length/2 - 10 &&
+           ac.pos.z < runway.pos.z + runway.length/2 + 10 &&
+           ac.pos.y < -5 && ac.vel.length() < 20) {
+            game.gameWon = true;
+        }
+    }
+}
 
-  const faces = [
-    // Nose
-    [fuselage[0], fuselage[2], fuselage[4]],
-    [fuselage[0], fuselage[4], fuselage[6]],
-    [fuselage[0], fuselage[6], fuselage[7]],
-    [fuselage[0], fuselage[7], fuselage[3]],
-    // Tail
-    [fuselage[1], fuselage[3], fuselage[5]],
-    [fuselage[1], fuselage[5], fuselage[7]],
-    // Sides
-    [fuselage[2], fuselage[3], fuselage[5]],
-    [fuselage[2], fuselage[5], fuselage[7]],
-    [fuselage[0], fuselage[1], fuselage[4]],
-    [fuselage[0], fuselage[4], fuselage[5]],
-    // Top
-    [fuselage[2], fuselage[0], fuselage[6]],
-    [fuselage[2], fuselage[6], fuselage[4]],
-    [fuselage[3], fuselage[1], fuselage[5]],
-    [fuselage[3], fuselage[5], fuselage[7]],
-    // Bottom
-    [fuselage[0], fuselage[3], fuselage[5]],
-    [fuselage[0], fuselage[5], fuselage[1]],
-  ];
+function checkCheckpoints() {
+    const ac = game.aircraft;
+    for(let i=0; i<game.checkpoints.length; i++) {
+        const cp = game.checkpoints[i];
+        if(!cp.passed) {
+            const dist = ac.pos.sub(cp.pos).length();
+            if(dist < cp.radius) {
+                cp.passed = true;
+                game.currentCheckpoint = i + 1;
+            }
+        }
+    }
+}
 
-  // Wings
-  const wingSpan = 4;
-  const wingChord = 2;
-  const wingPos = -1;
-  const wingL = [
-    lvtx(-wingSpan, 0, wingPos), lvtx(-wingChord, 0, wingPos), lvtx(-wingChord, 0.1, wingPos), lvtx(-wingSpan, 0.1, wingPos)
-  ];
-  const wingR = [
-    lvtx(wingSpan, 0, wingPos), lvtx(wingChord, 0, wingPos), lvtx(wingChord, 0.1, wingPos), lvtx(wingSpan, 0.1, wingPos)
-  ];
+function updateObstacles(dt) {
+    for(const o of game.obstacles) {
+        o.angle += dt * o.speed * 0.5;
+        o.pos.x += Math.cos(o.angle) * o.speed * dt;
+        o.pos.z += Math.sin(o.angle) * o.speed * dt;
+    }
+}
 
-  const wingFaces = [
-    [wingL[0], wingL[1], wingL[3]],
-    [wingL[1], wingL[2], wingL[3]],
-    [wingR[0], wingR[2], wingR[1]],
-    [wingR[0], wingR[3], wingR[2]],
-  ];
+function updateCamera() {
+    const ac = game.aircraft;
+    const forward = new Vec3(Math.sin(ac.yaw)*Math.cos(ac.pitch), Math.sin(ac.pitch), Math.cos(ac.yaw)*Math.cos(ac.pitch));
+    const right = new Vec3(Math.cos(ac.yaw), 0, -Math.sin(ac.yaw));
+    const up = forward.cross(right);
+    
+    if(game.camera.isCockpit) {
+        game.camera.offset = forward.scale(2);
+    } else {
+        game.camera.offset = forward.scale(-20).add(up.scale(5)).add(right.scale(0));
+    }
+    
+    game.camera.offset = game.camera.offset.add(ac.pos);
+}
 
-  // Tail wings
-  const tailSpan = 1.5;
-  const tailChord = 0.8;
-  const tailPos = -3.5;
-  const tailL = [lvtx(-tailSpan, 0, tailPos), lvtx(-tailChord, 0, tailPos), lvtx(-tailChord, 0.1, tailPos), lvtx(-tailSpan, 0.1, tailPos)];
-  const tailR = [lvtx(tailSpan, 0, tailPos), lvtx(tailChord, 0, tailPos), lvtx(tailChord, 0.1, tailPos), lvtx(tailSpan, 0.1, tailPos)];
+function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    renderSky();
+    
+    const ac = game.aircraft;
+    const forward = new Vec3(Math.sin(ac.yaw)*Math.cos(ac.pitch), Math.sin(ac.pitch), Math.cos(ac.yaw)*Math.cos(ac.pitch));
+    const right = new Vec3(Math.cos(ac.yaw), 0, -Math.sin(ac.yaw));
+    const up = forward.cross(right);
+    
+    updateCamera();
+    
+    const viewMatrix = new Mat4().lookAt(game.camera.offset, ac.pos, up);
+    const projMatrix = new Mat4().perspective(Math.PI/4, canvas.width/canvas.height, 0.1, 5000);
+    
+    renderTerrain(viewMatrix, projMatrix);
+    renderMountains(viewMatrix, projMatrix);
+    renderTowers(viewMatrix, projMatrix);
+    renderRunway(viewMatrix, projMatrix);
+    renderCheckpoints(viewMatrix, projMatrix);
+    renderObstacles(viewMatrix, projMatrix);
+    renderAircraft(viewMatrix, projMatrix);
+    
+    renderHUD();
+}
 
-  const tailFaces = [
-    [tailL[0], tailL[1], tailL[3]],
-    [tailL[1], tailL[2], tailL[3]],
-    [tailR[0], tailR[2], tailR[1]],
-    [tailR[0], tailR[3], tailR[2]],
-  ];
+let lastTime = 0;
+function gameLoop(timestamp) {
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05);
+    lastTime = timestamp;
+    
+    if(keys['c']) {
+        game.camera.isCockpit = !game.camera.isCockpit;
+        keys['c'] = false;
+    }
+    
+    if(keys['r']) {
+        init();
+        keys['r'] = false;
+    }
+    
+    updatePhysics(dt);
+    updateObstacles(dt);
+    render();
+    
+    requestAnimationFrame(gameLoop);
+}
 
-  // Vertical stabilizer
-  const vsL = [lvtx(0, 1.5, tailPos), lvtx(0, 1.5, tailPos-0.3), lvtx(-0.8, 0, tailPos-0.3), lvtx(-0.8, 0, tailPos)];
-  const vsR = [lvtx(0, 1.5, tailPos), lvtx(0, 1.5, tailPos-0.3), lvtx(0.8, 0, tailPos-0.3), lvtx(0.8, 0, tailPos)];
-
-  const vsFaces = [
-    [vsL[0], vsL[1], vsL[2]],
-    [vsL[0], vsL[2], vsL[3]],
-    [vsR[0], vs
+init();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

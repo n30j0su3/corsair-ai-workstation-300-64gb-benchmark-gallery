@@ -1,1033 +1,1248 @@
-We need answer complete HTML file only. Need build playable 3D flight sim in single HTML using vanilla JS Canvas/WebGL. We can use Canvas 2D to render 3D projections. Need controllable aircraft pitch/roll/yaw/throttle/velocity/altitude/heading. Gravity/drag/lift/collision. Chase and cockpit camera toggle C. Render 3D aircraft, terrain, sky, objective rings, obstacles with perspective projection. Terrain mountains/towers/gates, 8+ checkpoint rings, 3+ hazards, runway landing zone. Checkpoint tracking, collision logic, mission success/failure, restart. HUD airspeed altitude throttle heading artificial horizon checkpoint progress. Need output raw HTML. Need ensure works.
+We need answer raw HTML only. Need build playable 3D flight sim single HTML vanilla JS Canvas/WebGL. Need include controls, aircraft, terrain, sky, objective rings, obstacles, checkpoint tracking, collisions, success/failure restart, HUD with metrics and artificial horizon. Need output complete HTML file only. Need ensure works. We can use Canvas 2D with software 3D projection, or WebGL. User says Canvas/WebGL. "using only vanilla JavaScript and Canvas/WebGL". Single HTML. Need playable. We can implement Canvas 2D rendering 3D projections, enough. Need include 3D aircraft, terrain, sky, objective rings, obstacles perspective projection. Need collision.
 
-Need think design. Single HTML with canvas full screen, JS. Need implement enough.
+Need think through game. Need produce robust code. Single file. Need no explanations. Need raw HTML.
 
-We can use Canvas 2D custom 3D engine. Need "Canvas/WebGL" allowed, not necessarily WebGL. Use Canvas 2D. Need aircraft controllable.
+Let's design.
 
-Need define world coordinate. Let's make flight along x direction? Aircraft position vector [x,y,z]. Up y. Heading angle in horizontal plane: direction unit d = [cos h, 0, sin h]. Nose forward. Pitch angle p positive nose up around right axis. Roll angle r positive right wing down? We'll compute local axes:
-forward f from yaw+pitch:
-f = [cosPitch*cosHeading, sinPitch, cosPitch*sinHeading].
-right axis raxis = [sinHeading,0,-cosHeading] maybe right wing.
-up axis u = cross(raxis, f) normalized (since right x forward = up?). Check: raxis (1,0,0), f(0,0,1), raxis x f = (0,-? cross x,y formula: (0*1-0*0=0, 0*0-1*1=-1,1*0-0*0=0) -> down. Need up = f x right? f x r = (0,1,0) for f z, r x. So up = f x raxis. But for roll, up = rotate up by roll around f. Use basis:
-f = yaw pitch.
-right = [sin h,0,-cos h] (right wing)
-up0 = f x right.
-roll around f: right = right*cos + up0*sin? For positive roll, right wing down means up vector moves toward right? Need not critical. up = up0*cos - right*sin maybe. Let's derive: roll positive right wing down means right axis tilts downward, up axis tilts right. If right axis initial (1,0,0), up0 (0,1,0). Positive roll (right wing down) should up vector = (sin r, cos r,0), right = (cos r,-sin r,0). That matches up = up0*cos + right*sin, right = right*cos - up0*sin. Good.
+Game: 3D world coordinates x,z horizontal, y altitude. Aircraft position, velocity, orientation yaw/pitch/roll. Physics: throttle influences thrust along forward. Drag. Gravity. Lift perpendicular to aircraft? Simpler: velocity vector along heading/pitch; lift depends on speed and bank/attitude, bank affects turn. Need controllable pitch/roll/yaw/throttle.
 
-Lift vector up * lift. Gravity (0,-g,0). Drag opposite velocity magnitude^2 * drag coefficient. Lift maybe proportional speed^2 * lift coefficient * up, if speed > threshold. Need bank affects turning: update velocity += (lift * cos bank? Actually lift vector includes up with roll; vertical component controls climb, horizontal component turns. Good. But if f upward and no bank, lift up counteracts gravity. Need stable flight. Use simple.
+World: terrain height function y = h(x,z), with mountains/towers/gates. Runway landing zone. Checkpoints rings maybe vertical torus/rings centered in 3D? Objective rings. Gates as hoops? Need render 3D rings with perspective.
 
 Controls:
-W/S pitch up/down maybe key W pitch up, S pitch down. A/D roll left/right. Q/E yaw? Throttle +/-. Need also mouse drag to pitch/roll? For playable, implement keyboard plus mouse/touch. Controls:
-- Arrow Up / W: pitch up
-- Arrow Down / S: pitch down
-- Arrow Left / D: roll left/right
-- Arrow Right / D: roll
-- Q/E yaw left/right small
-- Shift/Up? Throttle up, X/Down throttle down
-- C camera toggle
-- R restart
-Maybe mouse: drag on canvas to pitch/roll (like flight stick). Need include.
+W/S pitch up/down? A/D roll/yaw? Q/E yaw left/right maybe. Throttle [ ] or up/down. C toggle camera. R restart. Mouse drag look? Could implement arrow keys for pitch/roll/yaw, W/S for pitch, A/D roll/yaw? Need intuitive. Let's implement:
+- Arrow Up: pitch up, Arrow Down pitch down
+- Arrow Left/Right: roll left/right (also yaw due bank)
+- Q/E: yaw left/right
+- W/S throttle up/down? But arrow also pitch. Maybe W/S throttle; A/D roll; Q/E yaw; Arrow Up/Down pitch. Throttle keys [ and ] or PageUp/PageDown.
+- Space dive? Not needed.
+- C camera toggle.
+- R restart.
 
-Need physics:
+Aircraft model: rendered as 3D with triangles? We can project points. Need "3D aircraft" perspective. Could draw simple fuselage line with wings triangles, tail. Draw visible based on screen. Use world-to-screen.
+
+Camera:
+- Chase camera: behind aircraft offset relative to orientation. Use yaw/roll? Chase camera offset = back (negative forward) + up*2 + left? Need look at aircraft. For chase, maybe offset = -forward*8 + up*2.5 + left*0 + height difference. Use current aircraft orientation; if inverted, up vector from orientation. Compute.
+- Cockpit: position slightly in front of nose along forward at distance 3, plus right/up offsets, look ahead. But if pitch/roll, use aircraft forward/up/right vectors.
+
+Perspective projection: camera matrix:
+World coords. For each point, compute relative to cam pos. Need basis right, up, forward (from camera looking). We can compute camForward vector. Project x = f * rightDot / dist? Standard:
+v = point - camPos.
+z = dot(v, camForward) (positive in front)
+x = dot(v, camRight)
+y = dot(v, camUp)
+screenX = w/2 + x/z*fov
+screenY = h/2 - y/z*fov
+visible if z > near.
+
+Need render sky gradient, terrain. Could draw sky gradient in canvas. Terrain: grid over world extents maybe -600..600, sample height. Project grid lines and fill? We can draw terrain as projected triangles? To appear perspective, fill grid triangles with color based on height. Need manageable. World 1200x1200 grid 30 maybe 900 cells; okay. But drawing 8100 triangles each frame maybe okay. We can optimize. Need include mountains/towers/gates. Terrain height function: base y=0; add gaussian mountains and radial rings. Add towers: obstacles vertical cylinders at positions, height. Gates: checkpoint rings maybe vertical hoops. Need render rings perspective as line segments projected.
+
+Checkpoints: 8+ rings along path. Need define ring centers in world. Could be vertical hoops: plane oriented maybe perpendicular to path, at height. Ring radius 20. Center at e.g. (0,25,0), (120,35,-120), etc. Need path through mountains. Objective rings maybe gate hoops. We can create rings with center and normal vector path direction; ring lies in plane perpendicular to direction? "objective rings" could be circular rings. Simpler: vertical rings at center y, radius, with normal along heading direction? If ring plane perpendicular to path, players fly through. Need render as circle points. Checkpoint progress: count passed. Need collision: if distance to ring center < radius*1.2 and abs dot(center-pos, normal) < thickness, pass if not already. Need not double count.
+
+Obstacles: hazards 3+: towers, mountains, wind turbines, red hazard cones. Collision with towers (cylinders), mountains (height terrain), gates? Need include 3+ hazards. Towers: vertical cylinders with radius 10 height 60 at positions, top y=h+height. Collision if horizontal dist < radius+plane radius, y between terrain and top. Mountains collision: if plane altitude < terrainHeight+ maybe 15? But plane needs fly above terrain. Need include runway landing zone. Landing zone maybe green rectangle at end with target altitude 25, speed 80, checkpoint after last? Mission success when land on runway after all checkpoints. Failure if crash/low fuel? Need mission failure if collision or altitude too low. Landing zone detection: if all checkpoints done, near runway zone and altitude between 10-35 and speed < maybe 110, then success. Or if speed too high maybe failure? Could success if touchdown within zone and speed <130. Need avoid "too fast" fail? Need landing zone.
+
+Aircraft physics:
 State:
-pos [x,y,z], vel [vx,vy,vz], speed = norm. heading = atan2(f.z, f.x), pitch = asin(f.y), roll = angle between up and world up projected? compute.
-mass etc. dt clamp.
+pos vec3
+vel vec3
+orient: yaw, pitch, roll, maybe orientation matrix from euler.
+throttle 0..1, airspeed magnitude.
+heading yaw (0..2π)
+altitude pos.y - terrainHeight(pos)
+Need update dt.
 
-Forces:
-g=28 m/s^2 maybe.
-drag = -v * speed * 0.035
-lift = up * speed^2 * 0.07 maybe. Need stable. At 55 m/s, lift=212 > weight 28. Too much. Use lift coeff 0.035? 55^2*0.035=106, close. But bank reduces vertical. At speed 45 lift=56. Need maybe g=25, liftCoeff=0.028. At 50 lift=70. Need climb. Add throttle affects engine acceleration along f: thrust = throttle * 18 maybe. Drag. Use acceleration = gravity + thrust*f + lift*up + drag. But if lift too high, okay. Need drag and throttle.
+Orientation:
+roll affects yaw and pitch? User wants controllable aircraft with pitch/roll/yaw/throttle/velocity/altitude/heading. We'll display yaw heading, pitch/roll maybe. Controls:
+- pitch input p = ArrowUp - ArrowDown
+- roll input r = ArrowLeft - ArrowRight
+- yaw input y = Q/E - A/D maybe.
+- throttle input = W/S? Need not conflict. Maybe W/S throttle, [ ] throttle. Also mouse wheel. Let's define:
+Pitch: ↑/↓
+Roll: ←/→
+Yaw: Q/E or A/D
+Throttle: W/S or ↑↓? But Arrow up used pitch. Use W/S for throttle. [ / ] too.
+C camera toggle, R restart.
+Space maybe brakes on landing? Not needed.
 
-Could make simpler:
-a = gDown + liftCoeff*speed^2*up + thrust*f - dragCoeff*speed*vel.
-g=30, liftCoeff=0.025, thrust=12. At speed 50 lift=62.5 vertical if level, gravity 30, net upward 32 too high, climb. At speed 40 lift=40. Good. Drag coeff 0.006, at 50 drag accel=15. Thrust 12, net. okay.
-Banking: lift vector tilted with up; vertical component = lift*up.y; horizontal = lift*horizontal. That turns.
+Need convert pitch/roll/yaw to orientation matrix. Need use roll, pitch, yaw. For aircraft orientation vectors:
+Start forward (0,0,1) in world? Coordinates x east, z north, y up. Need yaw rotates around y. pitch around local lateral axis. roll around local forward. We'll build matrix = R_y(yaw) * R_x(pitch) * R_z? Need coordinate. Standard with y up:
+yaw about y:
+x' = cos yaw*x + sin yaw*z? forward after yaw = (sin yaw,0,cos yaw).
+pitch about local lateral axis (right vector) positive pitch up: forward = (cos pitch*sin yaw, sin pitch, cos pitch*cos yaw).
+Roll not affect forward/up? It affects local up/right but not forward. For aircraft model roll.
+Need right vector = (cos yaw,0,-sin yaw) maybe; up vector = ( -cosPitch*sinYaw, sinPitch, cosPitch*cosYaw )? Let's derive from forward and right.
 
-Need collisions:
-Terrain: height map h(x,z)= base 0 + mountains. Need obstacles: mountains, towers, gates, rings. Need check aircraft collision if pos y <= terrainHeight + maybe clearance? Actually if below terrain/obstacle.
-Obstacle list: towers (cylinders), mountains? terrain collision with terrain height. towers as cylinders: if horizontal distance < radius and y between base and top => collision. gates/rings maybe as circular hoops; collision if passing through ring plane and outside ring. Checkpoint rings: 8+. Need objective rings, gates. "3+ hazards" obstacles. We'll include towers, mountain peaks? Need "terrain with mountains/towers/gates, 8+ checkpoint rings, 3+ hazards, runway landing zone." We can create terrain height map with mountains, towers, gates (checkpoint rings), hazards: towers, rocks/mountains, wind? Need collision with towers/rocks.
+Coordinate x east, z north, y up. yaw=0 forward +z. right=(1,0,0). pitch up positive: forward=(0,sinPitch,cosPitch). right unchanged. roll positive maybe bank right: up vector rotates toward right? We can compute up = forward * sinPitch? plus right * -cosPitch? Hmm.
 
-World:
-- x from 0 to 3500, z from -1200 to 1200.
-- runway landing zone at x=3100 maybe along z? Need landing zone visible.
-- Start at x=200 y=450 z=0 heading 0 (east).
-- Checkpoints 8 rings along path. Each ring is a circular gate perpendicular to path, with center [x, y, z], radius 95. y maybe 350, z=0, x increasing. Need "gates" objective rings.
-- Need mission success: pass all checkpoints and land at runway (touch zone) maybe within landing zone with low speed/altitude. Or complete all checkpoints and reach landing zone. Failure: crash into terrain/obstacles, out of bounds, stall? Need restart.
-- Need runway landing zone: maybe rectangular strip at end: x=3000-3300, z=0, y=0, with green/white strip; landing success if pos x > 3200, abs z < 120, speed<90, altitude<300? Or touchdown. Need "runway landing zone".
+Use basis from orientation:
+forward = (sin yaw * cos pitch, sin pitch, cos yaw * cos pitch).
+right = (cos yaw, 0, -sin yaw) maybe unchanged by pitch? But in aircraft, pitch doesn't change right vector if no roll? Actually right horizontal. Roll changes right/up. Need include roll.
+We can build orientation matrix from Euler in order yaw(y), pitch(x), roll(z):
+R_y(yaw):
+[cy 0 sy; 0 1 0; -sy 0 cy] with forward column? If basis columns are right, up, forward.
+R_x(pitch):
+[1 0 0; 0 cp -sp; 0 sp cp]
+R_z(roll):
+[cr -sr 0; sr cr 0;0 0 1]
+If local basis columns = R_y * R_x * R_z columns:
+right = col0, up=col1, forward=col2.
+Compute:
+right = (cy*cr + sy*sr*0? let's derive)
+Ry Rx Rz.
+First Rx Rz = [[cr,-sr,0],[cp*sr,cp*cr,-sp],[sp*sr,sp*cr,cp]]
+Then Ry * that:
+col0 = (cy*cr + sy*sp*sr, cp*sr, sp*sr)
+col1 = (-cy*sr + sy*sp*cr, cp*cr, sp*cr)
+col2 = (cy*0 + sy*sp, cp, -sy*0+cy*sp) = (sy*sp, cp, cy*sp)
+This forward has vertical component cp not sin pitch; wrong because pitch around local x should forward vertical = sin pitch. Our Rz roll before pitch maybe changes.
 
-Need rendering:
-- Sky gradient, sun, clouds maybe.
-- Perspective projection. Need sort objects by distance for terrain? Terrain mesh grid render triangles sorted by distance. Or draw terrain as grid lines/polygons. Need perspective projection. Need render 3D aircraft, terrain, sky, objective rings, obstacles. Need "render 3D aircraft" maybe draw model in world with projection and scale. Need 3D aircraft model: fuselage line + wings + tail, maybe 3D vertices transformed to screen. Use perspective.
-- Terrain: height map, mesh triangles. Need draw many triangles sorted by depth. Use 3D engine.
-- Objective rings: hoops (circles) rendered as ellipses using projected vertices; maybe colored.
-- Obstacles: towers (cylinders), mountains (cones). Need render obstacles with 3D lines.
-- Camera: chase and cockpit toggle C.
-Chase camera: behind aircraft opposite f with offset [0, 70, 180]? Actually behind along -f, plus up offset. target = pos + f*60 + up*25, camera = target - f*220 + up*60 maybe. Need look at target.
-Cockpit camera: near pos + f*15 + up*10, look ahead. Render simplified cockpit overlay (screen edges, crosshair, horizon lines) maybe.
+Maybe use yaw then pitch then roll; pitch should around local right after yaw, vertical = sin pitch. Matrix = R_y(yaw) * R_x(pitch) * R_z(roll) if column vector transforms basis. For roll=0, forward column = R_y * (0,-sin? wait R_x maps z to (0,-sp,cp) depending convention). We used R_x pitch matrix with z->(0,-sp,cp). Need use z->(0,-sp,cp) or (0,sp,cp)? For pitch up positive should forward vertical +. Matrix R_x with [1 0 0;0 cp -sp;0 sp cp] maps z (0,0,1)->(0,-sp,cp). So use [1 0 0;0 cp sp;0 -sp cp] maps z to (0,sp,cp). Let's set R_x = [[1,0,0],[0,cp,sp],[0,-sp,cp]]. Then Rx Rz:
+[[cr,-sr,0],[cp*sr,cp*cr,sp],[ -sp*sr,-sp*cr,cp]]
+Ry columns:
+forward = (sy*sp, cp, cy*sp). Good.
+right = (cy*cr + sy*sp*sr? compute col0 = (cy*cr+sy*(-sp*sr)? wait Ry*[cr; cp*sr; -sp*sr] = (cy*cr + sy*(-sp*sr), cp*sr, -sy*cr+cy*(-sp*sr)). Hmm due roll before pitch affects right. up = col1 = (cy*(-sr)+sy*(-sp*cr), cp*cr, -sy*(-sr)+cy*(-sp*cr)) = (-cy sr - sy sp cr, cp cr, sy sr - cy sp cr). This is okay. But roll positive rotates up toward? Fine.
 
-Need projection:
-Given camera pos, view basis:
-forward = normalize(target - camera)
-right = normalize(cross(forward, worldUp))? Check coordinate x,z horizontal, y up. cross(forward, up) maybe points right? For forward (0,0,1), cross(forward, up(0,1,0)) = (-1,0,0). Need right = normalize(cross(up, forward)) = (1,0,0). Good.
-up = cross(right, forward).
-Project point:
-v = p - cam
-x = dot(v,right)
-y = dot(v,up)
-z = dot(v,forward)
-If z <= near fail.
-screen x = cx + f*x/z, screen y = cy - f*y/z.
-f = min(w,h)*0.75 maybe.
+Need yaw control changes yaw directly, pitch control changes pitch directly, roll changes roll. For banking affects turning: We can in physics apply turn rate based on throttle/speed and roll and yaw input. Use orientation yaw updated:
+rollRate = control roll * 2.2 rad/s. pitchRate = control pitch * 1.4 rad/s. yaw input rate = (yawControl + sin(roll)*throttle*0.6 + speed* sin(roll)*0.025) * 1.6 maybe. Yaw update = yawInput * yawRate * dt + bankTurn. This satisfies banking affects turning. Need also if no yaw but bank roll, aircraft turns. Need velocity vector follow orientation? For flight sim, if we directly orient and let velocity align, easier. But need physics: throttle affects speed, drag, gravity, lift. We can update velocity:
+- thrust = throttle * maxAccel along forward
+- drag = -vel * kDrag * speed^2?
+- lift = up * (throttle*0.25 + speed? maybe)??? Need make plane not fall if throttle high.
+- gravity = down * 12
+- turn due bank? Could update orientation and velocity direction align to orientation gradually.
 
-Need 3D model projection:
-Use same. Need draw triangles/lines.
+Simpler:
+- Compute thrust acceleration along forward = throttle * 100.
+- Drag acceleration = -vel * (0.08 + 0.012*speed) maybe.
+- Lift acceleration = up * (30 + 22*throttle + 0.08*speed) maybe. Gravity = -9.8. If throttle high, lift balances. But if pitch nose up, vertical component of lift increases, speed changes.
+- Gravity always.
+- Maybe add "stall" if speed low: lift decreases; if too high, damage.
+- Update vel += acc dt.
+- Then align velocity direction to orientation forward/right/up with turn coupling: desiredVel = forward * speedDesired + up*0.2? Hmm. To make controllable, after physics, smooth velocity direction toward a desired vector based on orientation and speed:
+desired = forward * clamp(speed*1.05, 30, 170) + up * clamp(speed*0.12, -10, 20) + right * (yawInput + sin(roll)*0.35)* speed*0.25. This will make plane follow controls. But physics lift/drag/gravity included? Could be too arcade. Need include gravity/drag/lift/collision. We can combine: physics yields velocity, then damp to desired.
 
-Terrain rendering:
-Need generate grid height. We can use procedural function h(x,z):
-- base maybe -20? Let y=height.
-- mountains at positions [(-700,-450),(-250,250),(800,-500),(1400,350),(2100,-350),(2700,400)] with gaussian peaks.
-- valleys? h = max(0, sum gaussian*height - undulation maybe). Need terrain not too high.
-Maybe h = 20 + 160*gauss + ...; ensure start runway y around? Start at y=350? If terrain at start maybe 0. Need y altitude above terrain. Start y=450.
-Terrain mesh triangles: grid 80 x 30? 2400 triangles okay. Sort by average depth.
-Need draw terrain as triangles with shading based on normal. Use fill polygon. Could be many but okay. For performance, 80x30 = 4800 triangles. Need sort by z camera each frame. Fine.
+Maybe better:
+- Use orientation as attitude.
+- Controls affect orientation.
+- Physics:
+thrust along forward
+drag opposite vel
+lift along up
+gravity
+bank turn: yaw rate changes orientation based on roll, throttle, speed; velocity direction gradually aligns with forward due lift/turn.
+Then clamp speed.
 
-Projection for terrain: For each triangle, project vertices; if behind skip; fill with color. Need sort by depth descending? Painter: draw far first (larger depth? Since z positive forward distance). We can sort triangles by average z camera descending (far first). Use alpha. Need draw.
-Need maybe draw grid lines? Triangles enough.
+Detailed:
+const speed = length(vel);
+const throttle = ...
+const forward/up/right from orientation.
+let acc = vec3(0, -9.8, 0)
+acc += forward * throttle * 55
+acc += up * (18 + 0.08*speed + throttle*12) // lift
+acc += vel * - (0.035 + 0.0009*speed) // drag
+// if stall: if speed < 45 lift *=0.4; if speed>160 drag*=2
+vel += acc*dt
+// smooth speed to throttle target
+targetSpeed = 45 + throttle*115
+if speed < targetSpeed: vel += forward * (targetSpeed - speed)*dt*0.25
+if speed > targetSpeed: vel += -forward * (speed-target)*dt*0.25
+// turn velocity toward desired heading/up:
+desiredForward = forward
+if roll !=0 desiredForward += right * sin(roll)*0.35
+desiredForward += up * pitch*0.12? Actually pitch control already changes orientation.
+desiredVel = normalize(desiredForward) * speed
+vel = lerpVel(vel, desiredVel, dt*1.2)
+Clamp speed 25..185. But if throttle high, target speed. Good.
 
-Height function:
-function terrainHeight(x,z) {
-let h = 15;
-h += 220*exp(-((x+800)^2/(2*500^2)+(z+350)^2/(2*250^2)));
-...
-maybe add ridges.
-h = Math.max(0, h + 25*sin(x*0.006)*cos(z*0.01));
-return h;
-}
-But mountains can create impossible terrain. Need obstacles towers on flat ground maybe near path. Towers base at terrainHeight.
+Need orientation update:
+roll += rollInput * rollRate * dt; clamp maybe ±π/2? If inverted? Keep clamp [-1.2,1.2] or [-π/2,π/2].
+pitch += pitchInput * pitchRate * dt; clamp [-1.0,1.0] to avoid stalls.
+yawInput = (q/e - a/d). bankTurn = sin(roll)*throttle*0.004*speed? rad/s? Let's compute: sin(roll)*throttle*0.006*speed maybe at speed 100, roll 1 rad => 0.5 rad/s. yaw += yawInput * 1.2*dt + bankTurn*dt.
+Maybe roll controls also immediate yaw? no.
 
-Need draw terrain mesh resolution maybe 70 x 24. Use grid xMin 0, xMax 3400, zMin -1000,zMax 1000. For triangles, use height at corners.
+Need heading display = normalize yaw.
 
-Need render all objects:
-- Sky: gradient top #081b45 to horizon #91c6ff to ground? Horizon line at y=0? Use camera; draw gradient.
-- Sun.
-- Clouds maybe optional.
-- Terrain.
-- Runway: rectangle at x=3000,z=0 length 450,width120 maybe. Need draw as polygons/lines. Use colored rectangle on ground; draw centerline. Landing zone maybe at x=3180.
-- Checkpoint rings: 9 rings. Need ring orientation perpendicular to path (heading=0). Centers [450,300,0], [900,420,0], etc. Need altitude increasing? Need gates at y 250-500. Rings in plane normal = heading direction [1,0,0], circle in yz plane. For rendering, project 2D circle points: center + up*(radius cos t) + right*(radius sin t)? Plane normal forward, local axes [0,1,0], [0,0,1]. But with path heading maybe x direction. We'll use ring normal = [1,0,0], local up [0,1,0], right [0,0,1]. Need colored green/orange. Need checkpoint pass if aircraft x > ring center x and abs(z-center.z)<radius*0.75 and abs(y-center.y)<radius*0.75. But ring orientation yz; collision if crossing plane and outside ring. Checkpoint tracking: if not passed and distance to plane <= 15 and inside ring -> mark passed. Need progress.
-- Gates maybe same as rings.
-- Obstacles:
-towers: base at terrainHeight, x,z fixed, radius 18, height 250, color red/white. Draw as cylinder sides maybe lines from base to top.
-mountain/rock hazards: cones/spheres on terrain; collision radius.
-wind turbines? towers. Need 3+ hazards. We'll include hazard list: towers, rocks.
-- Need collision with terrain: if pos.y < terrainHeight(pos.x,pos.z)+5 maybe crash. Since altitude = pos.y - terrainHeight.
-- Collision with obstacles: tower if horizontal dist < radius and y between base and base+height. Rocks if dist < radius and y between terrain and terrain+height.
+Need camera:
+Chase:
+basis forward, right, up from orientation. offset = forward*(-9) + up*2.5 + right*(roll*? maybe 0). But if using roll vector, chase rolls? Could be stable? Use up vector from aircraft; if banked, camera rolls with plane. Chase camera behind and above. pos = aircraft.pos - forward*9 + up*3.5. Look at pos + forward*4 + up*1.
+Cockpit:
+camPos = pos + forward*5 + up*0.2 + right*0; lookAt = pos + forward*30 + up*1. maybe. Need cockpit camera toggle.
+Need draw HUD after projection. Need draw sky, terrain, obstacles, rings, aircraft, landing zone.
 
-Need aircraft model:
-World basis:
-f, right, up.
-Vertices:
-nose [12,0,0], tail [-10,0,0], left wing [-2,-3,-12]? Need coordinate: x forward, y up, z right? Earlier right axis maybe z positive? We used right = [sin h,0,-cos h], up = ..., local axes x forward, y up, z right? Let's define local aircraft coordinates:
-forward local x.
-up local y.
-right local z (positive right wing). For yaw=0, forward [1,0,0], right [0,0,1], up [0,1,0]. Need right axis formula for yaw h: [0,0,1] rotated around y: [sin h,0,cos h]. But earlier I had [sin,0,-cos] depending yaw convention. Need consistency. Let's set heading h: forward = [cos h,0,sin h], right = [sin h,0,cos h], up0 = cross(forward,right)? forward x right = [cos,0,sin] x [sin,0,cos] = (0*cos - sin*0=0, sin*sin - cos*cos = -? y = f.z*r.x - f.x*r.z = sin^2 - cos^2 = -cos2h not up). Need right should be cross(worldUp, forward)? cross(up(0,1,0), forward(cos,0,sin)) = (1*sin -0, 0, 0*cos-1*sin)= (sin,0,-cos). That gives yaw=0 right [0,0,-1]. So local right positive z = -cross(up,forward). Alternatively right = [-sin,0,-cos]? Wait if forward x=1, right should [0,0,1]. cross(up,forward) = [sin,0,-cos], yaw=0 [0,0,-1]. So right = -cross(up,forward) = [-sin,0,cos]. Good. Use right = [-sin h,0,cos h]. Then forward x right = [1,0,0]x[0,0,1]=[0,-1,0] down; up = right x forward = [0,1,0]. Good. Use:
-f=[cosh,0,sinh]
-right=[-sin h,0,cosh]
-up0 = cross(right,f) = [0,-? cross right x forward: right=( -s,0,c), f=(c,0,s). cross = (0*s - c*0=0, c*c - (-s)*s =1, (-s)*0 -0*c=0) yes up.
-roll:
-right = right*cosRoll - up0*sinRoll? Positive roll right wing down: right y negative. right*cos - up*sin => y=-sin. up = up0*cos + right*sin => y=cos. Good.
-So f unchanged.
+Canvas full screen. Need high-DPI scaling. Use CSS.
 
-Aircraft model local coords:
-nose [12,0,0]
-tail [-12,0,0]
-left wing? local z negative? If right positive z, left wing z=-12. vertices: wingLeft[-4,0,-12], wingRight[4,0,12], tailFin [-10,4,0], vertical? Maybe draw lines:
-- nose/tail center line
-- wings triangle: left wing [-4,0,-12], right [4,0,12], tail [-12,0,0]? Actually wings span from -3 to 5, z ±12.
-- tail wings.
-- vertical stabilizer.
-Need draw as 3D lines. Use projection with depth.
-Maybe draw aircraft in cockpit camera? In chase, draw model. In cockpit, not draw world aircraft; draw cockpit overlay and horizon. But requirement render 3D aircraft; chase camera does.
-
-Need controls:
-Keys object.
-Pitch control: keyUp/W positive; keyNow produce the final answer. Be concrete and complete.</think>
+Need implement terrain:
+World bounds [-650,650].
+heightAt(x,z):
+base = 0
++ 10*exp(-((x+300)^2/(2*130^2)+(z+200)^2/(2*120^2)))
++ 20*exp(... mountain)
++ 8*exp(...)
++ 2*sin(x*0.01)*cos(z*0.01)
+maybe.
+Runway landing zone at end e.g. x=470,z=400? Need path from start (0,40,0) through checkpoints to landing zone (600,400). Runway as rectangle oriented along z maybe.
+Runway: center (520,2Now produce the final answer. Be concrete and complete.</think>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>Single File 3D Flight Challenge</title>
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#071225;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;}
-#game{display:block;width:100vw;height:100vh;touch-action:none;cursor:crosshair;}
-#hud{position:fixed;left:14px;top:12px;color:#eef7ff;text-shadow:0 1px 3px #000;pointer-events:none;font-size:15px;line-height:1.45;min-width:225px;}
-#hud .row{white-space:nowrap;margin:2px 0;}
-#help{position:fixed;right:14px;top:12px;color:#eef7ff;text-shadow:0 1px 3px #000;pointer-events:none;font-size:13px;line-height:1.5;max-width:330px;}
-#centerMsg{position:fixed;left:50%;top:48%;transform:translate(-50%,-50%);color:#fff;text-shadow:0 3px 12px #000;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.25);padding:18px 28px;border-radius:14px;font-size:28px;font-weight:800;letter-spacing:.5px;pointer-events:none;display:none;}
-#mini{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);color:#fff;text-shadow:0 2px 8px #000;pointer-events:none;font-size:13px;opacity:.95;}
+  html, body { margin:0; height:100%; overflow:hidden; background:#07121f; font-family:Arial, Helvetica, sans-serif; }
+  canvas { display:block; width:100vw; height:100vh; background:#87ceeb; }
+  #help {
+    position:fixed; left:12px; top:12px; color:#fff; background:rgba(0,0,0,.42);
+    padding:9px 11px; border-radius:7px; font-size:12px; line-height:1.45;
+    pointer-events:none; max-width:330px;
+  }
+  #help b { color:#d9f2ff; }
+  #fail {
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,.62); color:#fff; text-align:center;
+    font-size:32px; font-weight:800; letter-spacing:1px;
+  }
+  #fail div { background:rgba(0,0,0,.68); padding:26px 36px; border-radius:12px; }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<div id="hud">
-<div class="row">✈ Flight Gate Runner</div>
-<div class="row">Airspeed: <span id="airspeed">0</span> m/s</div>
-<div class="row">Altitude: <span id="altitude">0</span> m</div>
-<div class="row">Throttle: <span id="throttle">0</span>%</div>
-<div class="row">Heading: <span id="heading">0</span>°</div>
-<div class="row">Camera: <span id="camera">Chase</span></div>
-<div class="row">Checkpoint: <span id="progress">0/8</span></div>
-<div class="row">Status: <span id="status">Mission running</span></div>
-</div>
+<canvas id="c"></canvas>
 <div id="help">
-<b>Controls</b><br>
-W / ↑ : pitch up &nbsp; S / ↓ : pitch down<br>
-A / ← : roll left &nbsp; D / ↑ : roll right<br>
-Q / E : yaw left/right<br>
-+ / - : throttle<br>
-C : chase / cockpit camera<br>
-R : restart<br>
-Mouse drag also pitches/rolls. Land on the runway to win.
+  <b>Controls</b><br>
+  Pitch: <b>↑</b>/<b>↓</b><br>
+  Roll: <b>←</b>/<b>→</b><br>
+  Yaw: <b>Q</b>/<b>E</b> or <b>A</b>/<b>D</b><br>
+  Throttle: <b>W</b>/<b>S</b>, <b>[</b>/<b>]</b>, mouse wheel<br>
+  Camera: <b>C</b>  |  Restart: <b>R</b>
 </div>
-<div id="mini">Pass 8 glowing checkpoint gates, avoid towers/rocks/mountains, then land on the runway.</div>
-<div id="centerMsg"></div>
+<div id="fail"><div><span id="failTitle">Mission Failed</span><br><br><span id="failSub">Press R to restart</span></div></div>
+
 <script>
 (() => {
-'use strict';
+"use strict";
 
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d', { alpha: false });
-let W = 0, H = 0, DPR = 1;
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d", { alpha:false });
+const failBox = document.getElementById("fail");
+const failTitle = document.getElementById("failTitle");
+const failSub = document.getElementById("failSub");
+const help = document.getElementById("help");
 
-const hud = {
-  airspeed: document.getElementById('airspeed'),
-  altitude: document.getElementById('altitude'),
-  throttle: document.getElementById('throttle'),
-  heading: document.getElementById('heading'),
-  camera: document.getElementById('camera'),
-  progress: document.getElementById('progress'),
-  status: document.getElementById('status')
-};
-
-function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
-function lerp(a,b,t){return a+(b-a)*t;}
-function len(v){return Math.hypot(v[0],v[1],v[2]);}
-function norm(v){const l=len(v)||1;return [v[0]/l,v[1]/l,v[2]/l];}
-function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2];}
-function cross(a,b){return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];}
-function add(a,b){return [a[0]+b[0],a[1]+b[1],a[2]+b[2]];}
-function sub(a,b){return [a[0]-b[0],a[1]-b[1],a[2]-b[2]];}
-function mul(a,s){return [a[0]*s,a[1]*s,a[2]*s];}
-function dist2(a,b){const dx=a[0]-b[0], dy=a[1]-b[1], dz=a[2]-b[2]; return dx*dx+dy*dy+dz*dz;}
-
-const keys = Object.create(null);
-let mouseDown = false;
-let lastMouseX = 0, lastMouseY = 0;
-
-canvas.addEventListener('keydown', e => {
-  const k = e.key.toLowerCase();
-  if (['w','a','s','d','q','e',' ','+','-','arrowup','arrowdown','arrowleft','arrowright'].includes(k)) e.preventDefault();
-  keys[k] = true;
-  if (k === 'c') toggleCamera();
-  if (k === 'r') restart();
-});
-canvas.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-canvas.addEventListener('mousedown', e => { mouseDown = true; lastMouseX = e.clientX; lastMouseY = e.clientY; });
-window.addEventListener('mouseup', () => mouseDown = false);
-canvas.addEventListener('mousemove', e => {
-  if (!mouseDown) return;
-  const dx = e.clientX - lastMouseX, dy = e.clientY - lastMouseY;
-  lastMouseX = e.clientX; lastMouseY = e.clientY;
-  input.pitch += dy * 0.12;
-  input.roll += dx * 0.15;
-});
-canvas.addEventListener('touchstart', e => {
-  if (e.touches.length) { mouseDown = true; lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY; }
-}, {passive:false});
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (!e.touches.length) return;
-  const dx = e.touches[0].clientX - lastMouseX, dy = e.touches[0].clientY - lastMouseY;
-  lastMouseX = e.touches[0].clientX; lastMouseY = e.touches[0].clientY;
-  input.pitch += dy * 0.12;
-  input.roll += dx * 0.15;
-}, {passive:false});
-
-function resize() {
-  DPR = Math.min(window.devicePixelRatio || 1, 2);
-  W = Math.floor(innerWidth * DPR);
-  H = Math.floor(innerHeight * DPR);
-  canvas.width = W;
-  canvas.height = H;
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  W = canvas.width = Math.floor(innerWidth*DPR);
+  H = canvas.height = Math.floor(innerHeight*DPR);
+  ctx.setTransform(DPR,0,0,DPR,0,0);
 }
-addEventListener('resize', resize);
+addEventListener("resize", resize);
 resize();
 
-const terrain = {
-  minX: 0, maxX: 3450, minZ: -1050, maxZ: 1050,
-  gx: 78, gz: 31,
-  grid: null
-};
+const TAU = Math.PI*2;
+const DEG = Math.PI/180;
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp = (a,b,t)=>a+(b-a)*t;
+const norm = (v,a,b)=>((v-a)%(b-a)+(b-a))%(b-a)+a;
+const len = v=>Math.hypot(v.x,v.y,v.z);
+const dot = (a,b)=>a.x*b.x+a.y*b.y+a.z*b.z;
+const cross = (a,b)=>({x:a.y*b.z-a.z*b.y, y:a.z*b.x-a.x*b.z, z:a.x*b.y-a.y*b.x});
+const add=(a,b)=>({x:a.x+b.x,y:a.y+b.y,z:a.z+b.z});
+const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y,z:a.z-b.z});
+const mul=(a,s)=>({x:a.x*s,y:a.y*s,z:a.z*s});
+const div=(a,s)=>({x:a.x/s,y:a.y/s,z:a.z/s});
+const add3=(a,b,c)=>({x:a.x+b.x+c.x,y:a.y+b.y+c.y,z:a.z+b.z+c.z});
+const dist2=(a,b)=>{let dx=a.x-b.x,dy=a.y-b.y,dz=a.z-b.z;return dx*dx+dy*dy+dz*dz;};
 
-function gauss(x,z,cx,cz,sx,sz,h){
-  const dx=(x-cx)/(sx||1), dz=(z-cz)/(sz||1);
-  return h * Math.exp(-(dx*dx + dz*dz));
-}
-function terrainHeight(x,z){
-  let h = 18 + 10*Math.sin(x*0.004) * Math.cos(z*0.007);
-  h += gauss(x,z,-750,-520,520,260,220);
-  h += gauss(x,z,-150, 330,420,250,180);
-  h += gauss(x,z, 700,-470,520,330,250);
-  h += gauss(x,z,1350, 310,470,260,190);
-  h += gauss(x,z,2150,-330,520,310,230);
-  h += gauss(x,z,2850, 390,420,220,150);
-  h += gauss(x,z,3150,-120,360,180,90);
-  h += 35*Math.max(0, Math.sin(x*0.012+z*0.015));
-  h += 18*Math.sin(z*0.018);
-  return Math.max(0, h);
-}
+const keys = Object.create(null);
+addEventListener("keydown", e=>{
+  if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.code)) e.preventDefault();
+  keys[e.code]=true;
+  if(e.code==="KeyC") toggleCamera();
+  if(e.code==="KeyR") restart();
+});
+addEventListener("keyup", e=>{ keys[e.code]=false; });
 
-function buildTerrainGrid(){
-  terrain.grid = [];
-  const gx = terrain.gx, gz = terrain.gz;
-  const x0 = terrain.minX, x1 = terrain.maxX, z0 = terrain.minZ, z1 = terrain.maxZ;
-  for(let iz=0; iz<=gz; iz++){
-    terrain.grid[iz] = [];
-    for(let ix=0; ix<=gx; ix++){
-      const x = lerp(x0,x1,ix/gx), z = lerp(z0,z1,iz/gz);
-      terrain.grid[iz][ix] = terrainHeight(x,z);
+let camChase = true;
+function toggleCamera(){ camChase = !camChase; help.style.opacity = camChose? "1" : ".45"; }
+
+let game, flight;
+function makeGame(){
+  const rng = mulberry32(7);
+  const terrain = {
+    w:1300,
+    half:650,
+    cells:32,
+    heightAt(x,z){
+      let h = 0;
+      h += 12*Math.exp(-((x+350)**2)/(2*135**2) - (z+190)**2/(2*115**2));
+      h += 22*Math.exp(-((x-100)**2)/(2*180**2) - (z+300)**2/(2*135**2));
+      h += 14*Math.exp(-((x+160)**2)/(2*120**2) - (z-100)**2/(2*160**2));
+      h += 10*Math.exp(-((x-420)**2)/(2*90**2) - (z+40)**2/(2*105**2));
+      h += 6*Math.exp(-((x+500)**2)/(2*150**2) - (z+500)**2/(2*150**2));
+      h += 2.5*Math.sin(x*.018)*Math.cos(z*.014);
+      h += 1.5*Math.sin((x+z)*.026);
+      return Math.max(0,h);
+    },
+    sample(x,z){
+      const h=this.heightAt(x,z);
+      return {x,z,y:h};
+    },
+    draw(g){
+      const cells=this.cells, step=this.w/cells;
+      const verts=[], tris=[];
+      for(let iz=0; iz<=cells; iz++){
+        const z=this.half-iz*step;
+        verts.push([]);
+        for(let ix=0; ix<=cells; ix++){
+          const x=this.half-ix*step;
+          verts[iz].push(this.sample(x,z));
+        }
+      }
+      for(let iz=0; iz<cells; iz++){
+        for(let ix=0; ix<cells; ix++){
+          const a=verts[iz][ix], b=verts[iz][ix+1], c=verts[iz+1][ix], d=verts[iz+1][ix+1];
+          tris.push([a,c,b],[b,c,d]);
+        }
+      }
+      tris.forEach(t=>g.push({v:t, col:terrainColor(t)}));
     }
+  };
+
+  function terrainColor(v){
+    const t=clamp((v.y-10)/80,0,1);
+    const c=lerpColor([103,137,91],[175,168,145],t);
+    const shade=clamp(v.y*0.045 + 0.12*Math.sin(v.z*.02)-0.05,0,1);
+    return `rgb(${Math.floor(c[0]*(.68+.32*shade))},${Math.floor(c[1]*(.68+.32*shade))},${Math.floor(c[2]*(.68+.32*shade))})`;
   }
+
+  const start = {x:0,y:42,z:0};
+  const landing = {x:610,y:25,z:455, yaw:0.05, width:76, depth:210};
+  const checkpoints = [
+    {x:115,y:70,z:-115, radius:25},
+    {x:220,y:82,z:-20},
+    {x:300,y:95,z:120},
+    {x:390,y:78,z:250},
+    {x:475,y:66,z:360},
+    {x:540,y:55,z:470},
+    {x:590,y:44,z:580},
+    {x:620,y:34,z:700}
+  ];
+
+  const gates = checkpoints.map(p=>({
+    x:p.x, y:p.y, z:p.z, r:p.radius,
+    nx:1, ny:0, nz:0,
+    passed:false
+  }));
+
+  const towers = [
+    {x:-445,y:0,z:-355,r:12,h:70},
+    {x:55,y:0,z:-420,r:10,h:90},
+    {x:430,y:0,z:-365,r:13,h:75},
+    {x:700,y:0,z:80,r:11,h:105},
+    {x:-120,y:0,z:660,r:10,h:85},
+    {x:690,y:0,z:610,r:14,h:60}
+  ];
+
+  const hazards = [
+    {x:300,y:0,z:-280,r:38,h:40,color:[255,80,80]},
+    {x:510,y:0,z:130,r:42,h:45,color:[255,120,60]},
+    {x:50,y:0,z:350,r:34,h:38,color:[255,90,130]},
+    {x:620,y:0,z:330,r:38,h:48,color:[255,150,60]}
+  ];
+
+  const wind = {
+    x:0.18, y:0.03, z:0.09
+  };
+
+  const game = {
+    time:0,
+    result:null,
+    lastPass:0,
+    terrain,
+    checkpoints,
+    gates,
+    towers,
+    hazards,
+    landing,
+    wind
+  };
+
+  const flight = {
+    pos:{...start},
+    vel:{x:112,y:0,z:1},
+    yaw:0.02,
+    pitch:0,
+    roll:0,
+    throttle:0.72,
+    camera:"chase",
+    lastHud:{},
+    crashCooldown:0,
+    shake:0,
+    smoke:[],
+    restartTime:0
+  };
+  return {game, flight};
 }
-buildTerrainGrid();
 
-const start = [170, terrainHeight(170,0)+470, 0];
-const aircraft = {
-  pos: start.slice(),
-  vel: [54, 0, 0],
-  f: [1,0,0],
-  r: [0,0,1],
-  u: [0,1,0],
-  roll: 0,
-  pitch: 0,
-  heading: 0,
-  throttle: 0.72,
-  throttleTarget: 0.72,
-  status: 'running',
-  crashText: ''
-};
-
-let cameraMode = 0; // 0 chase, 1 cockpit
-let checkpointIndex = 0;
-let passed = Array(8).fill(false);
-let crashed = false;
-let won = false;
-let lastT = performance.now();
-let simTime = 0;
-
-const checkpointCenters = [
-  [430, 310, 0],
-  [820, 430, 0],
-  [1210, 360, -95],
-  [1620, 500, 85],
-  [2050, 420, -150],
-  [2450, 540, 70],
-  [2850, 460, -130],
-  [3250, 360, 0]
-];
-
-const gates = checkpointCenters.map((c,i) => ({
-  x:c[0], y:c[1], z:c[2], r:92, passed:false,
-  color: i < 4 ? '#62ff8a' : '#ffcc44'
-}));
-
-const obstacles = [
-  {type:'tower', x:-420, z:-380, radius:22, height:260, color:'#ff5555'},
-  {type:'tower', x: 520, z: 390, radius:24, height:320, color:'#ff5555'},
-  {type:'tower', x:1180, z:-420, radius:23, height:290, color:'#ff5555'},
-  {type:'tower', x:1880, z: 400, radius:26, height:350, color:'#ff5555'},
-  {type:'tower', x:2550, z:-390, radius:24, height:310, color:'#ff5555'},
-  {type:'rock',  x:-260, z: 260, radius:55, height:95, color:'#7b6a58'},
-  {type:'rock',  x: 950, z: 250, radius:70, height:120, color:'#6f6255'},
-  {type:'rock',  x:1550, z:-410, radius:75, height:140, color:'#746759'},
-  {type:'rock',  x:2280, z: 330, radius:65, height:110, color:'#6b5d52'},
-  {type:'rock',  x:3020, z:-250, radius:58, height:90, color:'#736658'}
-];
-
-function resetMission(){
-  aircraft.pos = start.slice();
-  aircraft.vel = [54, 0, 0];
-  aircraft.f = [1,0,0]; aircraft.r = [0,0,1]; aircraft.u = [0,1,0];
-  aircraft.roll = 0; aircraft.pitch = 0; aircraft.heading = 0;
-  aircraft.throttle = 0.72; aircraft.throttleTarget = 0.72;
-  aircraft.status = 'running'; aircraft.crashText = '';
-  checkpointIndex = 0;
-  passed = Array(8).fill(false);
-  for(const g of gates) g.passed = false;
-  crashed = false; won = false;
-  showCenter('');
+function restart(){
+  ({game, flight} = makeGame());
+  failBox.style.display = "none";
 }
-resetMission();
+restart();
 
-function toggleCamera(){
-  cameraMode ^= 1;
-  hud.camera.textContent = cameraMode ? 'Cockpit' : 'Chase';
+function lerpColor(a,b,t){
+  return [
+    Math.round(lerp(a[0],b[0],t)),
+    Math.round(lerp(a[1],b[1],t)),
+    Math.round(lerp(a[2],b[2],t))
+  ];
 }
-function showCenter(text){
-  document.getElementById('centerMsg').style.display = text ? 'block' : 'none';
-  document.getElementById('centerMsg').textContent = text;
+
+function cameraBasis(){
+  const f = flight.pos, fp = flight.vel;
+  let camF, camR, camU;
+  if(camChase){
+    const fo = aircraftForwards();
+    camF = norm(fo.forward);
+    camR = norm(fo.right);
+    camU = norm(fo.up);
+    const back = mul(camF,-10.5);
+    const up = mul(camU,3.2);
+    camPos = add(f, add(back, up));
+  }else{
+    const fo = aircraftForwards();
+    camF = norm(fo.forward);
+    camR = norm(fo.right);
+    camU = norm(fo.up);
+    camPos = add(f, add(mul(camF,5.2), mul(camU,.15)));
+    camF = norm(add(camF, mul(camU,.03)));
+  }
+  return {pos:camPos, right:camR, up:camU, forward:camF};
 }
-function restart(){ resetMission(); }
 
-function headingFromVector(v){return Math.atan2(v[2], v[0]);}
-
-function updateAircraftBasis(){
-  const h = aircraft.heading;
-  const ch = Math.cos(h), sh = Math.sin(h);
-  let f = [ch, 0, sh];
-  let r = [-sh, 0, ch];
-  let u = [0,1,0];
-  r = norm([r[0]*Math.cos(aircraft.roll) - u[0]*Math.sin(aircraft.roll),
-            r[1]*Math.cos(aircraft.roll) - u[1]*Math.sin(aircraft.roll),
-            r[2]*Math.cos(aircraft.roll) - u[2]*Math.sin(aircraft.roll)]);
-  u = norm([u[0]*Math.cos(aircraft.roll) + r[0]*Math.sin(aircraft.roll),
-            u[1]*Math.cos(aircraft.roll) + r[1]*Math.sin(aircraft.roll),
-            u[2]*Math.cos(aircraft.roll) + r[2]*Math.sin(aircraft.roll)]);
-  aircraft.f = f; aircraft.r = r; aircraft.u = u;
-  aircraft.pitch = Math.asin(clamp(u[1], -1, 1));
+function aircraftForwards(){
+  const y=flight.yaw, p=flight.pitch, r=flight.roll;
+  const cy=Math.cos(y), sy=Math.sin(y), cp=Math.cos(p), sp=Math.sin(p), cr=Math.cos(r), sr=Math.sin(r);
+  const right = norm({x:cy*cr + sy*sp*sr, y:cp*sr, z:-sy*cr + cy*sp*sr});
+  const up = norm({x:-cy*sr + sy*sp*cr, y:cp*cr, z:-sy*sr - cy*sp*cr});
+  const forward = norm({x:sy*sp, y:cp, z:cy*sp});
+  return {right,up,forward};
 }
 
 function update(dt){
-  if (aircraft.status !== 'running') return;
-  dt = Math.min(dt, 0.033);
-  simTime += dt;
+  if(game.result) return;
+  game.time += dt;
+  flight.restartTime += dt;
+  flight.crashCooldown = Math.max(0, flight.crashCooldown-dt);
+  flight.shake = Math.max(0, flight.shake-dt*10);
 
-  const pitchInput = (keys['arrowup'] || keys['w'] ? 1 : 0) - (keys['arrowdown'] || keys['s'] ? 1 : 0);
-  const rollInput = (keys['arrowright'] || keys['d'] ? 1 : 0) - (keys['arrowleft'] || keys['a'] ? 1 : 0);
-  const yawInput = (keys['e'] ? 1 : 0) - (keys['q'] ? 1 : 0);
-  const throttleInput = (keys['+'] || keys['='] || keys['arrowup'] ? 1 : 0) - (keys['-'] || keys['.'] || keys['arrowdown'] ? 1 : 0);
+  const inputPitch = (keys.ArrowDown?1:0) - (keys.ArrowUp?1:0);
+  const inputRoll = (keys.ArrowRight?1:0) - (keys.ArrowLeft?1:0);
+  const inputYaw = (keys.KeyQ?1:0) + (keys.KeyA?1:0) - (keys.KeyE?1:0) - (keys.KeyD?1:0);
 
-  if (throttleInput !== 0) aircraft.throttleTarget = clamp(aircraft.throttleTarget + throttleInput * 0.18 * dt, 0, 1);
-  aircraft.throttle += (aircraft.throttleTarget - aircraft.throttle) * Math.min(1, dt*4.5);
+  flight.pitch += inputPitch*1.55*dt;
+  flight.pitch = clamp(flight.pitch,-1.05,1.05);
+  flight.roll += inputRoll*2.25*dt;
+  flight.roll = clamp(flight.roll,-1.25,1.25);
+  flight.yaw += inputYaw*1.35*dt + Math.sin(flight.roll)*Math.sin(flight.pitch)*0.18;
+  flight.yaw = norm(flight.yaw,-Math.PI,Math.PI);
 
-  updateAircraftBasis();
+  let th = flight.throttle;
+  if(keys.BracketLeft) th -= dt*0.18;
+  if(keys.BracketRight) th += dt*0.18;
+  if(keys.KeyW) th += dt*0.18;
+  if(keys.KeyS) th -= dt*0.18;
+  th = clamp(th,0.05,1);
+  flight.throttle = th;
 
-  const speed = len(aircraft.vel);
-  const bank = Math.asin(clamp(aircraft.r[1], -1, 1));
+  const fo = aircraftForwards();
+  const speed = len(flight.vel);
+  const targetSpeed = 42 + th*126;
+  const f = flight.pos, v = flight.vel;
 
-  aircraft.vel[0] += pitchInput * 18 * dt;
-  aircraft.vel[2] += yawInput * 8 * dt;
-  aircraft.heading += yawInput * 0.18 * dt;
-  aircraft.roll += rollInput * 1.7 * dt;
-  aircraft.roll = clamp(aircraft.roll, -1.45, 1.45);
+  let acc = {x:0,y:-9.8,z:0};
+  acc.x += fo.forward.x*th*62;
+  acc.y += fo.forward.y*th*62;
+  acc.z += fo.forward.z*th*62;
 
-  const speedNow = len(aircraft.vel);
-  const throttle = aircraft.throttle;
-  const thrust = mul(aircraft.f, throttle * 17.5);
-  const drag = mul(aircraft.vel, -(0.0045 + throttle * 0.0007) * speedNow * speedNow);
-  const lift = mul(aircraft.u, 0.027 * speedNow * speedNow);
-  const gravity = [0, -28.5, 0];
+  const stall = clamp((speed-40)/70,0,1);
+  const lift = (18 + speed*0.105 + th*12) * (stall>0.25 ? 1 : 0.45);
+  acc.x += fo.up.x*lift;
+  acc.y += fo.up.y*lift;
+  acc.z += fo.up.z*lift;
 
-  const a = [
-    thrust[0] + drag[0] + lift[0] + gravity[0],
-    thrust[1] + drag[1] + lift[1] + gravity[1],
-    thrust[2] + drag[2] + lift[2] + gravity[2]
-  ];
+  const drag = 0.026 + 0.00072*speed + (th>0.9 ? 0.008 : 0);
+  acc.x -= v.x*drag;
+  acc.y -= v.y*drag;
+  acc.z -= v.z*drag;
 
-  aircraft.vel[0] += a[0] * dt;
-  aircraft.vel[1] += a[1] * dt;
-  aircraft.vel[2] += a[2] * dt;
-
-  aircraft.vel = mul(aircraft.vel, clamp(1 - 0.0015 * dt, 0, 1));
-  aircraft.pos[0] += aircraft.vel[0] * dt;
-  aircraft.pos[1] += aircraft.vel[1] * dt;
-  aircraft.pos[2] += aircraft.vel[2] * dt;
-
-  aircraft.pos[0] = clamp(aircraft.pos[0], -80, 3550);
-  aircraft.pos[1] = clamp(aircraft.pos[1], -250, 1500);
-  aircraft.pos[2] = clamp(aircraft.pos[2], -1300, 1300);
-
-  const hgt = terrainHeight(aircraft.pos[0], aircraft.pos[2]);
-  const altitude = aircraft.pos[1] - hgt;
-
-  if (altitude < 6) {
-    aircraft.status = 'crashed';
-    aircraft.crashText = 'Terrain collision! Press R to restart.';
-    crashed = true;
-    showCenter(aircraft.crashText);
-    return;
+  if(speed > 165){
+    acc.x -= v.x*0.018; acc.y -= v.y*0.018; acc.z -= v.z*0.018;
   }
 
-  for(const o of obstacles){
-    const d2 = (aircraft.pos[0]-o.x)**2 + (aircraft.pos[2]-o.z)**2;
-    const inXZ = d2 < o.radius*o.radius;
-    if(o.type === 'tower') {
-      const base = terrainHeight(o.x,o.z);
-      if(inXZ && aircraft.pos[1] > base && aircraft.pos[1] < base + o.height) {
-        aircraft.status = 'crashed';
-        aircraft.crashText = 'Tower collision! Press R to restart.';
-        crashed = true;
-        showCenter(aircraft.crashText);
-        return;
-      }
-    } else if(o.type === 'rock') {
-      const top = terrainHeight(o.x,o.z) + o.height;
-      if(inXZ && aircraft.pos[1] > terrainHeight(o.x,o.z) && aircraft.pos[1] < top) {
-        aircraft.status = 'crashed';
-        aircraft.crashText = 'Rock collision! Press R to restart.';
-        crashed = true;
-        showCenter(aircraft.crashText);
-        return;
-      }
+  f.x += (v.x + wind.x)*dt;
+  f.y += (v.y + wind.y)*dt;
+  f.z += (v.z + wind.z)*dt;
+
+  v.x += acc.x*dt;
+  v.y += acc.y*dt;
+  v.z += acc.z*dt;
+
+  const desired = norm(add3(mul(fo.forward,1), mul(fo.right, Math.sin(flight.roll)*0.42), mul(fo.up, flight.pitch*0.08)));
+  const desiredSpeed = clamp(speed,24,185);
+  v.x = lerp(v.x, desired.x*desiredSpeed, dt*1.15);
+  v.y = lerp(v.y, desired.y*desiredSpeed, dt*1.15);
+  v.z = lerp(v.z, desired.z*desiredSpeed, dt*1.15);
+
+  const sp = len(v);
+  if(sp < 34){
+    v.x *= 0.985; v.y *= 0.985; v.z *= 0.985;
+  }
+  if(sp > 188){
+    v.x *= 0.992; v.y *= 0.992; v.z *= 0.992;
+  }
+
+  const tht = game.terrain.heightAt(f.x,f.z);
+  const alt = f.y - tht;
+
+  const checkpointHits = [];
+  for(let i=0;i<game.checkpoints.length;i++){
+    const c=game.checkpoints[i];
+    const center={x:c.x,y:c.y,z:c.z};
+    const d = sub(f, center);
+    const dist = len(d);
+    if(!c.passed && dist < c.radius*1.18 && alt < c.y+14 && alt > c.y-18){
+      c.passed = true;
+      game.lastPass = game.time;
+      checkpointHits.push(i);
+      makeSpark(f, [255,240,120], 28);
     }
   }
 
-  for(let i=0;i<checkpoints.length;i++){
-    const g = gates[i];
-    const dx = aircraft.pos[0] - g.x;
-    const dz = aircraft.pos[2] - g.z;
-    const dy = aircraft.pos[1] - g.y;
-    const inside = Math.abs(dz) < g.r*0.76 && Math.abs(dy) < g.r*0.76;
-    if(!g.passed && Math.abs(dx) < 22 && inside) {
-      g.passed = true; passed[i] = true;
-      if(i === checkpointIndex) checkpointIndex++;
-      if(checkpointIndex >= gates.length) {
-        aircraft.status = 'land';
-        showCenter('All gates cleared — land on the runway!');
-      }
+  for(let i=0;i<game.gates.length;i++){
+    const g=game.gates[i];
+    const d = sub(f,{x:g.x,y:g.y,z:g.z});
+    const along = d.x*g.nx + d.y*g.ny + d.z*g.nz;
+    const inPlane = sub(d, {x:g.nx*along,y:g.ny*along,z:g.nz*along});
+    const dist = len(inPlane);
+    if(!g.passed && Math.abs(along) < 8 && dist < g.r*1.05 && alt > 8){
+      g.passed = true;
+      makeSpark(f, [180,240,255], 42);
     }
   }
 
-  const landingX = 3180, landingZ = 0;
-  const landingInside = aircraft.pos[0] > 3040 && aircraft.pos[0] < 3370 && Math.abs(aircraft.pos[2]) < 150 && altitude < 260;
-  const landingGood = landingInside && len(aircraft.vel) < 95 && altitude < 90;
-  if(checkpointIndex >= gates.length && landingGood) {
-    aircraft.status = 'won';
-    won = true;
-    showCenter('MISSION COMPLETE! You landed safely.');
-    return;
+  for(const t of game.towers){
+    const th = game.terrain.heightAt(t.x,t.z);
+    const dx=f.x-t.x, dz=f.z-t.z, d2=dx*dx+dz*dz;
+    const r=t.r+flight.radius;
+    if(d2 < r*r && f.y > th+2 && f.y < th+t.h-2){
+      fail("Tower Collision", "You hit an obstacle. Press R to restart.");
+      break;
+    }
   }
-  if(checkpointIndex >= gates.length && aircraft.pos[0] > 3420) {
-    aircraft.status = 'crashed';
-    aircraft.crashText = 'You overshot the runway! Press R to restart.';
-    crashed = true;
-    showCenter(aircraft.crashText);
+
+  for(const h of game.hazards){
+    const th = game.terrain.heightAt(h.x,h.z);
+    const dx=f.x-h.x, dz=f.z-h.z, d2=dx*dx+dz*dz;
+    const r=h.r+flight.radius*0.75;
+    if(d2 < r*r && f.y > th+h.h*.35 && f.y < th+h.h+18){
+      fail("Hazard Zone Collision", "You flew through a red hazard cloud. Press R to restart.");
+      break;
+    }
+  }
+
+  if(f.y < tht + flight.radius + 2){
+    fail("Terrain Collision", "You hit the ground. Press R to restart.");
+    break;
+  }
+
+  if(f.y < -120){
+    fail("Mission Failed", "You flew below the world. Press R to restart.");
+    break;
+  }
+
+  if(sp < 28){
+    fail("Stall", "Airspeed too low. Press R to restart.");
+    break;
+  }
+
+  if(game.time > 180){
+    fail("Mission Timed Out", "The course took too long. Press R to restart.");
+    break;
+  }
+
+  if(flight.restartTime > 1 && checkpointHits.length && Math.random()<0.015){
+    makeSmoke(f, 1);
+  }
+  if(Math.random()<0.025) makeSmoke(f, .7);
+
+  checkLanding();
+}
+
+function checkLanding(){
+  const f = flight.pos;
+  const tht = game.terrain.heightAt(f.x,f.z);
+  const alt = f.y - tht;
+  const sp = len(flight.vel);
+  const d = dist2(f, game.landing);
+  const inX = Math.abs(f.x-game.landing.x) < game.landing.width*.48;
+  const inZ = Math.abs(f.z-game.landing.z) < game.landing.depth*.48;
+  if(checkpointsAllPassed() && inX && inZ && alt < 42 && alt > 6 && sp < 120){
+    success();
   }
 }
 
-const checkpoints = Array.from({length:8}, (_,i)=>({x:i*410+250, y:300+i*45, z:0, r:100}));
+function checkpointsAllPassed(){
+  return game.checkpoints.every(c=>c.passed);
+}
 
-function makeCamera(){
-  const pos = aircraft.pos;
-  let cam, target;
-  if(cameraMode) {
-    target = add(pos, mul(aircraft.f, 115));
-    target = add(target, mul(aircraft.u, 12));
-    cam = add(pos, mul(aircraft.f, 16));
-    cam = add(cam, mul(aircraft.u, 9));
-  } else {
-    const back = mul(aircraft.f, 230);
-    const upOff = mul(aircraft.u, 58);
-    cam = add(pos, mul(aircraft.f, -175));
-    cam = add(cam, upOff);
-    target = add(pos, mul(aircraft.f, 80));
-    target = add(target, mul(aircraft.u, 25));
+function success(){
+  if(game.result) return;
+  game.result = "success";
+  failBox.style.display="flex";
+  failTitle.textContent = "Mission Success!";
+  failSub.textContent = "Landing complete. Press R to fly again.";
+}
+
+function fail(title, sub){
+  if(game.result) return;
+  game.result = "fail";
+  flight.shake = 1;
+  failBox.style.display="flex";
+  failTitle.textContent = title;
+  failSub.textContent = sub;
+}
+
+const sparks = [];
+const smoke = [];
+function makeSpark(pos, color, count){
+  for(let i=0;i<count;i++){
+    sparks.push({
+      pos:{...pos},
+      vel:{x:(Math.random()-.5)*30,y:Math.random()*20+5,z:(Math.random()-.5)*30},
+      life:.8+Math.random()*.4,
+      max:.8+Math.random()*.4,
+      color
+    });
   }
-  return {pos:cam, target};
+}
+function makeSmoke(pos, n){
+  for(let i=0;i<n;i++){
+    smoke.push({
+      pos:{x:pos.x+(Math.random()-.5)*4,y:pos.y-1,z:pos.z+(Math.random()-.5)*4},
+      vel:{x:(Math.random()-.5)*1.2,y:-1.5,z:(Math.random()-.5)*1.2},
+      r:7+Math.random()*8,
+      life:1.4+Math.random()*1.0,
+      max:1.4+Math.random()*1.0
+    });
+  }
 }
 
-let proj = {
-  cx:0, cy:0, scale:1, near:0.5,
-  camPos:null, camF:null, camR:null, camU:null
-};
-
-function initProjector(){
-  const c = makeCamera();
-  const f = norm(sub(c.target, c.pos));
-  let right = norm(cross([0,1,0], f));
-  const u = norm(cross(right, f));
-  proj.cx = W/2;
-  proj.cy = H/2;
-  proj.scale = Math.min(W,H) * 0.72;
-  proj.near = 0.5;
-  proj.camPos = c.pos;
-  proj.camF = f;
-  proj.camR = right;
-  proj.camU = u;
+function updateParticles(dt){
+  for(let i=sparks.length-1;i>=0;i--){
+    const p=sparks[i];
+    p.life -= dt;
+    if(p.life<=0){sparks.splice(i,1); continue;}
+    p.vel.y -= 20*dt;
+    p.pos.x += p.vel.x*dt;
+    p.pos.y += p.vel.y*dt;
+    p.pos.z += p.vel.z*dt;
+  }
+  for(let i=smoke.length-1;i>=0;i--){
+    const p=smoke[i];
+    p.life -= dt;
+    if(p.life<=0){smoke.splice(i,1); continue;}
+    p.vel.x += game.wind.x*dt;
+    p.vel.z += game.wind.z*dt;
+    p.pos.x += p.vel.x*dt;
+    p.pos.y += p.vel.y*dt;
+    p.pos.z += p.vel.z*dt;
+    p.r += dt*1.4;
+  }
 }
-initProjector();
 
-function project(p){
-  const v = sub(p, proj.camPos);
-  const x = dot(v, proj.camR);
-  const y = dot(v, proj.camU);
-  const z = dot(v, proj.camF);
-  if(z <= proj.near) return null;
+function project(p, cam){
+  const dx=p.x-cam.pos.x, dy=p.y-cam.pos.y, dz=p.z-cam.pos.z;
+  const z = dx*cam.forward.x + dy*cam.forward.y + dz*cam.forward.z;
+  if(z <= .25) return null;
+  const x = dx*cam.right.x + dy*cam.right.y + dz*cam.right.z;
+  const y = dx*cam.up.x + dy*cam.up.y + dz*cam.up.z;
+  const f = W*0.55/z;
   return {
-    x: proj.cx + proj.scale * x / z,
-    y: proj.cy - proj.scale * y / z,
-    z
+    x:W*.5 + x*f,
+    y:H*.5 + y*f,
+    z,
+    s:f
   };
 }
 
-function drawSky(){
-  const g = ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0, '#061436');
-  g.addColorStop(0.45, '#1b69a4');
-  g.addColorStop(0.72, '#78c7ee');
-  g.addColorStop(1, '#c7ecff');
-  ctx.fillStyle = g;
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  updateParticles(Math.min(.05, game.time*0));
+  const cam = cameraBasis();
+  const shake = flight.shake ? (Math.random()-.5)*flight.shake*12 : 0;
+  ctx.save();
+  if(shake){ ctx.translate(shake, Math.random()*shake); }
+
+  drawSky(cam);
+  drawTerrain(cam);
+  drawRunway(cam);
+  drawGates(cam);
+  drawTowers(cam);
+  drawHazards(cam);
+  drawCheckpoints(cam);
+  drawSmoke(cam);
+  drawSparks(cam);
+  drawAircraft(cam);
+  drawParticles(cam);
+
+  ctx.restore();
+  drawHud(cam);
+}
+
+function drawSky(cam){
+  const top = "#79c9ff";
+  const mid = "#b7e9ff";
+  const bot = "#eef7ff";
+  const grd = ctx.createLinearGradient(0,0,0,H);
+  grd.addColorStop(0,top);
+  grd.addColorStop(.58,mid);
+  grd.addColorStop(1,bot);
+  ctx.fillStyle=grd;
   ctx.fillRect(0,0,W,H);
 
-  ctx.save();
-  ctx.globalAlpha = 0.85;
-  ctx.fillStyle = '#fff1a8';
-  ctx.beginPath();
-  ctx.arc(W*0.78, H*0.18, Math.min(W,H)*0.035, 0, Math.PI*2);
-  ctx.fill();
-  ctx.restore();
+  const sun = project({x:520,y:360,z:-500}, cam);
+  if(sun){
+    const rr=55/sun.s;
+    const g=ctx.createRadialGradient(sun.x,sun.y,0,sun.x,sun.y,rr);
+    g.addColorStop(0,"rgba(255,255,230,1)");
+    g.addColorStop(.18,"rgba(255,235,150,.65)");
+    g.addColorStop(1,"rgba(255,235,150,0)");
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.arc(sun.x,sun.y,rr,0,TAU); ctx.fill();
+  }
 
-  ctx.save();
-  ctx.globalAlpha = 0.22;
-  ctx.fillStyle = '#fff';
-  for(let i=0;i<12;i++){
-    const x = (i*420 + Math.sin(simTime*0.08+i)*50) % W;
-    const y = H*0.18 + Math.sin(i*1.7)*H*0.04;
-    const s = Math.min(W,H)*(0.05 + (i%3)*0.012);
+  ctx.fillStyle="rgba(255,255,255,.55)";
+  for(let i=0;i<18;i++){
+    const x = (W*(.05 + (i*.09)%0.9) + Math.sin(game.time*.05+i)*35) % W;
+    const y = H*(.12 + ((i*37)%100)/100*.55);
+    const w = 70 + ((i*17)%35);
     ctx.beginPath();
-    ctx.ellipse(x, y, s*2.1, s*0.45, 0, 0, Math.PI*2);
-    ctx.ellipse(x+s*0.9, y, s*1.2, s*0.35, 0, 0, Math.PI*2);
-    ctx.ellipse(x-s*0.9, y, s*1.2, s*0.35, 0, 0, Math.PI*2);
+    ctx.ellipse(x,y,w,10,Math.sin(i)*.15,0,TAU);
     ctx.fill();
   }
-  ctx.restore();
 }
 
-function triColor(normal, hgt){
-  const light = 0.58 + normal[1]*0.38;
-  const t = clamp((hgt-20)/520, 0, 1);
-  const c1 = [82,139,80], c2 = [155,132,91], c3 = [210,205,190];
-  const r = Math.floor(lerp(c1[0], c2[0], t)*light + c3[0]*(1-light));
-  const g = Math.floor(lerp(c1[1], c2[1], t)*light + c3[1]*(1-light));
-  const b = Math.floor(lerp(c1[2], c2[2], t)*light + c3[2]*(1-light));
-  return `rgb(${r},${g},${b})`;
-}
-
-function drawTerrain(){
-  const gx = terrain.gx, gz = terrain.gz;
-  const tris = [];
-  for(let iz=0; iz<gz; iz++){
-    for(let ix=0; ix<gx; ix++){
-      const ixa = ix, ixb = ix+1, iya = iz, iyb = iz+1;
-      const x0 = lerp(terrain.minX, terrain.maxX, ixa/gx), x1 = lerp(terrain.minX, terrain.maxX, ixb/gx);
-      const z0 = lerp(terrain.minZ, terrain.maxZ, iya/gz), z1 = lerp(terrain.minZ, terrain.maxZ, iyb/gz);
-      const h0 = terrain.grid[iya][ixa], h1 = terrain.grid[iya][ixb], h2 = terrain.grid[iyb][ixb], h3 = terrain.grid[iyb][ixa];
-      const p0 = [x0, h0, z0], p1 = [x1, h1, z0], p2 = [x1, h2, z1], p3 = [x0, h3, z1];
-      const n = norm(cross(sub(p1,p0), sub(p2,p0)));
-      const avg = (project(p0)?.z || 0 + project(p1)?.z || 0 + project(p2)?.z || 0 + project(p3)?.z || 0)/4;
-      tris.push({p:[p0,p1,p2], n, h:h0, depth:avg});
-      tris.push({p:[p0,p2,p3], n, h:h2, depth:avg});
+function drawTerrain(cam){
+  const terrain = game.terrain;
+  const step=terrain.w/terrain.cells;
+  const verts=[], tris=[];
+  for(let iz=0; iz<=terrain.cells; iz++){
+    const z=terrain.half-iz*step;
+    const row=[];
+    for(let ix=0; ix<=terrain.cells; ix++){
+      const x=terrain.half-ix*step;
+      const p=terrain.sample(x,z);
+      row.push(project(p,cam));
+    }
+    verts.push(row);
+  }
+  for(let iz=0; iz<terrain.cells; iz++){
+    for(let ix=0; ix<terrain.cells; ix++){
+      const a=verts[iz][ix], b=verts[iz][ix+1], c=verts[iz+1][ix], d=verts[iz+1][ix+1];
+      tris.push([a,c,b],[b,c,d]);
     }
   }
-  tris.sort((a,b)=>b.depth-a.depth);
   for(const tri of tris){
-    const ps = tri.p.map(project).filter(Boolean);
-    if(ps.length < 3) continue;
+    let all=false, near=true;
+    let yavg=0;
+    for(const p of tri){
+      if(!p){ all=true; break; }
+      yavg += p.y;
+      near = near && p.z < 1700;
+    }
+    if(all || !near) continue;
+    yavg/=3;
+    const shade = clamp((yavg-20)/500,0,1);
+    ctx.fillStyle = `rgba(${Math.floor(55+shade*55)},${Math.floor(96+shade*35)},${Math.floor(70+shade*30)},${clamp(.42 + yavg/1500, .25, .72)})`;
     ctx.beginPath();
-    ctx.moveTo(ps[0].x, ps[0].y);
-    for(let i=1;i<3;i++) ctx.lineTo(ps[i].x, ps[i].y);
+    ctx.moveTo(tri[0].x,tri[0].y);
+    ctx.lineTo(tri[1].x,tri[1].y);
+    ctx.lineTo(tri[2].x,tri[2].y);
     ctx.closePath();
-    ctx.fillStyle = triColor(tri.n, tri.h);
     ctx.fill();
   }
 
   ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.strokeStyle = '#eaffd2';
   ctx.lineWidth = 1;
-  const stepX = 250, stepZ = 80;
-  for(let z=terrain.minZ; z<=terrain.maxZ; z+=stepZ){
-    const pts=[];
-    for(let x=terrain.minX; x<=terrain.maxX; x+=220){
-      const p = project([x, terrainHeight(x,z)+1.5, z]);
-      if(p) pts.push(p);
-    }
-    if(pts.length>1){
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.stroke();
-    }
-  }
-  for(let x=terrain.minX; x<=terrain.maxX; x+=stepX){
-    const pts=[];
-    for(let z=terrain.minZ; z<=terrain.maxZ; z+=160){
-      const p = project([x, terrainHeight(x,z)+1.5, z]);
-      if(p) pts.push(p);
-    }
-    if(pts.length>1){
-      ctx.beginPath();
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
-      ctx.stroke();
-    }
-  }
-  ctx.restore();
-}
-
-function drawPolygon(points, fill, stroke) {
-  const ps = points.map(project).filter(Boolean);
-  if(ps.length < 3) return;
-  ctx.beginPath();
-  ctx.moveTo(ps[0].x, ps[0].y);
-  for(let i=1;i<ps.length;i++) ctx.lineTo(ps[i].x, ps[i].y);
-  ctx.closePath();
-  if(fill){ctx.fillStyle=fill; ctx.fill();}
-  if(stroke){ctx.strokeStyle=stroke; ctx.lineWidth=2; ctx.stroke();}
-}
-
-function drawLine3D(a,b, color, width=2){
-  const p0=project(a), p1=project(b);
-  if(!p0 || !p1) return;
-  ctx.strokeStyle=color;
-  ctx.lineWidth=width;
-  ctx.beginPath();
-  ctx.moveTo(p0.x,p0.y);
-  ctx.lineTo(p1.x,p1.y);
-  ctx.stroke();
-}
-
-function drawRunway(){
-  const x0=3000, x1=3420, z=-170, z2=170;
-  const p = [[x0,terrainHeight(x0,0)+2,z],[x1,terrainHeight(x1,0)+2,z],[x1,terrainHeight(x1,0)+2,z2],[x0,terrainHeight(x0,0)+2,z2]];
-  drawPolygon(p, '#222c35', '#d8d8d8');
-  drawLine3D([x0,terrainHeight(x0,0)+3,0],[x1,terrainHeight(x1,0)+3,0], '#f2f2f2', 4);
-  for(let x=x0+90; x<x1; x+=110) drawLine3D([x,terrainHeight(x,0)+4,-28],[x,terrainHeight(x,0)+4,28], '#f2f2f2', 3);
-  drawPolygon([[3150,terrainHeight(3150,0)+4,-115],[3320,terrainHeight(3320,0)+4,-115],[3320,terrainHeight(3320,0)+4,115],[3150,terrainHeight(3150,0)+4,115]], 'rgba(36,180,70,.55)', 'rgba(150,255,170,.9)');
-  ctx.save();
-  ctx.fillStyle = 'rgba(255,255,255,.85)';
-  ctx.font = 'bold 18px monospace';
-  ctx.textAlign = 'center';
-  const lp = project([3235,terrainHeight(3235,0)+10,0]);
-  if(lp){ctx.fillText('LANDING ZONE', lp.x, lp.y-8);}
-  ctx.restore();
-}
-
-function drawCheckpointRing(i){
-  const g = gates[i];
-  const normal = [1,0,0];
-  const up = [0,1,0], right = [0,0,1];
-  const pts = [];
-  for(let k=0;k<=64;k++){
-    const a = k/64*Math.PI*2;
-    pts.push([g.x, g.y + Math.cos(a)*g.r*0.78, g.z + Math.sin(a)*g.r]);
-  }
-  const color = g.passed ? 'rgba(70,255,120,.35)' : g.color;
-  ctx.lineWidth = 4;
-  for(let k=0;k<pts.length;k++){
-    const p0=project(pts[k]), p1=project(pts[(k+1)%pts.length]);
-    if(p0 && p1){
-      ctx.strokeStyle = g.passed ? 'rgba(80,255,130,.25)' : g.color;
-      ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
-    }
-  }
-  ctx.strokeStyle = 'rgba(255,255,255,.75)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(g.x, g.y+g.r*0.78+3, g.z); ctx.lineTo(g.x, g.y-g.r*0.78-3, g.z); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(g.x, g.y, g.z-g.r); ctx.lineTo(g.x, g.y, g.z+g.r); ctx.stroke();
-  const lp = project([g.x, g.y+g.r+45, g.z]);
-  if(lp){
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold 16px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText(g.passed ? 'PASSED' : 'GATE '+(i+1), lp.x, lp.y);
-  }
-}
-
-function drawTower(o){
-  const base = terrainHeight(o.x,o.z);
-  const topY = base + o.height;
-  const p0 = project([o.x, base+2, o.z]);
-  const pTop = project([o.x, topY, o.z]);
-  if(!p0 || !pTop) return;
-  ctx.strokeStyle = o.color;
-  ctx.lineWidth = 4;
-  ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(pTop.x,pTop.y); ctx.stroke();
-  for(let y=base+25; y<topY; y+=38){
-    const py = project([o.x, y, o.z]);
-    if(py){
-      ctx.strokeStyle = y%76 < 38 ? '#fff' : o.color;
-      ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.arc(py.x, py.y, 2.2, 0, Math.PI*2); ctx.stroke();
-    }
-  }
-  ctx.strokeStyle = 'rgba(255,80,80,.55)';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.arc(p0.x,p0.y,o.radius*0.75,0,Math.PI*2); ctx.stroke();
-}
-
-function drawRock(o){
-  const base = terrainHeight(o.x,o.z);
-  const top = base + o.height;
-  const pTop = project([o.x, top, o.z]);
-  if(!pTop) return;
-  ctx.strokeStyle = 'rgba(255,255,255,.25)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for(let k=0;k<=72;k++){
-    const a = k/72*Math.PI*2;
-    const p = project([o.x + Math.cos(a)*o.radius*0.9, top - Math.sin(a)*o.height*0.55, o.z + Math.sin(a)*o.radius*0.9]);
-    if(p) k ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y);
-  }
-  ctx.closePath(); ctx.stroke();
-  drawLine3D([o.x,base,o.z],[o.x,top,o.z],'rgba(255,255,255,.18)',1);
-}
-
-function drawObstacles(){
-  const list = obstacles.map(o => {
-    const p = project([o.x, terrainHeight(o.x,o.z)+o.height*.5, o.z]);
-    return {o,p};
-  }).filter(x=>x.p).sort((a,b)=>b.p.z-a.p.z);
-  for(const item of list){
-    if(item.o.type === 'tower') drawTower(item.o);
-    else drawRock(item.o);
-  }
-}
-
-function drawAircraftModel(){
-  const pos = aircraft.pos;
-  const f = aircraft.f, r = aircraft.r, u = aircraft.u;
-  const V = p => add(pos, add(mul(f,p[0]), add(mul(r,p[2]), mul(u,p[1]))));
-  const pts = {
-    nose: V([14,0,0]),
-    tail: V([-12,0,0]),
-    left: V([-3,0,-13]),
-    right: V([5,0,13]),
-    tailL: V([-10,0,-10]),
-    tailR: V([-8,0,10]),
-    fin: V([-12,5,0]),
-    tailFinL: V([-12,1,-5]),
-    tailFinR: V([-12,1,5])
-  };
-  const drawPoly = (nameA,nameB,nameC, fill, stroke) => {
-    const p0=project(V(pts[nameA])), p1=project(V(pts[nameB])), p2=project(V(pts[nameC]));
-    if(!p0||!p1||!p2) return;
-    ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.closePath();
-    ctx.fillStyle = fill; ctx.fill(); if(stroke){ctx.strokeStyle=stroke; ctx.lineWidth=1; ctx.stroke();}
-  };
-  drawPoly('nose','right','tail', 'rgba(120,190,255,.75)', 'rgba(255,255,255,.9)');
-  drawPoly('nose','left','tail', 'rgba(70,130,210,.75)', 'rgba(255,255,255,.75)');
-  drawPoly('tail','right','tailR','rgba(220,230,255,.8)', 'rgba(255,255,255,.9)');
-  drawPoly('tail','left','tailL','rgba(180,190,220,.8)', 'rgba(255,255,255,.75)');
-  drawPoly('tailFinL','fin','tailFinR','rgba(255,220,120,.75)', 'rgba(255,255,255,.8)');
-  drawLine3D(pts.nose, pts.tail, 'rgba(255,255,255,.95)', 4);
-  drawLine3D(V([10,0,0]), V([12,0,0]), 'rgba(255,255,255,.95)', 3);
-  drawLine3D(V([-12,0,0]), V([-14,0,0]), 'rgba(255,255,255,.95)', 3);
-  const lp = project(pos);
-  if(lp){
-    ctx.save();
-    ctx.translate(lp.x, lp.y);
-    ctx.rotate(-Math.atan2(aircraft.u[1], aircraft.u[2]));
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(0,0,28,0,Math.PI*2); ctx.stroke();
-    ctx.restore();
-  }
-}
-
-function drawCockpitOverlay(){
-  ctx.save();
-  ctx.strokeStyle = 'rgba(10,20,30,.65)';
-  ctx.lineWidth = 10;
-  ctx.beginPath();
-  ctx.moveTo(W*0.08, H*0.06); ctx.lineTo(W*0.18, H*0.18); ctx.lineTo(W*0.14, H*0.95); ctx.lineTo(W*0.02, H*0.95); ctx.closePath();
-  ctx.moveTo(W*0.92, H*0.06); ctx.lineTo(W*0.82, H*0.18); ctx.lineTo(W*0.86, H*0.95); ctx.lineTo(W*0.98, H*0.95); ctx.closePath();
-  ctx.fill();
-
-  ctx.strokeStyle = 'rgba(255,255,255,.65)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(W*0.5, H*0.08); ctx.lineTo(W*0.5, H*0.92);
-  ctx.moveTo(W*0.12, H*0.5); ctx.lineTo(W*0.88, H*0.5);
-  ctx.stroke();
-
-  ctx.fillStyle = 'rgba(255,255,255,.9)';
-  ctx.font = '16px monospace';
-  ctx.textAlign = 'center';
-  ctx.fillText('COCKPIT', W*0.5, H*0.05);
-  ctx.restore();
-}
-
-function drawArtificialHorizon(){
-  const scale = Math.min(W,H)*0.19;
-  const cx = W*0.5, cy = H*0.23;
-  const roll = aircraft.roll;
-  const pitch = clamp(aircraft.pitch / (Math.PI/2), -1, 1);
-  ctx.save();
-  ctx.translate(cx,cy);
-  ctx.scale(scale,scale);
-  ctx.beginPath(); ctx.arc(0,0,1,0,Math.PI*2); ctx.clip();
-
-  const grad = ctx.createLinearGradient(0,-1,0,1);
-  grad.addColorStop(0,'#56b7ff');
-  grad.addColorStop(0.55,'#7ed0ff');
-  grad.addColorStop(0.56,'#7b6a58');
-  grad.addColorStop(1,'#5c4a32');
-  ctx.fillStyle = grad;
-  ctx.fillRect(-1,-1,2,2);
-
-  ctx.save();
-  ctx.rotate(-roll);
-  ctx.strokeStyle = 'rgba(0,0,0,.55)';
-  ctx.lineWidth = 0.025;
-  for(let i=-3;i<=3;i++){
-    ctx.beginPath(); ctx.moveTo(-1.2,i*0.055); ctx.lineTo(1.2,i*0.055); ctx.stroke();
-  }
-  for(let i=-4;i<=4;i++){
-    ctx.beginPath(); ctx.moveTo(0,-1); ctx.lineTo(Math.sin(i*0.22), i*0.08); ctx.stroke();
-  }
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 0.035;
-  ctx.beginPath(); ctx.moveTo(-1.2,0); ctx.lineTo(1.2,0); ctx.stroke();
-  ctx.restore();
-
-  const groundY = -pitch * 0.65;
-  ctx.fillStyle = '#fff';
-  ctx.beginPath();
-  ctx.moveTo(-0.78, groundY);
-  ctx.lineTo(0.78, groundY);
-  ctx.lineTo(0.78, 1.0);
-  ctx.lineTo(-0.78, 1.0);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 0.13em monospace';
-  ctx.textAlign = 'center';
-  for(let i=-4;i<=4;i++){
-    ctx.fillText(String(i*5), 0, 0.78 + i*0.1);
-  }
-
-  ctx.strokeStyle = '#ff4444';
-  ctx.lineWidth = 0.055;
-  ctx.beginPath(); ctx.moveTo(-0.42,0); ctx.lineTo(0.42,0); ctx.stroke();
-
-  ctx.fillStyle = '#ff4444';
-  ctx.beginPath();
-  ctx.moveTo(0,-0.72);
-  ctx.lineTo(0.13,-0.56);
-  ctx.lineTo(-0.13,-0.56);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function drawHUD(){
-  const speed = len(aircraft.vel);
-  const hgt = terrainHeight(aircraft.pos[0], aircraft.pos[2]);
-  const altitude = aircraft.pos[1] - hgt;
-  hud.airspeed.textContent = Math.round(speed);
-  hud.altitude.textContent = Math.round(altitude);
-  hud.throttle.textContent = Math.round(aircraft.throttle*100);
-  hud.heading.textContent = Math.round((aircraft.heading*180/Math.PI+360)%360);
-  hud.progress.textContent = `${checkpointIndex}/${gates.length}`;
-  hud.camera.textContent = cameraMode ? 'Cockpit' : 'Chase';
-  hud.status.textContent = aircraft.status === 'running' ? 'Mission running' : (aircraft.status === 'won' ? 'Success' : aircraft.crashText);
-
-  drawArtificialHorizon();
-
-  const lp = project(aircraft.pos);
-  if(lp && !cameraMode){
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255,255,255,.75)';
-    ctx.lineWidth = 2;
+  for(let iz=0; iz<=terrain.cells; iz+=4){
+    const z=terrain.half-iz*step;
+    let start=null;
     ctx.beginPath();
-    ctx.moveTo(lp.x-14, lp.y); ctx.lineTo(lp.x-5, lp.y);
-    ctx.moveTo(lp.x+5, lp.y); ctx.lineTo(lp.x+14, lp.y);
-    ctx.moveTo(lp.x, lp.y-14); ctx.lineTo(lp.x, lp.y-5);
-    ctx.moveTo(lp.x, lp.y+5); ctx.lineTo(lp.x, lp.y+14);
+    for(let ix=0; ix<=terrain.cells; ix++){
+      const x=terrain.half-ix*step;
+      const p=terrain.sample(x,z);
+      const q=project(p,cam);
+      if(!q){start=null; continue;}
+      if(!start) ctx.moveTo(q.x,q.y); else ctx.lineTo(q.x,q.y);
+    }
+    ctx.strokeStyle="rgba(40,70,45,.18)";
+    ctx.stroke();
+  }
+  for(let ix=0; ix<=terrain.cells; ix+=4){
+    const x=terrain.half-ix*step;
+    ctx.beginPath();
+    for(let iz=0; iz<=terrain.cells; iz++){
+      const z=terrain.half-iz*step;
+      const p=terrain.sample(x,z);
+      const q=project(p,cam);
+      if(!q) continue;
+      if(!start) ctx.moveTo(q.x,q.y); else ctx.lineTo(q.x,q.y);
+    }
+    ctx.strokeStyle="rgba(40,70,45,.15)";
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+const runwayVerts = [];
+function buildRunway(){
+  runwayVerts.length=0;
+  const c=game.landing, w=c.width/2, d=c.depth/2;
+  const forward={x:Math.sin(c.yaw),y:0,z:Math.cos(c.yaw)};
+  const right={x:Math.cos(c.yaw),y:0,z:-Math.sin(c.yaw)};
+  const corners = [
+    add3(mul(forward,-d), mul(right,-w), c),
+    add3(mul(forward, d), mul(right,-w), c),
+    add3(mul(forward, d), mul(right, w), c),
+    add3(mul(forward,-d), mul(right, w), c)
+  ];
+  for(const p of corners){
+    p.y = game.terrain.heightAt(p.x,p.z)+.35;
+    runwayVerts.push(p);
+  }
+}
+buildRunway();
+
+function drawRunway(cam){
+  const c=game.landing;
+  const verts = [];
+  for(const p of runwayVerts){
+    const q=project(p,cam);
+    if(q) verts.push(q);
+  }
+  const col = checkpointsAllPassed() ? [120,210,120] : [210,225,185];
+  ctx.fillStyle = `rgba(${col[0]},${col[1]},${col[2]},.65)`;
+  ctx.strokeStyle = "rgba(255,255,255,.85)";
+  ctx.lineWidth = 2;
+  if(verts.length===4){
+    ctx.beginPath();
+    ctx.moveTo(verts[0].x,verts[0].y);
+    for(let i=1;i<4;i++) ctx.lineTo(verts[i].x,verts[i].y);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+
+    ctx.strokeStyle="rgba(255,255,255,.95)";
+    ctx.lineWidth=2;
+    for(let i=0;i<8;i++){
+      const t=i/8;
+      const a=add3(mul(c.forward,-c.depth/2), mul(c.right,t*c.width-c.width/2), c);
+      const b=add3(mul(c.forward, c.depth/2), mul(c.right,t*c.width-c.width/2), c);
+      const qa=project(a,cam), qb=project(b,cam);
+      if(qa&&qb){ ctx.beginPath(); ctx.moveTo(qa.x,qa.y); ctx.lineTo(qb.x,qb.y); ctx.stroke(); }
+    }
+  }
+  ctx.fillStyle="rgba(255,255,255,.9)";
+  const tpos = project({x:c.x,y:c.y+1,z:c.z-c.depth/2-12},cam);
+  if(tpos) drawText2D("LAND", tpos.x, tpos.y, 26, "rgba(0,0,0,.65)");
+}
+
+function drawGates(cam){
+  for(const g of game.gates){
+    const center={x:g.x,y:g.y,z:g.z};
+    const q=project(center,cam);
+    if(!q) continue;
+    const r = Math.max(2, g.radius / q.z * W*.55);
+    const passed = g.passed;
+    ctx.save();
+    ctx.translate(q.x,q.y);
+    ctx.rotate(Math.atan2(g.nz,g.nx));
+    ctx.lineWidth = passed ? 3 : 4;
+    ctx.strokeStyle = passed ? "rgba(70,255,140,.95)" : "rgba(255,245,80,.95)";
+    ctx.shadowColor = passed ? "rgba(70,255,140,.8)" : "rgba(255,245,80,.8)";
+    ctx.shadowBlur = 12;
+    ctx.beginPath();
+    ctx.ellipse(0,0,r,r*.32,0,0,TAU);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.fillStyle = passed ? "rgba(0,255,120,.9)" : "rgba(255,255,210,.95)";
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText((g.x+1)+"", q.x, q.y-r-8);
+  }
+}
+
+function drawCheckpoints(cam){
+  const done = game.checkpoints.filter(c=>c.passed).length;
+  const total = game.checkpoints.length;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.35)";
+  ctx.fillRect(20,20,245,56);
+  ctx.fillStyle="#fff";
+  ctx.font="bold 20px Arial";
+  ctx.textAlign="left";
+  ctx.fillText(`CHECKPOINTS ${done}/${total}`, 34, 56);
+  ctx.restore();
+}
+
+function drawTowers(cam){
+  for(const t of game.towers){
+    const th=game.terrain.heightAt(t.x,t.z);
+    const bottom={x:t.x,y:th,z:t.z};
+    const top={x:t.x,y:th+t.h,z:t.z};
+    const qb=project(bottom,cam), qt=project(top,cam);
+    if(!qb || !qt) continue;
+    const r = Math.max(3, t.r/qt.z*W*.55);
+    ctx.strokeStyle = "rgba(35,35,35,.95)";
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(qb.x,qb.y); ctx.lineTo(qt.x,qt.y); ctx.stroke();
+    ctx.fillStyle = "rgba(255,190,70,.95)";
+    ctx.beginPath(); ctx.arc(qt.x,qt.y,Math.max(4,r*.18),0,TAU); ctx.fill();
+    ctx.strokeStyle="rgba(255,255,255,.65)";
+    ctx.beginPath(); ctx.arc(qt.x,qt.y,Math.max(7,r*.32),0,TAU); ctx.stroke();
+  }
+}
+
+function drawHazards(cam){
+  for(const h of game.hazards){
+    const th=game.terrain.heightAt(h.x,h.z);
+    const center={x:h.x,y:th+h.h*.55,z:h.z};
+    const q=project(center,cam);
+    if(!q) continue;
+    const r = Math.max(8, h.r*q.s*0.45);
+    const grd = ctx.createRadialGradient(q.x,q.y,2,q.x,q.y,r);
+    grd.addColorStop(0,`rgba(${h.color[0]},${h.color[1]},${h.color[2]},.72)`);
+    grd.addColorStop(1,`rgba(${h.color[0]},${h.color[1]},${h.color[2]},0)`);
+    ctx.fillStyle=grd;
+    ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+
+    ctx.strokeStyle=`rgba(${h.color[0]},${h.color[1]},${h.color[2]},.95)`;
+    ctx.lineWidth=3;
+    ctx.beginPath(); ctx.arc(q.x,q.y,r*.72,0,TAU); ctx.stroke();
+  }
+}
+
+function drawSmoke(cam){
+  for(const p of smoke){
+    const q=project(p,cam);
+    if(!q) continue;
+    const r=Math.max(4,p.r*q.s*.5);
+    ctx.fillStyle=`rgba(70,70,70,${clamp(.22*p.life/p.max,0,.35)})`;
+    ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+  }
+}
+
+function drawSparks(cam){
+  for(const p of sparks){
+    const q=project(p,cam);
+    if(!q) continue;
+    ctx.fillStyle=`rgba(${p.color[0]},${p.color[1]},${p.color[2]},${clamp(p.life/p.max,0,1)})`;
+    ctx.beginPath(); ctx.arc(q.x,q.y,Math.max(1.2,3*q.s*.12),0,TAU); ctx.fill();
+  }
+}
+
+function drawAircraft(cam){
+  const f=flight.pos;
+  const fo=aircraftForwards();
+  const scale = Math.max(5, 160/f.z*W*.55);
+  const roll = flight.roll;
+  const pitch = flight.pitch;
+  const y = Math.sin(roll);
+  const z = Math.cos(roll);
+  const points = {
+    nose:    add3(f, mul(fo.forward, 4.8)),
+    tail:    add3(f, mul(fo.forward,-4.2)),
+    left:    add3(add3(f, mul(fo.up,-.25)), mul(fo.right,-2.5)),
+    right:   add3(add3(f, mul(fo.up,-.25)), mul(fo.right, 2.5)),
+    top:     add3(f, mul(fo.up, .55)),
+    belly:   add3(f, mul(fo.up,-.55)),
+    ltail:   add3(add3(add3(f, mul(fo.forward,-3.2)), mul(fo.right,-1.35)), mul(fo.up,.35)),
+    rtail:   add3(add3(add3(f, mul(fo.forward,-3.2)), mul(fo.right, 1.35)), mul(fo.up,.35)),
+    lwing:   add3(add3(add3(f, mul(fo.forward, 1.2)), mul(fo.right,-3.0)), mul(fo.up,-.15)),
+    rwing:   add3(add3(add3(f, mul(fo.forward, 1.2)), mul(fo.right, 3.0)), mul(fo.up,-.15))
+  };
+  const proj = {};
+  for(const k in points) proj[k]=project(points[k],cam);
+
+  ctx.save();
+  ctx.translate(f.x,cam.pos.x); ctx.rotate(f.y,cam.pos.y); ctx.scale(f.z,cam.pos.z);
+  ctx.translate(Math.cos(roll)*2.2, Math.sin(roll)*.7);
+  ctx.rotate(roll);
+  ctx.scale(scale, scale);
+  ctx.lineCap="round";
+
+  ctx.strokeStyle="#202733"; ctx.lineWidth=8;
+  ctx.beginPath(); ctx.moveTo(-4.2,0); ctx.lineTo(4.8,0); ctx.stroke();
+  ctx.strokeStyle="#dcecff"; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(-4.0,0); ctx.lineTo(4.0,0); ctx.stroke();
+  ctx.strokeStyle="#17324a"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(3.9,0); ctx.lineTo(5.0,-.18); ctx.lineTo(4.0,.18); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle="#5f7fa0";
+  ctx.beginPath(); ctx.moveTo(-.2,.0); ctx.lineTo(-2.0,-.28); ctx.lineTo(-1.5,.28); ctx.closePath(); ctx.fill();
+  ctx.fillStyle="#436483";
+  ctx.beginPath(); ctx.moveTo(-2.5,-.55); ctx.lineTo(-.8,-.1); ctx.lineTo(-2.1,.55); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-2.5,.55); ctx.lineTo(-.8,.1); ctx.lineTo(-2.1,-.55); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle="#2a4762";
+  ctx.beginPath(); ctx.moveTo(2.3,.0); ctx.lineTo(5.0,-.24); ctx.lineTo(5.0,.24); ctx.closePath(); ctx.fill();
+
+  ctx.fillStyle="#ffcc45";
+  ctx.beginPath(); ctx.moveTo(4.8,0); ctx.lineTo(5.5,-.55); ctx.lineTo(5.5,.55); ctx.closePath(); ctx.fill();
+
+  ctx.strokeStyle="#202733"; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-2.9,0); ctx.lineTo(-3.7,-.7); ctx.lineTo(-2.9,.1); ctx.lineTo(-3.7,.7); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle="#dcecff"; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-3.2,0); ctx.lineTo(-3.8,-.55); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3.2,0); ctx.lineTo(-3.8,.55); ctx.stroke();
+
+  ctx.fillStyle="#ff3b30";
+  ctx.beginPath(); ctx.arc(4.85,0,.22,0,TAU); ctx.fill();
+  ctx.restore();
+
+  if(proj.nose && proj.nose.z < 2500){
+    ctx.save();
+    ctx.strokeStyle="rgba(0,0,0,.35)";
+    ctx.lineWidth=2;
+    ctx.beginPath();
+    ctx.moveTo(proj.nose.x,proj.nose.y);
+    ctx.lineTo(proj.belly.x,proj.belly.y);
     ctx.stroke();
     ctx.restore();
   }
 }
 
-function drawMiniMap(){
-  const x0=terrain.minX, x1=terrain.maxX, z0=terrain.minZ, z1=terrain.maxZ;
-  const mapW = Math.min(420, W*0.35), mapH = Math.min(240, H*0.22);
-  const mx = W*0.5 - mapW*0.5, my = H - mapH - 26;
+function drawParticles(cam){
+  for(const p of smoke) drawSmokeParticle(cam,p);
+  for(const p of sparks) drawSparkParticle(cam,p);
+}
+
+function drawSmokeParticle(cam,p){
+  const q=project(p,cam);
+  if(!q) return;
+  const r=Math.max(4,p.r*q.s*.55);
+  ctx.fillStyle=`rgba(70,70,70,${clamp(.20*p.life/p.max,0,.28)})`;
+  ctx.beginPath(); ctx.arc(q.x,q.y,r,0,TAU); ctx.fill();
+}
+
+function drawSparkParticle(cam,p){
+  const q=project(p,cam);
+  if(!q) return;
+  ctx.fillStyle=`rgba(${p.color[0]},${p.color[1]},${p.color[2]},${clamp(p.life/p.max,0,1)})`;
+  ctx.beginPath(); ctx.arc(q.x,q.y,Math.max(1.2,3*q.s*.12),0,TAU); ctx.fill();
+}
+
+function drawHud(cam){
+  const sp = len(flight.vel);
+  const alt = flight.pos.y - game.terrain.heightAt(flight.pos.x, flight.pos.z);
+  const th = flight.throttle;
+  const heading = norm(flight.yaw,0,TAU)*180/Math.PI;
+  const pitch = flight.pitch*180/Math.PI;
+  const rollDeg = flight.roll*180/Math.PI;
+  const done = game.checkpoints.filter(c=>c.passed).length;
+  const total = game.checkpoints.length;
+
   ctx.save();
-  ctx.fillStyle = 'rgba(0,0,0,.35)';
-  roundRect(ctx, mx,my,mapW,mapH,12); ctx.fill();
-  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 1; ctx.stroke();
-  const sx = mapW/(x1-x0), sy = mapH/(z1-z0);
-  const px = x => mx + (x-x0)*sx;
-  const py = z => my + mapH - (z-z0)*sy;
+  ctx.globalAlpha=.82;
+  ctx.fillStyle="rgba(0,0,0,.38)";
+  ctx.fillRect(0,0,W,H);
+  ctx.globalAlpha=1;
 
-  ctx.strokeStyle = 'rgba(255,255,255,.25)';
-  ctx.lineWidth = 1;
-  for(let x=x0; x<=x1; x+=500){ctx.beginPath(); ctx.moveTo(px(x),my); ctx.lineTo(px(x),my+mapH); ctx.stroke();}
-  for(let z=z0; z<=z1; z+=250){ctx.beginPath(); ctx.moveTo(mx,py(z)); ctx.lineTo(mx+mapW,py(z)); ctx.stroke();}
+  ctx.fillStyle="#fff";
+  ctx.font="bold 18px Arial";
+  ctx.textAlign="left";
+  ctx.fillText("AIRSPEED", 18, 28);
+  ctx.fillText(`${Math.round(sp)} kt`, 18, 52);
 
-  ctx.strokeStyle = 'rgba(90,255,140,.9)';
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(px(0), py(0));
-  for(const c of checkpointCenters) ctx.lineTo(px(c[0]), py(c[2]));
-  ctx.stroke();
+  ctx.fillText("ALTITUDE", 18, 84);
+  ctx.fillText(`${Math.round(alt)} ft`, 18, 108);
 
-  for(const g of gates){
-    ctx.fillStyle = g.passed ? '#60ff8a' : '#ffcc44';
-    ctx.beginPath(); ctx.arc(px(g.x), py(g.z), 5, 0, Math.PI*2); ctx.fill();
+  ctx.fillText("THROTTLE", 18, 140);
+  ctx.fillStyle="#d7ff7d";
+  ctx.fillRect(18,160,180,16);
+  ctx.fillStyle="#06111d";
+  ctx.fillRect(18,160,180*th,16);
+  ctx.fillStyle="#fff";
+  ctx.fillText(`${Math.round(th*100)}%`, 220, 173);
+
+  ctx.fillStyle="#fff";
+  ctx.fillText("HEADING", 18, 208);
+  ctx.fillText(`${Math.round(heading)}°`, 18, 232);
+
+  ctx.fillStyle="#fff";
+  ctx.fillText("PITCH", 18, 260);
+  ctx.fillText(`${pitch>0?"+":""}${Math.round(pitch)}°`, 18, 284);
+
+  ctx.fillStyle="#fff";
+  ctx.fillText("ROLL", 18, 312);
+  ctx.fillText(`${rollDeg>0?"+":""}${Math.round(rollDeg)}°`, 18, 336);
+
+  ctx.fillStyle="#fff";
+  ctx.fillText("CAMERA", 18, 364);
+  ctx.fillText(camChase ? "CHASE" : "COCKPIT", 18, 388);
+
+  drawArtificialHorizon(18, 430, 148);
+  drawMiniMap(cam, 18, 610);
+
+  drawCheckpointBar(cam, done, total);
+
+  if(game.result){
+    ctx.fillStyle="rgba(0,0,0,.75)";
+    ctx.fillRect(W/2-360, H/2-110, 720, 220);
+    ctx.fillStyle="rgba(255,255,255,.95)";
+    ctx.font="bold 46px Arial";
+    ctx.textAlign="center";
+    ctx.fillText(game.result==="success"?"MISSION SUCCESS":"MISSION FAILED", W/2, H/2-15);
+    ctx.font="20px Arial";
+    ctx.fillStyle="#d9f2ff";
+    ctx.fillText("Press R to restart", W/2, H/2+34);
   }
-  for(const o of obstacles){
-    ctx.fillStyle = o.type === 'tower' ? '#ff5555' : '#d0b08a';
-    ctx.beginPath(); ctx.arc(px(o.x), py(o.z), o.type==='tower'?4:6, 0, Math.PI*2); ctx.fill();
-  }
+  ctx.restore();
+}
 
-  const ap = [px(aircraft.pos[0]), py(aircraft.pos[2])];
+function drawArtificialHorizon(x,y,s){
   ctx.save();
-  ctx.translate(ap[0],ap[1]);
-  ctx.rotate(-aircraft.heading);
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.moveTo(0,-8); ctx.lineTo(6,7); ctx.lineTo(0,4); ctx.lineTo(-6,7); ctx.closePath(); ctx.fill();
+  ctx.fillStyle="rgba(0,0,0,.55)";
+  ctx.beginPath(); ctx.roundRect(x,y,s,s,14); ctx.fill();
+  const skyH = y+s/2 + flight.pitch*s*.38;
+  ctx.fillStyle="#75cfff";
+  ctx.fillRect(x,y,s,skyH-y);
+  ctx.fillStyle="#8e6f43";
+  ctx.fillRect(x,skyH,s,y+s-skyH);
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(x,skyH); ctx.lineTo(x+s,skyH); ctx.stroke();
+
+  ctx.save();
+  ctx.translate(x+s/2,y+s/2);
+  ctx.rotate(flight.roll);
+  ctx.strokeStyle="#fff";
+  ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-s*.45,0); ctx.lineTo(s*.45,0); ctx.stroke();
+  ctx.fillStyle="#fff";
+  for(let i=-3;i<=3;i++){
+    const yy=i*7;
+    ctx.fillRect(-s*.45,yy,s*.9,2);
+  }
+  ctx.fillStyle="#ff3b30";
+  ctx.beginPath(); ctx.moveTo(0,-18); ctx.lineTo(-6,-5); ctx.lineTo(6,-5); ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  ctx.fillStyle = '#fff';
-  ctx.font = '12px monospace';
-  ctx.textAlign = 'left';
-  ctx.fillText('MINI MAP', mx+10, my+16);
+  ctx.fillStyle="#fff";
+  ctx.font="bold 12px Arial";
+  ctx.textAlign="center";
+  ctx.fillText(`${Math.round(flight.pitch*180/Math.PI)}°`, 0, -27);
   ctx.restore();
 }
 
-function roundRect(c,x,y,w,h,r){
-  c.beginPath();
-  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r);
-  c.arcTo(x+w,y+h,x,y+h,r);
-  c.arcTo(x,y+h,x,y,r);
-  c.arcTo(x,y,x+w,y,r);
-  c.closePath();
+function drawMiniMap(cam){
+  const x=18,y=610,s=148;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.55)";
+  ctx.beginPath(); ctx.roundRect(x,y,s,s,14); ctx.fill();
+  ctx.fillStyle="rgba(255,255,255,.12)";
+  for(let i=0;i<=4;i++){
+    ctx.fillRect(x+i*s/4,y,s/4+1,s);
+    ctx.fillRect(x,y+i*s/4,s,s/4+1);
+  }
+  for(const t of game.towers){
+    const q=project(t,cam);
+    if(!q || q.z>1500) continue;
+    const px=x+(q.x-W/2)*s/W*.75, py=y+(H/2-q.y)*s/H*.75;
+    if(px<x || px>x+s || py<y || py>y+s) continue;
+    ctx.fillStyle="#ffcc00"; ctx.beginPath(); ctx.arc(px,py,2.2,0,TAU); ctx.fill();
+  }
+  for(const c of game.checkpoints){
+    const q=project(c,cam);
+    if(!q || q.z>1500) continue;
+    const px=x+(q.x-W/2)*s/W*.75, py=y+(H/2-q.y)*s/H*.75;
+    if(px<x || px>x+s || py<y || py>y+s) continue;
+    ctx.fillStyle=c.passed?"#45ff8a":"#fff";
+    ctx.beginPath(); ctx.arc(px,py,2.2,0,TAU); ctx.fill();
+  }
+  const qp=project(flight.pos,cam);
+  if(qp){
+    const px=x+(qp.x-W/2)*s/W*.75, py=y+(H/2-qp.y)*s/H*.75;
+    ctx.save();
+    ctx.translate(px,py);
+    ctx.rotate(-flight.yaw);
+    ctx.fillStyle="#fff";
+    ctx.beginPath(); ctx.moveTo(0,-5); ctx.lineTo(4,4); ctx.lineTo(0,2); ctx.lineTo(-4,4); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
 }
 
-function draw(){
-  initProjector();
-  drawSky();
-  drawTerrain();
-  drawRunway();
-  drawObstacles();
-  for(let i=0;i<gates.length;i++) drawCheckpointRing(i);
-  if(!cameraMode) drawAircraftModel();
-  drawHUD();
-  drawMiniMap();
-  if(cameraMode) drawCockpitOverlay();
+function drawCheckpointBar(cam, done, total){
+  const x=W-260,y=28,s=230,h=28;
+  ctx.save();
+  ctx.fillStyle="rgba(0,0,0,.55)";
+  ctx.beginPath(); ctx.roundRect(x,y,s,h,14); ctx.fill();
+  ctx.fillStyle="#45ff8a";
+  ctx.fillRect(x,y,s*done/total,h);
+  ctx.strokeStyle="rgba(255,255,255,.85)";
+  ctx.strokeRect(x+.5,y+.5,s-1,h-1);
+  ctx.fillStyle="#fff";
+  ctx.font="bold 13px Arial";
+  ctx.textAlign="center";
+  ctx.fillText(`CHECKPOINTS ${done}/${total}`, x+s/2, y+h/2+5);
+  ctx.restore();
 }
 
-function frame(t){
-  const dt = (t - lastT) / 1000;
-  lastT = t;
+function drawText2D(text,x,y,bg){
+  ctx.save();
+  ctx.font=`bold ${bg}px Arial`;
+  ctx.textAlign="center";
+  ctx.textBaseline="middle";
+  ctx.fillStyle="rgba(0,0,0,.55)";
+  ctx.fillText(text,x+2,y+2);
+  ctx.fillStyle="#fff";
+  ctx.fillText(text,x,y);
+  ctx.restore();
+}
+
+function renderLoop(t){
+  const dt = Math.min(.05, (t - (renderLoop.last || t))/1000 || .016);
+  renderLoop.last = t;
   update(dt);
   draw();
-  requestAnimationFrame(frame);
+  requestAnimationFrame(renderLoop);
 }
-requestAnimationFrame(frame);
+requestAnimationFrame(renderLoop);
+
+Math.roundRect = function(x,y,w,h,r){
+  r = Math.min(r, w/2, h/2);
+  this.beginPath();
+  this.moveTo(x+r,y);
+  this.lineTo(x+w-r,y);
+  this.quadraticCurveTo(x+w,y,x+w,y+r);
+  this.lineTo(x+w,y+h-r);
+  this.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  this.lineTo(x+r,y+h);
+  this.quadraticCurveTo(x,y+h,x,y+h-r);
+  this.lineTo(x,y+r);
+  this.quadraticCurveTo(x,y,x+r,y);
+  this.closePath();
+};
+
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+})();
+</script>
+</body>
+</html>

@@ -3,658 +3,558 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canvas FPS</title>
+<title>Raycast FPS</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
-canvas { display: block; cursor: crosshair; }
-#ui {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-pointer-events: none; color: #fff;
-}
-#crosshair {
-position: absolute; top: 50%; left: 50%;
-transform: translate(-50%, -50%);
-width: 20px; height: 20px;
-}
-#crosshair::before, #crosshair::after {
-content: ''; position: absolute; background: rgba(255,255,255,0.8);
-}
-#crosshair::before { width: 2px; height: 20px; left: 9px; top: 0; }
-#crosshair::after { width: 20px; height: 2px; top: 9px; left: 0; }
-#hud {
-position: absolute; bottom: 20px; left: 20px; right: 20px;
-display: flex; justify-content: space-between; align-items: flex-end;
-}
-.hud-left, .hud-right { display: flex; flex-direction: column; gap: 5px; }
-.hud-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 2px; }
-.hud-value { font-size: 36px; font-weight: bold; }
-.health-val { color: #e74c3c; }
-.ammo-val { color: #f39c12; }
-.weapon-name { font-size: 14px; color: #aaa; }
-#health-bar {
-width: 200px; height: 8px; background: rgba(255,255,255,0.1);
-border: 1px solid rgba(255,255,255,0.2); border-radius: 4px;
-}
-#health-fill {
-height: 100%; background: #e74c3c; border-radius: 4px;
-transition: width 0.3s;
-}
-#minimap {
-position: absolute; top: 20px; right: 20px;
-border: 2px solid rgba(255,255,255,0.3);
-opacity: 0; transition: opacity 0.3s;
-}
-#minimap.visible { opacity: 1; }
-#minimap-container {
-position: absolute; top: 20px; right: 20px;
-}
-#pause-screen {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-background: rgba(0,0,0,0.7); display: none;
-justify-content: center; align-items: center;
-flex-direction: column; gap: 20px;
-}
-#pause-screen.active { display: flex; }
-#pause-screen h1 { font-size: 48px; color: #fff; }
-#pause-screen p { font-size: 18px; color: #aaa; }
-#start-screen {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-background: rgba(0,0,0,0.85); display: flex;
-justify-content: center; align-items: center;
-flex-direction: column; gap: 20px;
-}
-#start-screen h1 { font-size: 48px; color: #e74c3c; }
-#start-screen p { font-size: 16px; color: #aaa; max-width: 500px; text-align: center; line-height: 1.6; }
-#start-screen button {
-padding: 12px 40px; font-size: 18px; background: #e74c3c;
-color: #fff; border: none; cursor: pointer; font-family: inherit;
-text-transform: uppercase; letter-spacing: 3px;
-}
-#start-screen button:hover { background: #c0392b; }
-#damage-overlay {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-background: radial-gradient(ellipse at center, transparent 50%, rgba(255,0,0,0.4) 100%);
-opacity: 0; transition: opacity 0.15s; pointer-events: none;
-}
-#damage-overlay.active { opacity: 1; }
-#win-screen {
-position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-background: rgba(0,0,0,0.85); display: none;
-justify-content: center; align-items: center;
-flex-direction: column; gap: 20px;
-}
-#win-screen.active { display: flex; }
-#win-screen h1 { font-size: 48px; color: #2ecc71; }
-#win-screen p { font-size: 18px; color: #aaa; }
-#win-screen button {
-padding: 12px 40px; font-size: 18px; background: #2ecc71;
-color: #fff; border: none; cursor: pointer; font-family: inherit;
-text-transform: uppercase; letter-spacing: 3px;
-}
-#win-screen button:hover { background: #27ae60; }
-#reload-indicator {
-position: absolute; top: 55%; left: 50%;
-transform: translate(-50%, -50%);
-font-size: 14px; color: #f39c12; display: none;
-}
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; user-select: none; }
+    #gameCanvas { display: block; width: 100vw; height: 100vh; }
+    #hud { position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; pointer-events: none; }
+    .hud-box { background: rgba(0,0,0,0.7); color: #0f0; padding: 10px 20px; border: 2px solid #0f0; border-radius: 5px; font-size: 24px; font-weight: bold; text-shadow: 0 0 5px #0f0; }
+    #minimap { position: absolute; top: 20px; right: 20px; border: 2px solid #0f0; border-radius: 5px; display: none; }
+    #crosshair { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #0f0; font-size: 30px; pointer-events: none; text-shadow: 0 0 5px #0f0; }
+    #pauseMenu { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; color: #0f0; }
+    #pauseMenu h1 { font-size: 48px; text-shadow: 0 0 10px #0f0; margin-bottom: 20px; }
+    #pauseMenu p { font-size: 20px; margin: 5px; }
+    #message { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); color: #f00; font-size: 36px; font-weight: bold; text-shadow: 0 0 10px #f00; display: none; }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<div id="ui">
-<div id="crosshair"></div>
-<div id="minimap-container">
-<canvas id="minimap" width="180" height="180"></canvas>
-</div>
+<canvas id="gameCanvas"></canvas>
+<div id="crosshair">+</div>
 <div id="hud">
-<div class="hud-left">
-<div class="hud-label">Health</div>
-<div class="hud-value health-val" id="health-val">100</div>
-<div id="health-bar"><div id="health-fill" style="width:100%"></div></div>
+    <div class="hud-box" id="health">Health: 100</div>
+    <div class="hud-box" id="ammo">Ammo: 30</div>
+    <div class="hud-box" id="score">Score: 0</div>
 </div>
-<div class="hud-right" style="align-items:flex-end;">
-<div class="hud-label">Ammo</div>
-<div class="hud-value ammo-val" id="ammo-val">30 / 90</div>
-<div class="weapon-name" id="weapon-name">PISTOL</div>
+<canvas id="minimap" width="150" height="150"></canvas>
+<div id="pauseMenu">
+    <h1>PAUSED</h1>
+    <p>Press 'P' to Resume</p>
+    <p>WASD: Move | Shift: Sprint | M: Minimap</p>
+    <p>Mouse: Aim | Click: Shoot | R: Reload | P: Pause</p>
 </div>
-</div>
-<div id="pause-screen">
-<h1>PAUSED</h1>
-<p>Press ESC or P to resume</p>
-</div>
-<div id="damage-overlay"></div>
-<div id="reload-indicator">RELOADING...</div>
-<div id="win-screen">
-<h1>MISSION COMPLETE</h1>
-<p>All enemies eliminated. Exit found.</p>
-<button onclick="location.reload()">PLAY AGAIN</button>
-</div>
-<div id="start-screen">
-<h1>CANVAS FPS</h1>
-<p>WASD - Move | Mouse - Aim | Click/Space - Shoot<br>
-R - Reload | Shift - Sprint | M - Minimap | ESC/P - Pause</p>
-<p>Eliminate all enemies and find the exit to win.</p>
-<button onclick="startGame()">START GAME</button>
-</div>
-</div>
+<div id="message"></div>
 
 <script>
-const canvas = document.getElementById('game');
-const ctx = canvas.getContext('2d');
-const minimapCanvas = document.getElementById('minimap');
-const minimapCtx = minimapCanvas.getContext('2d');
+// --- Configuration ---
+const SCREEN_WIDTH = 800;
+const SCREEN_HEIGHT = 600;
+const FOV = 60 * (Math.PI / 180);
+const MOVE_SPEED = 0.08;
+const SPRINT_SPEED = 0.15;
+const ROT_SPEED = 0.004;
+const MAP_SIZE = 32;
+const TILE_SIZE = 1;
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+// --- Game State ---
+let canvas = document.getElementById('gameCanvas');
+let ctx = canvas.getContext('2d');
+let minimapCanvas = document.getElementById('minimap');
+let minimapCtx = minimapCanvas.getContext('2d');
+let paused = false;
+let gameOver = false;
+let score = 0;
 
-const TILE = 1;
-const FOV = Math.PI / 3;
-const HALF_FOV = FOV / 2;
-const RAY_COUNT = Math.floor(canvas.width / 2);
-const MAX_DEPTH = 20;
-const MINIMAP_SCALE = 18;
+canvas.width = SCREEN_WIDTH;
+canvas.height = SCREEN_HEIGHT;
 
-const keys = {};
+// --- Player ---
+let player = {
+    x: 1.5, y: 1.5, angle: 0,
+    health: 100, ammo: 30, maxAmmo: 30,
+    reloading: false, lastShot: 0, fireRate: 200,
+    bob: 0, bobDir: 1
+};
+
+// --- Input ---
+let keys = {};
 let mouseDown = false;
-let mouseX = 0;
-let mouseY = 0;
 let pointerLocked = false;
 
-let gameState = 'menu'; // menu, playing, paused, won
-let minimapVisible = false;
-
-// Map definitions
-const MAP = [
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
-[1,0,0,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
-[1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-];
-
-const MAP_W = MAP[0].length;
-const MAP_H = MAP.length;
-
-// Wall colors by type
-const WALL_COLORS = {
-1: { r: 120, g: 120, b: 130 },
-2: { r: 140, g: 80, b: 60 },
-3: { r: 60, g: 100, b: 140 },
-};
-
-// Generate wall types for visual variety
-const wallTypes = [];
-for (let y = 0; y < MAP_H; y++) {
-wallTypes[y] = [];
-for (let x = 0; x < MAP_W; x++) {
-if (MAP[y][x] === 1) {
-const r = Math.random();
-if (r < 0.3) wallTypes[y][x] = 2;
-else if (r < 0.5) wallTypes[y][x] = 3;
-else wallTypes[y][x] = 1;
-} else {
-wallTypes[y][x] = 0;
-}
-}
-}
-
-// Player
-let player = {
-x: 2.5, y: 2.5,
-angle: 0,
-health: 100,
-maxHealth: 100,
-sprint: false,
-sprintSpeed: 4.5,
-walkSpeed: 2.5,
-weapon: 'pistol',
-ammo: 30,
-maxAmmo: 30,
-reserveAmmo: 90,
-fireRate: 300,
-damage: 25,
-reloadTime: 1500,
-isReloading: false,
-reloadStart: 0,
-lastShot: 0,
-bobPhase: 0,
-bobAmount: 0,
-};
-
-// Enemies
+// --- Map ---
+let map = [];
 let enemies = [];
 let pickups = [];
 let projectiles = [];
-let particles = [];
-let exitPos = null;
-let enemiesKilled = 0;
-const TOTAL_ENEMIES = 8;
 
-function initEnemies() {
-enemies = [];
-const spawnPoints = [
-{ x: 5.5, y: 5.5, type: 'soldier' },
-{ x: 12.5, y: 4.5, type: 'soldier' },
-{ x: 18.5, y: 5.5, type: 'heavy' },
-{ x: 5.5, y: 12.5, type: 'soldier' },
-{ x: 12.5, y: 12.5, type: 'soldier' },
-{ x: 18.5, y: 12.5, type: 'heavy' },
-{ x: 8.5, y: 8.5, type: 'sniper' },
-{ x: 15.5, y: 8.5, type: 'sniper' },
-];
+// --- Procedural Level Generation ---
+function generateLevel() {
+    map = [];
+    for (let y = 0; y < MAP_SIZE; y++) {
+        map[y] = [];
+        for (let x = 0; x < MAP_SIZE; x++) {
+            map[y][x] = 1; // Walls
+        }
+    }
 
-spawnPoints.forEach(sp => {
-const e = {
-x: sp.x, y: sp.y,
-type: sp.type,
-health: sp.type === 'heavy' ? 100 : sp.type === 'sniper' ? 50 : 60,
-maxHealth: sp.type === 'heavy' ? 100 : sp.type === 'sniper' ? 50 : 60,
-damage: sp.type === 'heavy' ? 20 : sp.type === 'sniper' ? 30 : 10,
-speed: sp.type === 'heavy' ? 1.2 : sp.type === 'sniper' ? 0.8 : 1.5,
-fireRate: sp.type === 'sniper' ? 2000 : sp.type === 'heavy' ? 800 : 1200,
-lastShot: 0,
-detectionRange: sp.type === 'sniper' ? 12 : sp.type === 'heavy' ? 6 : 8,
-attackRange: sp.type === 'sniper' ? 10 : 5,
-alive: true,
-alerted: false,
-patrolAngle: Math.random() * Math.PI * 2,
-patrolTimer: 0,
-patrolDir: Math.random() < 0.5 ? 1 : -1,
-stuckTimer: 0,
-};
-enemies.push(e);
-});
+    // Rooms
+    let rooms = [];
+    for (let i = 0; i < 10; i++) {
+        let rw = 3 + Math.floor(Math.random() * 5);
+        let rh = 3 + Math.floor(Math.random() * 5);
+        let rx = 2 + Math.floor(Math.random() * (MAP_SIZE - rw - 4));
+        let ry = 2 + Math.floor(Math.random() * (MAP_SIZE - rh - 4));
+        rooms.push({x: rx, y: ry, w: rw, h: rh});
+        
+        for (let y = ry; y < ry + rh; y++) {
+            for (let x = rx; x < rx + rw; x++) {
+                map[y][x] = 0;
+            }
+        }
+    }
+
+    // Corridors
+    for (let i = 1; i < rooms.length; i++) {
+        let r1 = rooms[i-1], r2 = rooms[i];
+        let cx = Math.min(r1.x + r1.w, r2.x);
+        let cy = Math.min(r1.y + r1.h, r2.y);
+        let ex = Math.max(r1.x + r1.w, r2.x + r2.w);
+        let ey = Math.max(r1.y + r1.h, r2.y + r2.h);
+        
+        for (let y = cy; y < ey; y++) {
+            for (let x = cx; x < ex; x++) {
+                map[y][x] = 0;
+            }
+        }
+    }
+
+    // Place entities
+    enemies = [];
+    pickups = [];
+    let emptyCells = [];
+    for (let y = 1; y < MAP_SIZE - 1; y++) {
+        for (let x = 1; x < MAP_SIZE - 1; x++) {
+            if (map[y][x] === 0 && !(x < 3 && y < 3)) {
+                emptyCells.push({x, y});
+            }
+        }
+    }
+
+    // Enemies
+    for (let i = 0; i < 15; i++) {
+        if (emptyCells.length === 0) break;
+        let idx = Math.floor(Math.random() * emptyCells.length);
+        let pos = emptyCells.splice(idx, 1)[0];
+        enemies.push({
+            x: pos.x + 0.5, y: pos.y + 0.5,
+            health: 30, alive: true, lastAttack: 0,
+            type: Math.random() > 0.7 ? 'heavy' : 'normal'
+        });
+    }
+
+    // Pickups
+    for (let i = 0; i < 8; i++) {
+        if (emptyCells.length === 0) break;
+        let idx = Math.floor(Math.random() * emptyCells.length);
+        let pos = emptyCells.splice(idx, 1)[0];
+        pickups.push({
+            x: pos.x + 0.5, y: pos.y + 0.5,
+            type: Math.random() > 0.5 ? 'health' : 'ammo',
+            alive: true
+        });
+    }
+
+    // Exit
+    if (emptyCells.length > 0) {
+        let pos = emptyCells[emptyCells.length - 1];
+        map[pos.y][pos.x] = 3; // Exit
+    }
 }
 
-function initPickups() {
-pickups = [];
-const pickupSpawns = [
-{ x: 3.5, y: 8.5, type: 'health', amount: 25 },
-{ x: 10.5, y: 2.5, type: 'ammo', amount: 15 },
-{ x: 18.5, y: 8.5, type: 'health', amount: 50 },
-{ x: 2.5, y: 18.5, type: 'ammo', amount: 20 },
-{ x: 12.5, y: 18.5, type: 'health', amount: 25 },
-{ x: 8.5, y: 15.5, type: 'ammo', amount: 15 },
-];
-pickupSpawns.forEach(p => {
-pickups.push({
-x: p.x, y: p.y,
-type: p.type,
-amount: p.amount,
-alive: true,
-bobPhase: Math.random() * Math.PI * 2,
-});
-});
-}
-
-function initExit() {
-exitPos = { x: 21.5, y: 21.5 };
-}
-
-// Raycasting
+// --- Raycasting Engine ---
 function castRay(angle) {
-const sin = Math.sin(angle);
-const cos = Math.cos(angle);
-let x = player.x;
-let y = player.y;
-
-const dx = cos;
-const dy = sin;
-
-let side = 0;
-let dist = 0;
-
-const stepX = cos > 0 ? 1 : -1;
-const stepY = dy > 0 ? 1 : -1;
-
-let mapX = Math.floor(x);
-let mapY = Math.floor(y);
-
-let deltaDistX = Math.abs(1 / cos);
-let deltaDistY = Math.abs(1 / dy);
-
-let sideDistX, sideDistY;
-
-if (cos < 0) {
-sideDistX = (x - mapX) * deltaDistX;
-} else {
-sideDistX = (mapX + 1 - x) * deltaDistX;
-}
-if (dy < 0) {
-sideDistY = (y - mapY) * deltaDistY;
-} else {
-sideDistY = (mapY + 1 - y) * deltaDistY;
+    let sin = Math.sin(angle);
+    let cos = Math.cos(angle);
+    let x = player.x;
+    let y = player.y;
+    
+    let step = 0.01;
+    let dist = 0;
+    
+    while (dist < 20) {
+        x += cos * step;
+        y += sin * step;
+        dist += step;
+        
+        let mapX = Math.floor(x);
+        let mapY = Math.floor(y);
+        
+        if (mapY < 0 || mapY >= MAP_SIZE || mapX < 0 || mapX >= MAP_SIZE) return { dist: 20, type: 1 };
+        
+        let type = map[mapY][mapX];
+        if (type === 1 || type === 3) {
+            // Calculate exact wall hit for shading
+            let side = (Math.abs(cos) < Math.abs(sin)) ? 'y' : 'x';
+            let wallX = side === 'x' ? y + (x - Math.floor(x)) * sin : x + (y - Math.floor(y)) * cos;
+            let texX = wallX % 1;
+            return { dist, type, side, texX };
+        }
+    }
+    return { dist: 20, type: 0 };
 }
 
-let hit = false;
-while (!hit && dist < MAX_DEPTH) {
-if (sideDistX < sideDistY) {
-sideDistX += deltaDistX;
-mapX += stepX;
-side = 0;
-} else {
-sideDistY += deltaDistY;
-mapY += stepY;
-side = 1;
+function render() {
+    // Clear
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+    
+    // Ceiling & Floor
+    for (let y = 0; y < SCREEN_HEIGHT / 2; y++) {
+        let shade = 0.3 - (y / SCREEN_HEIGHT) * 0.2;
+        ctx.fillStyle = `rgba(0,0,0,${shade})`;
+        ctx.fillRect(0, y, SCREEN_WIDTH, 1);
+    }
+    for (let y = SCREEN_HEIGHT / 2; y < SCREEN_HEIGHT; y++) {
+        let shade = 0.2 + (y / SCREEN_HEIGHT) * 0.3;
+        ctx.fillStyle = `rgba(0,0,0,${shade})`;
+        ctx.fillRect(0, y, SCREEN_WIDTH, 1);
+    }
+
+    // Z-buffer for sprites
+    let zBuffer = new Float32Array(SCREEN_WIDTH);
+
+    // Walls
+    let startAngle = player.angle - FOV / 2;
+    for (let i = 0; i < SCREEN_WIDTH; i++) {
+        let rayAngle = startAngle + (i / SCREEN_WIDTH) * FOV;
+        let ray = castRay(rayAngle);
+        let perpDist = ray.dist * Math.cos(rayAngle - player.angle);
+        
+        if (ray.dist < 20) {
+            let wallHeight = (TILE_SIZE / perpDist) * SCREEN_HEIGHT;
+            let wallTop = (SCREEN_HEIGHT - wallHeight) / 2;
+            
+            // Shading based on distance and side
+            let shade = 1 / (1 + perpDist * 0.5);
+            if (ray.side === 'x') shade *= 0.7;
+            
+            let color = ray.type === 3 ? `rgba(255,255,0,${shade})` : `rgba(100,100,100,${shade})`;
+            
+            // Simple texture effect
+            if (ray.type === 1 && ray.texX < 0.1) color = `rgba(80,80,80,${shade})`;
+            
+            ctx.fillStyle = color;
+            ctx.fillRect(i, wallTop, 1, wallHeight);
+        }
+        zBuffer[i] = perpDist;
+    }
+
+    // Sprites (Enemies & Pickups)
+    let sprites = [];
+    enemies.forEach(e => { if (e.alive) sprites.push({x: e.x, y: e.y, type: 'enemy', ref: e}); });
+    pickups.forEach(p => { if (p.alive) sprites.push({x: p.x, y: p.y, type: 'pickup', ref: p}); });
+    
+    // Sort sprites by distance
+    sprites.sort((a, b) => {
+        let da = (player.x - a.x) ** 2 + (player.y - a.y) ** 2;
+        let db = (player.x - b.x) ** 2 + (player.y - b.y) ** 2;
+        return db - da;
+    });
+
+    sprites.forEach(sprite => {
+        let dx = sprite.x - player.x;
+        let dy = sprite.y - player.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        let spriteAngle = Math.atan2(dy, dx) - player.angle;
+        while (spriteAngle < -Math.PI) spriteAngle += 2 * Math.PI;
+        while (spriteAngle > Math.PI) spriteAngle -= 2 * Math.PI;
+        
+        if (Math.abs(spriteAngle) < FOV / 2 + 0.2) {
+            let screenX = (0.5 + spriteAngle / FOV) * SCREEN_WIDTH;
+            let spriteHeight = (TILE_SIZE / dist) * SCREEN_HEIGHT;
+            let spriteWidth = spriteHeight * 0.6;
+            let spriteTop = (SCREEN_HEIGHT - spriteHeight) / 2;
+            
+            let shade = 1 / (1 + dist * 0.5);
+            
+            // Check Z-buffer to only draw if not behind wall
+            let startCol = Math.max(0, Math.floor(screenX - spriteWidth / 2));
+            let endCol = Math.min(SCREEN_WIDTH - 1, Math.floor(screenX + spriteWidth / 2));
+            
+            for (let col = startCol; col <= endCol; col++) {
+                if (zBuffer[col] > dist) {
+                    if (sprite.type === 'enemy') {
+                        let color = sprite.ref.type === 'heavy' ? `rgba(200,50,50,${shade})` : `rgba(255,50,50,${shade})`;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(col, spriteTop + spriteHeight * 0.3, 1, spriteHeight * 0.7);
+                        // Eyes
+                        ctx.fillStyle = `rgba(255,255,0,${shade})`;
+                        ctx.fillRect(col, spriteTop + spriteHeight * 0.4, 1, spriteHeight * 0.1);
+                    } else if (sprite.type === 'pickup') {
+                        let color = sprite.ref.type === 'health' ? `rgba(50,255,50,${shade})` : `rgba(255,255,50,${shade})`;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(col, spriteTop + spriteHeight * 0.6, 1, spriteHeight * 0.4);
+                    }
+                }
+            }
+        }
+    });
+
+    // Weapon
+    drawWeapon();
+    
+    // Minimap
+    drawMinimap();
 }
 
-if (mapX < 0 || mapX >= MAP_W || mapY < 0 || mapY >= MAP_H) {
-hit = true;
-dist = side === 0 ? sideDistX : sideDistY;
-} else if (MAP[mapY][mapX] > 0) {
-hit = true;
-dist = side === 0 ? sideDistX : sideDistY;
-}
-}
-
-let wallX;
-if (side === 0) {
-wallX = y + dist * dy;
-} else {
-wallX = x + dist * dx;
-}
-wallX -= Math.floor(wallX);
-
-return { dist, side, wallX, mapX, mapY };
-}
-
-function castRayForHit(angle) {
-const sin = Math.sin(angle);
-const cos = Math.cos(angle);
-let x = player.x;
-let y = player.y;
-const dx = cos;
-const dy = sin;
-let side = 0;
-let dist = 0;
-const stepX = cos > 0 ? 1 : -1;
-const stepY = dy > 0 ? 1 : -1;
-let mapX = Math.floor(x);
-let mapY = Math.floor(y);
-let deltaDistX = Math.abs(1 / cos);
-let deltaDistY = Math.abs(1 / dy);
-let sideDistX, sideDistY;
-if (cos < 0) sideDistX = (x - mapX) * deltaDistX;
-else sideDistX = (mapX + 1 - x) * deltaDistX;
-if (dy < 0) sideDistY = (y - mapY) * deltaDistY;
-else sideDistY = (mapY + 1 - y) * deltaDistY;
-let hit = false;
-while (!hit && dist < MAX_DEPTH) {
-if (sideDistX < sideDistY) {
-sideDistX += deltaDistX;
-mapX += stepX;
-side = 0;
-} else {
-sideDistY += deltaDistY;
-mapY += stepY;
-side = 1;
-}
-if (mapX < 0 || mapX >= MAP_W || mapY < 0 || mapY >= MAP_H) {
-hit = true;
-dist = side === 0 ? sideDistX : sideDistY;
-} else if (MAP[mapY][mapX] > 0) {
-hit = true;
-dist = side === 0 ? sideDistX : sideDistY;
-}
-}
-let wallX;
-if (side === 0) wallX = y + dist * dy;
-else wallX = x + dist * dx;
-wallX -= Math.floor(wallX);
-return { dist, side, wallX, mapX, mapY };
+function drawWeapon() {
+    let bob = player.bob * 10;
+    let recoil = Math.max(0, player.lastShot + 100 - Date.now()) * 2;
+    
+    ctx.save();
+    ctx.translate(SCREEN_WIDTH / 2 + bob, SCREEN_HEIGHT - 150 + bob + recoil);
+    
+    // Gun body
+    ctx.fillStyle = '#555';
+    ctx.fillRect(-30, -100, 60, 150);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(-25, -120, 50, 100);
+    
+    // Barrel
+    ctx.fillStyle = '#222';
+    ctx.fillRect(-10, -150, 20, 60);
+    
+    // Muzzle flash
+    if (player.lastShot + 50 > Date.now()) {
+        ctx.fillStyle = `rgba(255,200,50,${0.8 - (Date.now() - player.lastShot) / 100})`;
+        ctx.beginPath();
+        ctx.arc(0, -160, 25, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.restore();
 }
 
-// Check if a point is inside a wall
-function isWall(px, py) {
-const mx = Math.floor(px);
-const my = Math.floor(py);
-if (mx < 0 || mx >= MAP_W || my < 0 || my >= MAP_H) return true;
-return MAP[my][mx] > 0;
+function drawMinimap() {
+    let display = document.getElementById('minimap');
+    if (keys['m'] || keys['M']) {
+        display.style.display = 'block';
+        minimapCtx.fillStyle = '#000';
+        minimapCtx.fillRect(0, 0, 150, 150);
+        
+        let scale = 150 / MAP_SIZE;
+        
+        for (let y = 0; y < MAP_SIZE; y++) {
+            for (let x = 0; x < MAP_SIZE; x++) {
+                if (map[y][x] === 1) minimapCtx.fillStyle = '#444';
+                else if (map[y][x] === 3) minimapCtx.fillStyle = '#ff0';
+                else minimapCtx.fillStyle = '#000';
+                minimapCtx.fillRect(x * scale, y * scale, scale, scale);
+            }
+        }
+        
+        // Player
+        minimapCtx.fillStyle = '#0f0';
+        minimapCtx.beginPath();
+        minimapCtx.arc(player.x * scale, player.y * scale, 3, 0, Math.PI * 2);
+        minimapCtx.fill();
+        
+        // Enemies
+        minimapCtx.fillStyle = '#f00';
+        enemies.forEach(e => {
+            if (e.alive) minimapCtx.fillRect(e.x * scale - 2, e.y * scale - 2, 4, 4);
+        });
+        
+        // Pickups
+        minimapCtx.fillStyle = '#0f0';
+        pickups.forEach(p => {
+            if (p.alive) minimapCtx.fillRect(p.x * scale - 2, p.y * scale - 2, 4, 4);
+        });
+    } else {
+        display.style.display = 'none';
+    }
 }
 
-// Check distance to nearest wall in a direction
-function wallDistanceInDir(px, py, angle) {
-const sin = Math.sin(angle);
-const cos = Math.cos(angle);
-let x = px;
-let y = py;
-const steps = 30;
-for (let i = 0; i < steps; i++) {
-x += cos * 0.1;
-y += sin * 0.1;
-if (isWall(x, y)) return i * 0.1;
-}
-return steps * 0.1;
-}
-
-// Render walls
-function renderWalls() {
-const w = canvas.width;
-const h = canvas.height;
-const halfH = h / 2;
-const stripWidth = w / RAY_COUNT;
-
-for (let i = 0; i < RAY_COUNT; i++) {
-const rayAngle = player.angle - HALF_FOV + (i / RAY_COUNT) * FOV;
-const ray = castRay(rayAngle);
-
-const perpDist = ray.dist * Math.cos(rayAngle - player.angle);
-if (perpDist < 0.1) continue;
-
-const lineHeight = h / perpDist;
-const drawStart = Math.max(0, Math.floor(halfH - lineHeight / 2));
-const drawEnd = Math.min(h, Math.floor(halfH + lineHeight / 2));
-
-const color = WALL_COLORS[wallTypes[ray.mapY] ? wallTypes[ray.mapY][ray.mapX] : 1];
-const shade = Math.max(0.15, 1 - perpDist / MAX_DEPTH);
-const sideShade = ray.side === 1 ? 0.7 : 1;
-
-const r = Math.floor(color.r * shade * sideShade);
-const g = Math.floor(color.g * shade * sideShade);
-const b = Math.floor(color.b * shade * sideShade);
-
-// Wall face with subtle texture pattern
-const texX = ray.wallX;
-const stripeShade = (Math.floor(texX * 8) % 2 === 0) ? 0.95 : 1;
-
-const finalR = Math.floor(r * stripeShade);
-const finalG = Math.floor(g * stripeShade);
-const finalB = Math.floor(b * stripeShade);
-
-ctx.fillStyle = `rgb(${finalR},${finalG},${finalB})`;
-ctx.fillRect(i * stripWidth, drawStart, stripWidth + 1, drawEnd - drawStart);
-
-// Wall top/bottom edge highlight
-ctx.fillStyle = `rgba(255,255,255,${0.05 * shade})`;
-ctx.fillRect(i * stripWidth, drawStart, stripWidth + 1, 2);
-ctx.fillStyle = `rgba(0,0,0,${0.15 * shade})`;
-ctx.fillRect(i * stripWidth, drawEnd - 2, stripWidth + 1, 2);
-}
-}
-
-// Render floor and ceiling
-function renderFloorCeiling() {
-const w = canvas.width;
-const h = canvas.height;
-const halfH = h / 2;
-const stripWidth = w / RAY_COUNT;
-
-for (let i = 0; i < RAY_COUNT; i++) {
-const rayAngle = player.angle - HALF_FOV + (i / RAY_COUNT) * FOV;
-
-// Floor
-for (let y = halfH; y < h; y++) {
-const currentDist = halfH / (y - halfH);
-const perpDist = currentDist * Math.cos(rayAngle - player.angle);
-if (perpDist < 0.1) continue;
-
-const floorX = player.x + Math.cos(rayAngle) * perpDist;
-const floorY = player.y + Math.sin(rayAngle) * perpDist;
-
-const fx = Math.floor(floorX);
-const fy = Math.floor(floorY);
-const shade = Math.max(0.1, 1 - perpDist / MAX_DEPTH);
-
-// Checkerboard floor
-const checker = ((fx + fy) % 2 === 0) ? 0.9 : 1;
-const r = Math.floor(40 * shade * checker);
-const g = Math.floor(40 * shade * checker);
-const b = Math.floor(50 * shade * checker);
-
-ctx.fillStyle = `rgb(${r},${g},${b})`;
-ctx.fillRect(i * stripWidth, y, stripWidth + 1, 1);
-}
-
-// Ceiling
-for (let y = 0; y < halfH; y++) {
-const currentDist = halfH / (halfH - y);
-const perpDist = currentDist * Math.cos(rayAngle - player.angle);
-if (perpDist < 0.1) continue;
-
-const ceilX = player.x + Math.cos(rayAngle) * perpDist;
-const ceilY = player.y + Math.sin(rayAngle) * perpDist;
-
-const cx = Math.floor(ceilX);
-const cy = Math.floor(ceilY);
-const shade = Math.max(0.1, 1 - perpDist / MAX_DEPTH);
-
-const checker = ((cx + cy) % 2 === 0) ? 0.9 : 1;
-const r = Math.floor(20 * shade * checker);
-const g = Math.floor(20 * shade * checker);
-const b = Math.floor(30 * shade * checker);
-
-ctx.fillStyle = `rgb(${r},${g},${b})`;
-ctx.fillRect(i * stripWidth, y, stripWidth + 1, 1);
-}
-}
+// --- Game Logic ---
+function update() {
+    if (paused || gameOver) return;
+    
+    // Player movement
+    let moveSpeed = keys['Shift'] ? SPRINT_SPEED : MOVE_SPEED;
+    let newX = player.x;
+    let newY = player.y;
+    
+    if (keys['w']) { newX += Math.cos(player.angle) * moveSpeed; newY += Math.sin(player.angle) * moveSpeed; }
+    if (keys['s']) { newX -= Math.cos(player.angle) * moveSpeed; newY -= Math.sin(player.angle) * moveSpeed; }
+    if (keys['a']) { newX += Math.cos(player.angle + Math.PI / 2) * moveSpeed; newY += Math.sin(player.angle + Math.PI / 2) * moveSpeed; }
+    if (keys['d']) { newX -= Math.cos(player.angle + Math.PI / 2) * moveSpeed; newY -= Math.sin(player.angle + Math.PI / 2) * moveSpeed; }
+    
+    // Collision
+    if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+        player.x = newX;
+        player.y = newY;
+        player.bob += player.bobDir * 0.1;
+        if (Math.abs(player.bob) > 1) player.bobDir *= -1;
+    }
+    
+    // Mouse aim
+    if (pointerLocked) {
+        player.angle += mouseX * ROT_SPEED;
+        mouseX = 0;
+    }
+    
+    // Shooting
+    if (mouseDown && !player.reloading && Date.now() - player.lastShot > player.fireRate) {
+        player.lastShot = Date.now();
+        if (player.ammo > 0) {
+            player.ammo--;
+            shoot();
+        }
+    }
+    
+    // Reload
+    if (keys['r'] && !player.reloading && player.ammo < player.maxAmmo) {
+        player.reloading = true;
+        setTimeout(() => {
+            player.ammo = player.maxAmmo;
+            player.reloading = false;
+        }, 1500);
+    }
+    
+    // Update enemies
+    enemies.forEach(e => {
+        if (!e.alive) return;
+        let dx = player.x - e.x;
+        let dy = player.y - e.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 8) {
+            // Move towards player
+            if (dist > 0.5) {
+                let speed = e.type === 'heavy' ? 0.02 : 0.04;
+                let nx = e.x + (dx / dist) * speed;
+                let ny = e.y + (dy / dist) * speed;
+                if (map[Math.floor(ny)][Math.floor(nx)] === 0) {
+                    e.x = nx;
+                    e.y = ny;
+                }
+            }
+            
+            // Attack
+            if (dist < 1.5 && Date.now() - e.lastAttack > (e.type === 'heavy' ? 1500 : 800)) {
+                e.lastAttack = Date.now();
+                player.health -= e.type === 'heavy' ? 20 : 10;
+                showMessage("Hit! -" + (e.type === 'heavy' ? 20 : 10) + " HP");
+            }
+        }
+    });
+    
+    // Check pickups
+    pickups.forEach(p => {
+        if (!p.alive) return;
+        let dx = player.x - p.x;
+        let dy = player.y - p.y;
+        if (dx*dx + dy*dy < 0.5) {
+            p.alive = false;
+            if (p.type === 'health') {
+                player.health = Math.min(100, player.health + 25);
+                showMessage("+25 HP");
+            } else {
+                player.ammo = player.maxAmmo;
+                showMessage("Ammo Refilled");
+            }
+        }
+    });
+    
+    // Check exit
+    if (map[Math.floor(player.y)][Math.floor(player.x)] === 3) {
+        gameOver = true;
+        showMessage("LEVEL COMPLETE! Score: " + score);
+    }
+    
+    // Update HUD
+    document.getElementById('health').textContent = "Health: " + player.health;
+    document.getElementById('ammo').textContent = "Ammo: " + player.ammo;
+    document.getElementById('score').textContent = "Score: " + score;
+    
+    if (player.health <= 0) {
+        gameOver = true;
+        showMessage("GAME OVER");
+    }
 }
 
-// Render sprites (enemies, pickups)
-function renderSprites() {
-const w = canvas.width;
-const h = canvas.height;
-const halfH = h / 2;
+function shoot() {
+    // Simple raycast for hit detection
+    let ray = castRay(player.angle);
+    if (ray.dist < 10) {
+        // Check if enemy in line of sight
+        enemies.forEach(e => {
+            if (!e.alive) return;
+            let dx = e.x - player.x;
+            let dy = e.y - player.y;
+            let eDist = Math.sqrt(dx*dx + dy*dy);
+            let eAngle = Math.atan2(dy, dx) - player.angle;
+            while (eAngle < -Math.PI) eAngle += 2 * Math.PI;
+            while (eAngle > Math.PI) eAngle -= 2 * Math.PI;
+            
+            if (Math.abs(eAngle) < 0.1 && eDist < ray.dist) {
+                e.health -= 25;
+                if (e.health <= 0) {
+                    e.alive = false;
+                    score += 100;
+                }
+            }
+        });
+    }
+}
 
-// Sort sprites by distance
-const sprites = [];
+function showMessage(msg) {
+    let el = document.getElementById('message');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 1000);
+}
 
-enemies.forEach(e => {
-if (!e.alive) return;
-const dx = e.x - player.x;
-const dy = e.y - player.y;
-const dist = Math.sqrt(dx * dx + dy * dy);
-sprites.push({ ...e, dist, type: 'enemy' });
+// --- Input Handling ---
+let mouseX = 0;
+
+document.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if (e.key.toLowerCase() === 'p') {
+        paused = !paused;
+        document.getElementById('pauseMenu').style.display = paused ? 'flex' : 'none';
+    }
 });
 
-pickups.forEach(p => {
-if (!p.alive) return;
-const dx = p.x - player.x;
-const dy = p.y - player.y;
-const dist = Math.sqrt(dx * dx + dy * dy);
-sprites.push({ ...p, dist, type: 'pickup' });
+document.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false;
 });
 
-sprites.sort((a, b) => b.dist - a.dist);
-
-sprites.forEach(sprite => {
-const dx = sprite.x - player.x;
-const dy = sprite.y - player.y;
-const angle = Math.atan2(dy, dx);
-let relAngle = angle - player.angle;
-
-while (relAngle > Math.PI) relAngle -= 2 * Math.PI;
-while (relAngle < -Math.PI) relAngle += 2 * Math.PI;
-
-if (Math.abs(relAngle) > HALF_FOV + 0.3) return;
-
-const perpDist = sprite.dist * Math.cos(relAngle);
-if (perpDist < 0.3) return;
-
-const spriteHeight = h / perpDist;
-const spriteWidth = spriteHeight * 0.5;
-
-const spriteX = w / 2 + relAngle / FOV * w;
-
-const shade = Math.max(0.15, 1 - sprite.dist / MAX_DEPTH);
-
-if (sprite.type === 'enemy') {
-renderEnemy(sprite, spriteX, spriteHeight, spriteWidth, shade);
-} else if (sprite.type === 'pickup') {
-renderPickup(sprite, spriteX, spriteHeight, spriteWidth, shade);
-}
+canvas.addEventListener('click', () => {
+    if (!paused && !gameOver) {
+        canvas.requestPointerLock();
+    }
 });
+
+document.addEventListener('pointerlockchange', () => {
+    pointerLocked = document.pointerLockElement === canvas;
+});
+
+document.addEventListener('mousemove', e => {
+    if (pointerLocked) {
+        mouseX += e.movementX;
+    }
+});
+
+document.addEventListener('mousedown', e => {
+    if (e.button === 0) mouseDown = true;
+});
+
+document.addEventListener('mouseup', e => {
+    if (e.button === 0) mouseDown = false;
+});
+
+// --- Main Loop ---
+function gameLoop() {
+    update();
+    render();
+    requestAnimationFrame(gameLoop);
 }
 
-function renderEnemy(sprite, x, height, width, shade) {
-const y = canvas.height / 2 - height / 2;
-
-// Body
-const bodyColor = sprite.type === 'soldier' ? [180, 60, 60] :
-sprite.type === 'heavy' ? [100, 100, 100] : [60, 100, 180];
-
-const r = Math.floor(bodyColor[0] * shade);
-const g = Math.floor(bodyColor[1] * shade);
-const b = Math.floor(bodyColor[2] * shade);
-
-// Head
-const headSize = width * 0.5;
-const headY = y + height * 0.1;
-ctx.fillStyle = `rgb(${Math.floor(r * 1.2)},${Math.floor(g * 1.2)},${Math.floor(b * 1.2)})`;
-ctx.beginPath();
-ctx.arc(x, headY + headSize / 2, headSize / 2, 0, Math.PI * 2);
-ctx.fill();
-
-// Eyes
-const eyeSize = headSize * 0.12;
-ctx.fillStyle = `rgba(255,255,200,${shade * 0.8})`;
-ctx.beginPath();
-ctx.arc(x - headSize * 0.2, headY + headSize * 0.35, eyeSize, 0, Math.PI * 2);
-ctx.arc(x + headSize * 0.2, headY + headSize * 0.35, eyeSize, 0, Math.PI * 2);
-ctx.fill();
-
-// Body
-const bodyTop = y + height * 0.35;
-const bodyBottom = y + height * 0.85;
-const bodyWidth = width * 0.8;
-
-ctx.fillStyle = `rgb(${r},${g},${b})`;
-ctx.fillRect(x - bodyWidth / 2, bodyTop, bodyWidth, bodyBottom - bodyTop);
-
-// Legs
-const legWidth = bodyWidth * 0.25;
-const legTop = bodyBottom;
-const legBottom = y + height;
-ctx.fillStyle = `rgb(${Math.floor(r * 0.7)},${Math.floor(g * 0.7)},${Math.floor(b * 0.7)})`;
-ctx.fillRect(x - bodyWidth / 2 - legWidth / 2, legTop, legWidth, legBottom - legTop);
-ctx.fillRect(x + bodyWidth / 2 - legWidth / 2, legTop, legWidth, legBottom - legTop);
-
-// Arms
-const armWidth = bodyWidth * 0.2;
-const armHeight = bodyWidth * 0.6;
-ctx.fillStyle = `rgb(${r},${g},${b})`;
-ctx.fillRect(x - bodyWidth / 2 - armWidth, bodyTop, armWidth, armHeight);
-ctx.fillRect(x + bodyWidth / 2, bodyTop, armWidth, armHeight);
-
-// Weapon
-const weaponWidth = armWidth * 0.6;
-ctx.fillStyle = `rgb(${Math.floor(r * 0.5)},${Math.floor(g * 0.5)},${Math.floor(b *
+// --- Init ---
+generateLevel();
+gameLoop();
+</script>
+</body>
+</html>
