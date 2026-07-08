@@ -1,0 +1,622 @@
+{
+  "generated_at": "2026-07-07T21:23:08.229537",
+  "type": "direct-local-model-remediated",
+  "models": {
+    "architect-35b-q6": {
+      "breakout": {
+        "file": "architect-35b-q6_breakout.html",
+        "size": 24101,
+        "chars": 24087,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "architect-35b-q6_flight.html",
+        "size": 33538,
+        "chars": 33537,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "architect-35b-q6_fps.html",
+        "size": 33325,
+        "chars": 33325,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "architect-35b-q6_galaxy.html",
+        "size": 8809,
+        "chars": 8809,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "architect-35b-q6_ocean.html",
+        "size": 14477,
+        "chars": 14477,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "ocean"
+      }
+    },
+    "coding-coder-27b-q6": {
+      "breakout": {
+        "file": "coding-coder-27b-q6_breakout.html",
+        "size": 22018,
+        "chars": 21965,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "coding-coder-27b-q6_flight.html",
+        "size": 26861,
+        "chars": 26859,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "coding-coder-27b-q6_fps.html",
+        "size": 27312,
+        "chars": 27312,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "coding-coder-27b-q6_galaxy.html",
+        "size": 10479,
+        "chars": 10479,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "coding-coder-27b-q6_ocean.html",
+        "size": 5574,
+        "chars": 5534,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "coding-coder-27b-q6",
+        "prompt": "ocean"
+      }
+    },
+    "coding-coder-27b-q8": {
+      "breakout": {
+        "file": "coding-coder-27b-q8_breakout.html",
+        "size": 22578,
+        "chars": 22550,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "coding-coder-27b-q8",
+        "prompt": "breakout"
+      },
+      "galaxy": {
+        "file": "coding-coder-27b-q8_galaxy.html",
+        "size": 10883,
+        "chars": 10883,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "coding-coder-27b-q8",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "coding-coder-27b-q8_ocean.html",
+        "size": 12292,
+        "chars": 12292,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 6,
+        "script_close_count": 6,
+        "fenced": false,
+        "model": "coding-coder-27b-q8",
+        "prompt": "ocean"
+      }
+    },
+    "nex-n2-mini-q6": {
+      "breakout": {
+        "file": "nex-n2-mini-q6_breakout.html",
+        "size": 25183,
+        "chars": 25183,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "nex-n2-mini-q6_flight.html",
+        "size": 46680,
+        "chars": 46651,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "nex-n2-mini-q6_fps.html",
+        "size": 48843,
+        "chars": 48840,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "nex-n2-mini-q6_galaxy.html",
+        "size": 25844,
+        "chars": 25843,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 6,
+        "script_close_count": 4,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "nex-n2-mini-q6_ocean.html",
+        "size": 23577,
+        "chars": 23577,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "nex-n2-mini-q6",
+        "prompt": "ocean"
+      }
+    },
+    "ornith-35b-q6-100k": {
+      "breakout": {
+        "file": "ornith-35b-q6-100k_breakout.html",
+        "size": 32517,
+        "chars": 32455,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "ornith-35b-q6-100k_flight.html",
+        "size": 40329,
+        "chars": 40305,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "ornith-35b-q6-100k_fps.html",
+        "size": 38343,
+        "chars": 38343,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "ornith-35b-q6-100k_galaxy.html",
+        "size": 12339,
+        "chars": 12267,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "ornith-35b-q6-100k_ocean.html",
+        "size": 9584,
+        "chars": 9240,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "ocean"
+      }
+    },
+    "ornith-35b-q6": {
+      "breakout": {
+        "file": "ornith-35b-q6_breakout.html",
+        "size": 24561,
+        "chars": 24527,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "ornith-35b-q6_flight.html",
+        "size": 46359,
+        "chars": 46357,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "ornith-35b-q6_fps.html",
+        "size": 32603,
+        "chars": 32603,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "ornith-35b-q6_galaxy.html",
+        "size": 11457,
+        "chars": 11457,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "ornith-35b-q6_ocean.html",
+        "size": 14662,
+        "chars": 14661,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 6,
+        "script_close_count": 6,
+        "fenced": false,
+        "model": "ornith-35b-q6",
+        "prompt": "ocean"
+      }
+    },
+    "q8-architect-35b": {
+      "breakout": {
+        "file": "q8-architect-35b_breakout.html",
+        "size": 19680,
+        "chars": 19662,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "q8-architect-35b_flight.html",
+        "size": 22154,
+        "chars": 22152,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "q8-architect-35b_fps.html",
+        "size": 18340,
+        "chars": 18340,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "q8-architect-35b_galaxy.html",
+        "size": 6507,
+        "chars": 6507,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "q8-architect-35b_ocean.html",
+        "size": 14419,
+        "chars": 14419,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 6,
+        "script_close_count": 6,
+        "fenced": false,
+        "model": "q8-architect-35b",
+        "prompt": "ocean"
+      }
+    },
+    "q8-reasoning-27b": {
+      "galaxy": {
+        "file": "q8-reasoning-27b_galaxy.html",
+        "size": 12552,
+        "chars": 12552,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "q8-reasoning-27b",
+        "prompt": "galaxy"
+      }
+    },
+    "qwen36-35b-q6": {
+      "breakout": {
+        "file": "qwen36-35b-q6_breakout.html",
+        "size": 24814,
+        "chars": 24758,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "qwen36-35b-q6_flight.html",
+        "size": 44064,
+        "chars": 44053,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "qwen36-35b-q6_fps.html",
+        "size": 28769,
+        "chars": 28755,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "qwen36-35b-q6_galaxy.html",
+        "size": 13813,
+        "chars": 13811,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "qwen36-35b-q6_ocean.html",
+        "size": 12866,
+        "chars": 12802,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "ocean"
+      }
+    },
+    "qwen36-35b-q8": {
+      "breakout": {
+        "file": "qwen36-35b-q8_breakout.html",
+        "size": 20507,
+        "chars": 20482,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "qwen36-35b-q8_flight.html",
+        "size": 34157,
+        "chars": 34131,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "qwen36-35b-q8_fps.html",
+        "size": 48060,
+        "chars": 48046,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "qwen36-35b-q8_galaxy.html",
+        "size": 7317,
+        "chars": 7317,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "qwen36-35b-q8_ocean.html",
+        "size": 11885,
+        "chars": 11885,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 6,
+        "script_close_count": 6,
+        "fenced": false,
+        "model": "qwen36-35b-q8",
+        "prompt": "ocean"
+      }
+    },
+    "reasoning-27b-q6": {
+      "breakout": {
+        "file": "reasoning-27b-q6_breakout.html",
+        "size": 20016,
+        "chars": 19993,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "reasoning-27b-q6_flight.html",
+        "size": 31623,
+        "chars": 31622,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "reasoning-27b-q6_fps.html",
+        "size": 29062,
+        "chars": 29062,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "reasoning-27b-q6_galaxy.html",
+        "size": 10244,
+        "chars": 10240,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "reasoning-27b-q6_ocean.html",
+        "size": 11481,
+        "chars": 11481,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "reasoning-27b-q6",
+        "prompt": "ocean"
+      }
+    }
+  },
+  "summary": {
+    "files": 49,
+    "complete": 49,
+    "fenced": 0,
+    "total_chars": 1126488
+  }
+}

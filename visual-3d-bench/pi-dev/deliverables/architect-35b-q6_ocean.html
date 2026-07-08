@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Ocean - Gerstner Waves</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { overflow: hidden; background: #000; }
+canvas { display: block; }
+#info {
+  position: absolute; top: 10px; left: 10px; color: #fff;
+  font-family: 'Courier New', monospace; font-size: 12px;
+  background: rgba(0,0,0,0.5); padding: 8px 12px; border-radius: 4px;
+  pointer-events: none; z-index: 10;
+}
+</style>
+</head>
+<body>
+<div id="info">🌊 3D Ocean — Gerstner Waves<br>Click & drag to orbit, scroll to zoom</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ============================================================
+// Scene Setup
+// ============================================================
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 30, 80);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.2;
+document.body.appendChild(renderer.domElement);
+
+// ============================================================
+// Orbit Controls
+// ============================================================
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.maxPolarAngle = Math.PI * 0.48;
+controls.minPolarAngle = 0.1;
+controls.minDistance = 15;
+controls.maxDistance = 300;
+controls.target.set(0, 0, 0);
+
+// ============================================================
+// Skybox - Dynamic Gradient
+// ============================================================
+const skyUniforms = {
+  uTime: { value: 0 },
+  uSunDir: { value: new THREE.Vector3(0.5, 0.4, 0.3).normalize() },
+  uSunColor: { value: new THREE.Color(1.0, 0.95, 0.7) },
+  uZenithColor: { value: new THREE.Color(0.1, 0.2, 0.5) },
+  uHorizonColor: { value: new THREE.Color(0.4, 0.55, 0.7) },
+  uHorizonGlow: { value: new THREE.Color(0.9, 0.6, 0.3) }
+};
+
+const skyMaterial = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: skyUniforms,
+  vertexShader: `
+    varying vec3 vWorldPos;
+    void main() {
+      vWorldPos = position;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uSunDir;
+    uniform vec3 uSunColor;
+    uniform vec3 uZenithColor;
+    uniform vec3 uHorizonColor;
+    uniform vec3 uHorizonGlow;
+    varying vec3 vWorldPos;
+
+    void main() {
+      vec3 dir = normalize(vWorldPos);
+      float y = dir.y * 0.5 + 0.5; // 0 = horizon, 1 = zenith
+
+      // Sky gradient
+      vec3 skyColor = mix(uHorizonColor, uZenithColor, pow(y, 0.6));
+
+      // Horizon glow
+      float horizonGlow = exp(-8.0 * (dir.y * dir.y));
+      skyColor = mix(skyColor, uHorizonGlow * 0.5, horizonGlow * 0.3);
+
+      // Sun disc
+      float sunDot = max(dot(dir, uSunDir), 0.0);
+      float sunDisc = smoothstep(0.997, 0.999, sunDot);
+      vec3 sunColor = uSunColor * 3.0;
+      skyColor = mix(skyColor, sunColor, sunDisc);
+
+      // Sun glow / halo
+      float sunGlow = pow(sunDot, 64.0) * 0.8;
+      float sunGlow2 = pow(sunDot, 8.0) * 0.15;
+      skyColor += uSunColor * (sunGlow + sunGlow2);
+
+      // Sun reflection on horizon (glittering path)
+      vec3 sunReflection = normalize(uSunDir - dir * (dir.y + 1.0));
+      float horizonSun = smoothstep(0.01, 0.0, abs(dir.x - sunReflection.x)) * smoothstep(0.05, 0.0, dir.y);
+      horizonSun *= smoothstep(0.0, 0.15, sunDot);
+      skyColor += uSunColor * horizonSun * 0.4;
+
+      gl_FragColor = vec4(skyColor, 1.0);
+    }
+  `
+});
+
+const skyGeo = new THREE.SphereGeometry(900, 32, 32);
+const sky = new THREE.Mesh(skyGeo, skyMaterial);
+scene.add(sky);
+
+// ============================================================
+// Sun Light
+// ============================================================
+const sunLight = new THREE.DirectionalLight(0xffeedd, 2.5);
+sunLight.position.copy(skyUniforms.uSunDir.value).multiplyScalar(200);
+scene.add(sunLight);
+
+const ambientLight = new THREE.AmbientLight(0x446688, 0.4);
+scene.add(ambientLight);
+
+// ============================================================
+// Ocean - Gerstner Waves
+// ============================================================
+
+// Gerstner wave parameters
+const waves = [
+  { steepness: 0.18, wavelength: 40.0, direction: 0.0, speed: 1.0, phase: 0.0 },
+  { steepness: 0.14, wavelength: 25.0, direction: 0.8, speed: 0.8, phase: 1.0 },
+  { steepness: 0.10, wavelength: 15.0, direction: 1.5, speed: 0.6, phase: 2.0 },
+  { steepness: 0.06, wavelength: 8.0,  direction: 2.2, speed: 0.5, phase: 3.0 },
+  { steepness: 0.04, wavelength: 5.0,  direction: 3.0, speed: 0.4, phase: 4.0 },
+  { steepness: 0.02, wavelength: 3.0,  direction: 4.1, speed: 0.3, phase: 5.0 },
+  { steepness: 0.01, wavelength: 1.5,  direction: 5.0, speed: 0.2, phase: 6.0 }
+];
+
+const oceanUniforms = {
+  uTime: { value: 0 },
+  uSunDir: { value: skyUniforms.uSunDir.value.clone() },
+  uSunColor: { value: new THREE.Color(1.0, 0.95, 0.7) },
+  uCameraPos: { value: camera.position.clone() },
+  uWaveData: { value: new Float32Array(waves.length * 4) }, // steepness, wavelength, direction, speed, phase
+  uFoamColor: { value: new THREE.Color(0.85, 0.92, 0.95) },
+  uDeepColor: { value: new THREE.Color(0.0, 0.02, 0.05) },
+  uShallowColor: { value: new THREE.Color(0.0, 0.15, 0.25) },
+  uSkyColor: { value: new THREE.Color(0.1, 0.2, 0.5) },
+  uHorizonGlow: { value: new THREE.Color(0.9, 0.6, 0.3) },
+  uFoamThreshold: { value: 0.15 },
+  uFoamIntensity: { value: 0.8 }
+};
+
+// Set wave data
+for (let i = 0; i < waves.length; i++) {
+  const idx = i * 4;
+  oceanUniforms.uWaveData.value[idx] = waves[i].steepness;
+  oceanUniforms.uWaveData.value[idx + 1] = waves[i].wavelength;
+  oceanUniforms.uWaveData.value[idx + 2] = waves[i].direction;
+  oceanUniforms.uWaveData.value[idx + 3] = waves[i].speed;
+}
+
+const oceanMaterial = new THREE.ShaderMaterial({
+  side: THREE.FrontSide,
+  uniforms: oceanUniforms,
+  vertexShader: `
+    uniform float uTime;
+    uniform vec4 uWaveData[${waves.length}]; // [steepness, wavelength, direction, speed, phase]
+
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying float vHeight;
+    varying float vFresnel;
+    varying float vFoam;
+
+    vec3 gerstnerWave(vec3 pos, float steepness, float wavelength, float direction, float speed, float phase) {
+      vec2 waveDir = vec2(cos(direction), sin(direction));
+      float k = 6.2831853 / wavelength;
+      float c = speed * 9.8 / k;
+      vec2 xy = pos.xz * k + waveDir * (uTime * c + phase);
+      float w = dot(xy, waveDir);
+      float cosW = cos(w);
+      float sinW = sin(w);
+      float A = steepness / k;
+
+      vec3 result = vec3(
+        A * waveDir.x * cosW,
+        A * sinW,
+        A * waveDir.y * cosW
+      );
+      return result;
+    }
+
+    vec3 gerstnerWaveJacobian(vec3 pos, float steepness, float wavelength, float direction, float speed, float phase) {
+      vec2 waveDir = vec2(cos(direction), sin(direction));
+      float k = 6.2831853 / wavelength;
+      float c = speed * 9.8 / k;
+      vec2 xy = pos.xz * k + waveDir * (uTime * c + phase);
+      float w = dot(xy, waveDir);
+      float cosW = cos(w);
+      float sinW = sin(w);
+      float A = steepness / k;
+      float sA = steepness * sinW;
+      float cA = steepness * cosW;
+
+      vec3 dx = vec3(
+        1.0 - A * waveDir.x * waveDir.x * cA,
+        A * waveDir.x * sinW,
+        -A * waveDir.x * waveDir.y * cA
+      );
+      vec3 dz = vec3(
+        -A * waveDir.x * waveDir.y * cA,
+        A * waveDir.y * sinW,
+        1.0 - A * waveDir.y * waveDir.y * cA
+      );
+      return cross(dz, dx);
+    }
+
+    void main() {
+      vec3 pos = position;
+      vec3 displaced = vec3(0.0);
+      vec3 normal = vec3(0.0, 1.0, 0.0);
+
+      for (int i = 0; i < ${waves.length}; i++) {
+        vec4 wData = uWaveData[i];
+        float steepness = wData.x;
+        float wavelength = wData.y;
+        float direction = wData.z;
+        float speed = wData.w;
+        float phase = 0.0; // phase is baked into time offset
+
+        displaced += gerstnerWave(pos, steepness, wavelength, direction, speed, phase);
+        normal += gerstnerWaveJacobian(pos, steepness, wavelength, direction, speed, phase);
+      }
+
+      vec3 finalPos = pos + displaced;
+      vHeight = displaced.y;
+      vWorldPos = finalPos;
+      vNormal = normalize(normal);
+
+      // View direction
+      vViewDir = normalize(cameraPosition - finalPos);
+
+      // Fresnel
+      vFresnel = pow(1.0 - max(dot(vViewDir, vNormal), 0.0), 3.0);
+
+      // Foam based on wave height and steepness
+      float foam = smoothstep(0.15, 0.45, vHeight) * smoothstep(0.0, 0.005, vHeight);
+      vFoam = foam;
+
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(finalPos, 1.0);
+    }
+  `,
+  fragmentShader: `
+    uniform vec3 uSunDir;
+    uniform vec3 uSunColor;
+    uniform vec3 uCameraPos;
+    uniform vec3 uFoamColor;
+    uniform vec3 uDeepColor;
+    uniform vec3 uShallowColor;
+    uniform vec3 uSkyColor;
+    uniform vec3 uHorizonGlow;
+    uniform float uFoamThreshold;
+    uniform float uFoamIntensity;
+    uniform float uTime;
+
+    varying vec3 vWorldPos;
+    varying vec3 vNormal;
+    varying vec3 vViewDir;
+    varying float vHeight;
+    varying float vFresnel;
+    varying float vFoam;
+
+    // Hash function for noise
+    float hash(vec2 p) {
+      p = fract(p * vec2(123.34, 456.21));
+      p += dot(p, p + 45.32);
+      return fract(p.x * p.y);
+    }
+
+    float noise(vec2 p) {
+      vec2 i = floor(p);
+      vec2 f = fract(p);
+      f = f * f * (3.0 - 2.0 * f);
+
+      float a = hash(i);
+      float b = hash(i + vec2(1.0, 0.0));
+      float c = hash(i + vec2(0.0, 1.0));
+      float d = hash(i + vec2(1.0, 1.0));
+
+      return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+    }
+
+    float fbm(vec2 p) {
+      float v = 0.0;
+      float a = 0.5;
+      vec2 shift = vec2(100.0);
+      for (int i = 0; i < 4; i++) {
+        v += a * noise(p);
+        p = p * 2.0 + shift;
+        a *= 0.5;
+      }
+      return v;
+    }
+
+    vec3 getSkyColor(vec3 dir) {
+      float y = dir.y * 0.5 + 0.5;
+      vec3 skyColor = mix(uHorizonGlow * 0.5, uSkyColor, pow(y, 0.6));
+
+      float sunDot = max(dot(dir, uSunDir), 0.0);
+      float sunDisc = smoothstep(0.997, 0.999, sunDot);
+      skyColor = mix(skyColor, uSunColor * 3.0, sunDisc);
+
+      float sunGlow = pow(sunDot, 64.0) * 0.8;
+      float sunGlow2 = pow(sunDot, 8.0) * 0.15;
+      skyColor += uSunColor * (sunGlow + sunGlow2);
+
+      return skyColor;
+    }
+
+    void main() {
+      vec3 N = normalize(vNormal);
+      vec3 V = normalize(vViewDir);
+
+      // Fresnel blend
+      float fresnel = vFresnel;
+      float fresnel2 = pow(fresnel, 2.0);
+
+      // Sky reflection
+      vec3 R = reflect(-V, N);
+      vec3 skyColor = getSkyColor(R);
+
+      // Subsurface scattering approximation
+      float sss = pow(max(dot(V, -N), 0.0), 3.0) * 0.15;
+
+      // Water color
+      float depth = smoothstep(0.0, 0.5, vHeight + 0.25);
+      vec3 waterColor = mix(uShallowColor, uDeepColor, depth);
+      waterColor += sss * uShallowColor * 0.5;
+
+      // Specular - sun reflection on water
+      vec3 H = normalize(V + uSunDir);
+      float spec = pow(max(dot(N, H), 0.0), 256.0) * 2.0;
+      vec3 sunSpec = uSunColor * spec;
+
+      // Secondary specular (larger, softer)
+      float spec2 = pow(max(dot(N, H), 0.0), 32.0) * 0.3;
+      vec3 sunSpec2 = uSunColor * spec2;
+
+      // Sun path on water - horizontal band of reflection
+      float sunPath = smoothstep(0.02, 0.0, abs(R.x - uSunDir.x));
+      float sunPathFade = smoothstep(0.0, 0.15, -R.y);
+      float sunPathGlitter = fbm(vec2(R.x * 20.0 + uTime * 0.5, R.z * 10.0));
+      sunPathGlitter = pow(sunPathGlitter, 0.5);
+      vec3 sunPathColor = uSunColor * sunPath * sunPathFade * sunPathGlitter * 0.8;
+
+      // Foam
+      vec3 foamColor = uFoamColor;
+      float foamNoise = fbm(vWorldPos.xz * 0.3 + uTime * 0.1);
+      foamNoise = smoothstep(0.3, 0.7, foamNoise);
+      foamColor = mix(foamColor, foamColor * 1.1, foamNoise * 0.3);
+
+      // Combine
+      vec3 color = mix(waterColor, skyColor, fresnel);
+      color = mix(color, foamColor, vFoam * uFoamIntensity);
+      color += sunSpec;
+      color += sunSpec2;
+      color += sunPathColor;
+      color += waterColor * sss;
+
+      // Depth fog
+      float fog = 1.0 - exp(-0.0003 * length(vWorldPos - uCameraPos));
+      fog = clamp(fog, 0.0, 1.0);
+      color = mix(color, uSkyColor, fog * 0.6);
+
+      // Tone mapping hint
+      color = color / (1.0 + color);
+
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `
+});
+
+// Create ocean plane with high tessellation
+const oceanGeo = new THREE.PlaneGeometry(500, 500, 512, 512);
+oceanGeo.rotateX(-Math.PI / 2);
+const ocean = new THREE.Mesh(oceanGeo, oceanMaterial);
+ocean.position.y = -0.5;
+scene.add(ocean);
+
+// ============================================================
+// Fog
+// ============================================================
+scene.fog = new THREE.FogExp2(0x1a2a3a, 0.002);
+
+// ============================================================
+// Animation
+// ============================================================
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const elapsed = clock.getElapsedTime();
+
+  // Update uniforms
+  oceanUniforms.uTime.value = elapsed;
+  skyUniforms.uTime.value = elapsed;
+  oceanUniforms.uCameraPos.value.copy(camera.position);
+
+  // Slowly rotate sun direction for variety
+  const sunAngle = elapsed * 0.01;
+  const sunDir = new THREE.Vector3(
+    Math.cos(sunAngle) * 0.5,
+    0.3 + Math.sin(sunAngle * 0.5) * 0.1,
+    Math.sin(sunAngle) * 0.3 + 0.3
+  ).normalize();
+  oceanUniforms.uSunDir.value.copy(sunDir);
+  skyUniforms.uSunDir.value.copy(sunDir);
+  sunLight.position.copy(sunDir).multiplyScalar(200);
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+animate();
+
+// ============================================================
+// Resize Handler
+// ============================================================
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body>
+</html>

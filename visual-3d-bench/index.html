@@ -3,484 +3,383 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MiniV Visual 3D Benchmark — Gallery</title>
+<title>🎮 MiniV Visual 3D Benchmark Gallery</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#010403; color:#c8d0e0; font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif; padding:20px; }
   .container { max-width:1400px; margin:0 auto; }
-  h1 { font-family:'JetBrains Mono',monospace; font-size:1.5em; color:#06b6d4; margin-bottom:8px; }
-  .subtitle { color:#64748b; font-size:.8em; margin-bottom:24px; font-family:'JetBrains Mono',monospace; }
+  h1 { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:1.55rem; color:#06b6d4; margin-bottom:8px; }
+  .subtitle { color:#94a3b8; font-size:.82rem; margin-bottom:20px; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .banner { background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(74,222,128,.08)); border:1px solid rgba(6,182,212,.22); border-radius:14px; padding:14px 16px; margin:0 0 20px; }
+  .banner strong { color:#4ade80; }
+  .summary { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+  .stat { min-width:90px; text-align:center; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:9px 12px; }
+  .stat .val { font-size:1.25rem; font-weight:800; color:#e2e8f0; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .stat .label { font-size:.62rem; color:#64748b; text-transform:uppercase; margin-top:2px; }
+  .links { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+  .button { display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid rgba(6,182,212,.35); color:#67e8f9; border-radius:10px; text-decoration:none; background:rgba(6,182,212,.08); font-size:.8rem; font-weight:700; }
+  .button:hover { border-color:rgba(6,182,212,.7); }
   .model-card { background:rgba(0,0,0,.55); border:1px solid rgba(6,182,212,.2); border-radius:12px; padding:16px; margin-bottom:16px; }
-  .model-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(6,182,212,.15); }
-  .model-name { font-family:'JetBrains Mono',monospace; font-weight:700; color:#06b6d4; }
-  .model-stats { display:flex; gap:16px; font-size:.7em; color:#94a3b8; font-family:'JetBrains Mono',monospace; }
-  .stat { text-align:center; }
-  .stat .val { font-size:1.2em; font-weight:700; color:#e2e8f0; }
-  .stat .label { font-size:.6em; color:#64748b; text-transform:uppercase; }
-  .prompt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
-  .prompt-tile { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:10px; text-decoration:none; color:inherit; transition:border-color .2s; }
-  .prompt-tile:hover { border-color:rgba(6,182,212,.5); }
-  .prompt-tile.complete { border-color:rgba(74,222,128,.3); }
-  .prompt-tile.truncated { border-color:rgba(239,68,68,.3); }
-  .prompt-tile.partial { border-color:rgba(251,146,60,.3); }
-  .prompt-name { font-size:.7em; font-weight:600; margin-bottom:4px; }
-  .prompt-quality { font-size:.6em; padding:2px 6px; border-radius:4px; display:inline-block; }
+  .model-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(6,182,212,.15); }
+  .model-name { font-family:'JetBrains Mono',ui-monospace,monospace; font-weight:800; color:#06b6d4; }
+  .model-stats { display:flex; gap:8px; }
+  .model-stats .stat { min-width:72px; padding:6px 8px; }
+  .model-stats .stat .val { font-size:1rem; }
+  .prompt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; }
+  .prompt-tile { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:10px; text-decoration:none; color:inherit; transition:border-color .2s, transform .2s; }
+  a.prompt-tile:hover { border-color:rgba(6,182,212,.55); transform:translateY(-1px); }
+  .prompt-tile.complete { border-color:rgba(74,222,128,.32); }
+  .prompt-tile.truncated { border-color:rgba(239,68,68,.35); }
+  .prompt-tile.missing { border-color:rgba(100,116,139,.22); opacity:.55; }
+  .prompt-name { font-size:.73rem; font-weight:700; margin-bottom:5px; }
+  .prompt-quality { font-size:.62rem; padding:2px 7px; border-radius:999px; display:inline-block; font-family:'JetBrains Mono',ui-monospace,monospace; }
   .q-complete { background:rgba(74,222,128,.15); color:#4ade80; }
-  .q-partial { background:rgba(251,146,60,.15); color:#fb923c; }
   .q-truncated { background:rgba(239,68,68,.15); color:#ef4444; }
-  .q-error { background:rgba(239,68,68,.15); color:#ef4444; }
-  .prompt-meta { font-size:.6em; color:#64748b; margin-top:4px; font-family:'JetBrains Mono',monospace; }
-  .footer { text-align:center; padding:20px 0; color:#64748b; font-size:.6em; font-family:'JetBrains Mono',monospace; }
-  .credit { color:#06b6d4; margin-top:8px; }
+  .q-missing { background:rgba(100,116,139,.15); color:#94a3b8; }
+  .prompt-meta { font-size:.62rem; color:#64748b; margin-top:5px; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .footer { text-align:center; padding:24px 0; color:#64748b; font-size:.65rem; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  @media (max-width:700px) { body { padding:12px; } .model-header { align-items:flex-start; flex-direction:column; } }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>🎮 MiniV Visual 3D Benchmark Gallery</h1>
-  <div class="subtitle">5 prompts × 11 models = 55 runs · Bench v2.2 · 2026-07-07</div>
-  
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px;">
-    <div class="stat"><div class="val">11</div><div class="label">Models</div></div>
-    <div class="stat"><div class="val">5</div><div class="label">Prompts</div></div>
-    <div class="stat"><div class="val">55</div><div class="label">Total Runs</div></div>
-    <div class="stat"><div class="val">49</div><div class="label">Complete</div></div>
-    <div class="stat"><div class="val">866K</div><div class="label">Total chars</div></div>
+  <div class="subtitle">Direct local-model generation · 5 visual prompts · repaired after wrapper/truncation audit</div>
+  <div class="banner"><strong>Remediation complete:</strong> 49/49 direct-model HTML deliverables now contain <code>&lt;/html&gt;</code> and 0 markdown fences. A second pi-dev harness benchmark is available below.</div>
+  <div class="links"><a class="button" href="pi-dev/">🧪 Open pi-dev harness benchmark</a><a class="button" href="checkpoint.json">📄 Original checkpoint</a></div>
+  <div class="summary">
+    <div class="stat"><div class="val">11</div><div class="label">Models</div></div><div class="stat"><div class="val">49</div><div class="label">Files</div></div><div class="stat"><div class="val">49</div><div class="label">Complete</div></div><div class="stat"><div class="val">0</div><div class="label">Fences</div></div><div class="stat"><div class="val">1.1M</div><div class="label">Total chars</div></div>
   </div>
-
-  <div class="model-card">
+  
+  <section class="model-card">
     <div class="model-header">
       <div class="model-name">architect-35b-q6</div>
       <div class="model-stats">
-        <div class="stat"><div class="val">70.2</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
         <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">94K</div><div class="label">chars</div></div>
+        <div class="stat"><div class="val">114K</div><div class="label">chars</div></div>
       </div>
     </div>
     <div class="prompt-grid">
       <a class="prompt-tile complete" href="deliverables/architect-35b-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">8821 chars · 71 tok/s · 50.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/architect-35b-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">23557 chars · 68 tok/s · 122.0s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/architect-35b-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">22291 chars · 70 tok/s · 117.9s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/architect-35b-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">14489 chars · 72 tok/s · 70.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/architect-35b-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25613 chars · 71 tok/s · 116.3s</div>
-      </a>
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">9K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">33K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">34K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">14K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">24K chars</div>
+        </a>
     </div>
-  </div>
-
-  <div class="model-card">
+  </section>
+  <section class="model-card">
     <div class="model-header">
       <div class="model-name">qwen36-35b-q6</div>
       <div class="model-stats">
-        <div class="stat"><div class="val">64.5</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">124K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">14K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">29K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">44K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">13K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">25K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">q8-architect-35b</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">81K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">7K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/q8-architect-35b_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">18K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/q8-architect-35b_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">22K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/q8-architect-35b_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">14K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/q8-architect-35b_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">20K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">qwen36-35b-q8</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">122K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">7K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">48K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">34K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">20K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">ornith-35b-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">130K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">33K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">46K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">15K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">25K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">ornith-35b-q6-100k</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">133K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">38K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">40K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">9K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">32K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">nex-n2-mini-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">170K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">26K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">49K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">47K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">24K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">25K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">coding-coder-27b-q6</div>
+      <div class="model-stats">
         <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
         <div class="stat"><div class="val">92K</div><div class="label">chars</div></div>
       </div>
     </div>
     <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">13823 chars · 66 tok/s · 76.4s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">21329 chars · 64 tok/s · 128.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">18583 chars · 63 tok/s · 131.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">12814 chars · 64 tok/s · 77.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25974 chars · 65 tok/s · 125.8s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">q8-architect-35b</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">61.5</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">84K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">6519 chars · 62 tok/s · 50.7s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">18825 chars · 62 tok/s · 133.2s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">19938 chars · 60 tok/s · 137.8s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">14431 chars · 62 tok/s · 82.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/q8-architect-35b_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25109 chars · 63 tok/s · 131.2s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">qwen36-35b-q8</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">56.4</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">86K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">7329 chars · 58 tok/s · 50.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">23079 chars · 56 tok/s · 148.3s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">18836 chars · 56 tok/s · 148.2s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">11897 chars · 56 tok/s · 72.9s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q8_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25817 chars · 57 tok/s · 144.8s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">ornith-35b-q6</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">53.4</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">90K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">11469 chars · 54 tok/s · 60.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">20648 chars · 53 tok/s · 155.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">18751 chars · 53 tok/s · 155.5s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">14673 chars · 54 tok/s · 99.0s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">24536 chars · 53 tok/s · 155.1s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">ornith-35b-q6-100k</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">53.3</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">88K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">12279 chars · 54 tok/s · 76.3s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">21653 chars · 53 tok/s · 155.8s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">20091 chars · 53 tok/s · 155.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">9252 chars · 54 tok/s · 104.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25382 chars · 53 tok/s · 155.5s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">nex-n2-mini-q6</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">48.9</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">123K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25843 chars · 49 tok/s · 153.4s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">23816 chars · 49 tok/s · 168.7s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25318 chars · 49 tok/s · 168.7s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">23577 chars · 49 tok/s · 166.5s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/nex-n2-mini-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">25191 chars · 49 tok/s · 168.2s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">reasoning-27b-q6</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">19.1</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">69K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
-      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">10252 chars · 19 tok/s · 195.4s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">10954 chars · 19 tok/s · 438.6s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">16410 chars · 19 tok/s · 435.2s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">11493 chars · 19 tok/s · 207.3s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">20005 chars · 20 tok/s · 385.3s</div>
-      </a>
-    </div>
-  </div>
-
-  <div class="model-card">
-    <div class="model-header">
-      <div class="model-name">coding-coder-27b-q6</div>
-      <div class="model-stats">
-        <div class="stat"><div class="val">18.8</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">100%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">77K</div><div class="label">chars</div></div>
-      </div>
-    </div>
-    <div class="prompt-grid">
       <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">10491 chars · 19 tok/s · 200.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_fps.html" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">21248 chars · 19 tok/s · 442.9s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_flight.html" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">17939 chars · 18 tok/s · 445.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">5546 chars · 18 tok/s · 345.9s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">21977 chars · 19 tok/s · 404.5s</div>
-      </a>
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">10K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">27K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">27K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">6K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">22K chars</div>
+        </a>
     </div>
-  </div>
-
-  <div class="model-card">
+  </section>
+  <section class="model-card">
     <div class="model-header">
       <div class="model-name">coding-coder-27b-q8</div>
       <div class="model-stats">
-        <div class="stat"><div class="val">8.4</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">60%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">3/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">45K</div><div class="label">chars</div></div>
+        <div class="stat"><div class="val">3/3</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">46K</div><div class="label">chars</div></div>
       </div>
     </div>
     <div class="prompt-grid">
       <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q8_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">10895 chars · 15 tok/s · 294.6s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q8_ocean.html" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">12304 chars · 13 tok/s · 352.7s</div>
-      </a>
-      <a class="prompt-tile complete" href="deliverables/coding-coder-27b-q8_breakout.html" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">22562 chars · 15 tok/s · 517.7s</div>
-      </a>
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars</div>
+        </a><div class="prompt-tile missing"><div class="prompt-name">FPS Raycasting Engine</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div><div class="prompt-tile missing"><div class="prompt-name">3D Flight Simulation</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q8_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/coding-coder-27b-q8_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">23K chars</div>
+        </a>
     </div>
-  </div>
-
-  <div class="model-card">
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">reasoning-27b-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">102K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">10K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">29K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">32K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars</div>
+        </a><a class="prompt-tile complete" href="deliverables/reasoning-27b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">20K chars</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
     <div class="model-header">
       <div class="model-name">q8-reasoning-27b</div>
       <div class="model-stats">
-        <div class="stat"><div class="val">1.5</div><div class="label">tok/s</div></div>
-        <div class="stat"><div class="val">20%</div><div class="label">quality</div></div>
-        <div class="stat"><div class="val">1/5</div><div class="label">complete</div></div>
-        <div class="stat"><div class="val">12K</div><div class="label">chars</div></div>
+        <div class="stat"><div class="val">1/1</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">13K</div><div class="label">chars</div></div>
       </div>
     </div>
     <div class="prompt-grid">
       <a class="prompt-tile complete" href="deliverables/q8-reasoning-27b_galaxy.html" target="_blank">
-        <div class="prompt-name">Three.js Particle Galaxy</div>
-        <span class="prompt-quality q-complete">COMPLETE</span>
-        <div class="prompt-meta">12564 chars · 8 tok/s · 599.6s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">FPS Raycasting Engine</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">3D Flight Simulation</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">Three.js Wave Ocean Shader</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
-      <a class="prompt-tile error" href="#" target="_blank">
-        <div class="prompt-name">Breakout Canvas Game</div>
-        <span class="prompt-quality q-error">ERROR</span>
-        <div class="prompt-meta">0 chars · 0 tok/s · 600.1s</div>
-      </a>
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">13K chars</div>
+        </a><div class="prompt-tile missing"><div class="prompt-name">FPS Raycasting Engine</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div><div class="prompt-tile missing"><div class="prompt-name">3D Flight Simulation</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div><div class="prompt-tile missing"><div class="prompt-name">Three.js Wave Ocean Shader</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div><div class="prompt-tile missing"><div class="prompt-name">Breakout Canvas Game</div><span class="prompt-quality q-missing">NO RUN</span><div class="prompt-meta">not generated</div></div>
     </div>
-  </div>
-
-  <div class="footer">
-    MiniV · Corsair AI Workstation 300 · AMD Ryzen AI MAX 385 · Radeon 8050S · Vulkan<br>
-    Bench v2.2 · 5 visual prompts × 11 models · 2026-07-07
-    <div class="credit">All benchmark orchestration, methodology design, and AI model evaluations directed by N30.</div>
-  </div>
+  </section>
+  <div class="footer">Generated by Hermes · MiniV local AI benchmark · 2026-07-07 21:23</div>
 </div>
 </body>
 </html>

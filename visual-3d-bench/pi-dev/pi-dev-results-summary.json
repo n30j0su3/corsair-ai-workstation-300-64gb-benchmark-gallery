@@ -1,0 +1,261 @@
+{
+  "generated_at": "2026-07-07T21:23:08.230007",
+  "type": "pi-dev-harness",
+  "harness": "pi v0.80.2 with read/write/bash tools",
+  "models": {
+    "architect-35b-q6": {
+      "breakout": {
+        "file": "architect-35b-q6_breakout.html",
+        "size": 24434,
+        "chars": 24404,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "architect-35b-q6_flight.html",
+        "size": 37450,
+        "chars": 37450,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "architect-35b-q6_fps.html",
+        "size": 41305,
+        "chars": 41305,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "architect-35b-q6_galaxy.html",
+        "size": 11906,
+        "chars": 11906,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "architect-35b-q6_ocean.html",
+        "size": 14901,
+        "chars": 14896,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "architect-35b-q6",
+        "prompt": "ocean"
+      }
+    },
+    "ornith-35b-q6-100k": {
+      "breakout": {
+        "file": "ornith-35b-q6-100k_breakout.html",
+        "size": 20081,
+        "chars": 20054,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "ornith-35b-q6-100k_flight.html",
+        "size": 51763,
+        "chars": 51739,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "ornith-35b-q6-100k_fps.html",
+        "size": 33882,
+        "chars": 33870,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "ornith-35b-q6-100k_galaxy.html",
+        "size": 11670,
+        "chars": 11670,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "ornith-35b-q6-100k_ocean.html",
+        "size": 10652,
+        "chars": 10648,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 5,
+        "script_close_count": 5,
+        "fenced": false,
+        "model": "ornith-35b-q6-100k",
+        "prompt": "ocean"
+      }
+    },
+    "qwen36-35b-q6": {
+      "breakout": {
+        "file": "qwen36-35b-q6_breakout.html",
+        "size": 20681,
+        "chars": 20677,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "breakout"
+      },
+      "flight": {
+        "file": "qwen36-35b-q6_flight.html",
+        "size": 50004,
+        "chars": 49995,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "flight"
+      },
+      "fps": {
+        "file": "qwen36-35b-q6_fps.html",
+        "size": 24093,
+        "chars": 24091,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 1,
+        "script_close_count": 1,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "fps"
+      },
+      "galaxy": {
+        "file": "qwen36-35b-q6_galaxy.html",
+        "size": 12427,
+        "chars": 12426,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "galaxy"
+      },
+      "ocean": {
+        "file": "qwen36-35b-q6_ocean.html",
+        "size": 10979,
+        "chars": 10854,
+        "has_html_close": true,
+        "has_script_open": true,
+        "script_open_count": 2,
+        "script_close_count": 2,
+        "fenced": false,
+        "model": "qwen36-35b-q6",
+        "prompt": "ocean"
+      }
+    }
+  },
+  "times": {
+    "architect-35b-q6_breakout": {
+      "seconds": 231,
+      "reported_size": 24434
+    },
+    "architect-35b-q6_flight": {
+      "seconds": 232,
+      "reported_size": 37450
+    },
+    "architect-35b-q6_fps": {
+      "seconds": 274,
+      "reported_size": 41305
+    },
+    "architect-35b-q6_galaxy": {
+      "seconds": 71,
+      "reported_size": 11906
+    },
+    "architect-35b-q6_ocean": {
+      "seconds": 91,
+      "reported_size": 14901
+    },
+    "qwen36-35b-q6_breakout": {
+      "seconds": 202,
+      "reported_size": 20681
+    },
+    "qwen36-35b-q6_flight": {
+      "seconds": 415,
+      "reported_size": 50004
+    },
+    "qwen36-35b-q6_fps": {
+      "seconds": 184,
+      "reported_size": 24093
+    },
+    "qwen36-35b-q6_galaxy": {
+      "seconds": 71,
+      "reported_size": 12427
+    },
+    "qwen36-35b-q6_ocean": {
+      "seconds": 74,
+      "reported_size": 10979
+    },
+    "ornith-35b-q6-100k_breakout": {
+      "seconds": 242,
+      "reported_size": 20081
+    },
+    "ornith-35b-q6-100k_flight": {
+      "seconds": 504,
+      "reported_size": 51763
+    },
+    "ornith-35b-q6-100k_fps": {
+      "seconds": 242,
+      "reported_size": 33882
+    },
+    "ornith-35b-q6-100k_galaxy": {
+      "seconds": 87,
+      "reported_size": 11670
+    },
+    "ornith-35b-q6-100k_ocean": {
+      "seconds": 84,
+      "reported_size": 10652
+    }
+  },
+  "summary": {
+    "files": 15,
+    "complete": 15,
+    "fenced": 0,
+    "total_chars": 375985
+  }
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧪 MiniV Visual 3D Benchmark — pi-dev Harness</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#010403; color:#c8d0e0; font-family:'Space Grotesk','Segoe UI',system-ui,sans-serif; padding:20px; }
+  .container { max-width:1400px; margin:0 auto; }
+  h1 { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:1.55rem; color:#06b6d4; margin-bottom:8px; }
+  .subtitle { color:#94a3b8; font-size:.82rem; margin-bottom:20px; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .banner { background:linear-gradient(135deg,rgba(6,182,212,.12),rgba(74,222,128,.08)); border:1px solid rgba(6,182,212,.22); border-radius:14px; padding:14px 16px; margin:0 0 20px; }
+  .banner strong { color:#4ade80; }
+  .summary { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+  .stat { min-width:90px; text-align:center; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.06); border-radius:10px; padding:9px 12px; }
+  .stat .val { font-size:1.25rem; font-weight:800; color:#e2e8f0; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .stat .label { font-size:.62rem; color:#64748b; text-transform:uppercase; margin-top:2px; }
+  .links { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:22px; }
+  .button { display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid rgba(6,182,212,.35); color:#67e8f9; border-radius:10px; text-decoration:none; background:rgba(6,182,212,.08); font-size:.8rem; font-weight:700; }
+  .button:hover { border-color:rgba(6,182,212,.7); }
+  .model-card { background:rgba(0,0,0,.55); border:1px solid rgba(6,182,212,.2); border-radius:12px; padding:16px; margin-bottom:16px; }
+  .model-header { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:8px; border-bottom:1px solid rgba(6,182,212,.15); }
+  .model-name { font-family:'JetBrains Mono',ui-monospace,monospace; font-weight:800; color:#06b6d4; }
+  .model-stats { display:flex; gap:8px; }
+  .model-stats .stat { min-width:72px; padding:6px 8px; }
+  .model-stats .stat .val { font-size:1rem; }
+  .prompt-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:8px; }
+  .prompt-tile { background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.06); border-radius:8px; padding:10px; text-decoration:none; color:inherit; transition:border-color .2s, transform .2s; }
+  a.prompt-tile:hover { border-color:rgba(6,182,212,.55); transform:translateY(-1px); }
+  .prompt-tile.complete { border-color:rgba(74,222,128,.32); }
+  .prompt-tile.truncated { border-color:rgba(239,68,68,.35); }
+  .prompt-tile.missing { border-color:rgba(100,116,139,.22); opacity:.55; }
+  .prompt-name { font-size:.73rem; font-weight:700; margin-bottom:5px; }
+  .prompt-quality { font-size:.62rem; padding:2px 7px; border-radius:999px; display:inline-block; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .q-complete { background:rgba(74,222,128,.15); color:#4ade80; }
+  .q-truncated { background:rgba(239,68,68,.15); color:#ef4444; }
+  .q-missing { background:rgba(100,116,139,.15); color:#94a3b8; }
+  .prompt-meta { font-size:.62rem; color:#64748b; margin-top:5px; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  .footer { text-align:center; padding:24px 0; color:#64748b; font-size:.65rem; font-family:'JetBrains Mono',ui-monospace,monospace; }
+  @media (max-width:700px) { body { padding:12px; } .model-header { align-items:flex-start; flex-direction:column; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🧪 MiniV Visual 3D Benchmark — pi-dev Harness</h1>
+  <div class="subtitle">Pi v0.80.2 · read/write/bash tools · 3 top models × 5 prompts</div>
+  <div class="banner"><strong>pi-dev harness:</strong> Same visual prompts, but routed through Pi v0.80.2 with read/write/bash tools. This evaluates whether a specialized agent harness improves artifact discipline.</div>
+  <div class="links"><a class="button" href="../">← Back to direct benchmark</a><a class="button" href="bench-results.log">📄 Raw bench log</a></div>
+  <div class="summary">
+    <div class="stat"><div class="val">3</div><div class="label">Models</div></div><div class="stat"><div class="val">15</div><div class="label">Runs</div></div><div class="stat"><div class="val">15</div><div class="label">Complete</div></div><div class="stat"><div class="val">0</div><div class="label">Fences</div></div><div class="stat"><div class="val">376K</div><div class="label">Total chars</div></div>
+  </div>
+  
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">architect-35b-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">130K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/architect-35b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars · 71s</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">41K chars · 274s</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">37K chars · 232s</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">15K chars · 91s</div>
+        </a><a class="prompt-tile complete" href="deliverables/architect-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">24K chars · 231s</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">qwen36-35b-q6</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">118K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars · 71s</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">24K chars · 184s</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">50K chars · 415s</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars · 74s</div>
+        </a><a class="prompt-tile complete" href="deliverables/qwen36-35b-q6_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">21K chars · 202s</div>
+        </a>
+    </div>
+  </section>
+  <section class="model-card">
+    <div class="model-header">
+      <div class="model-name">ornith-35b-q6-100k</div>
+      <div class="model-stats">
+        <div class="stat"><div class="val">5/5</div><div class="label">complete</div></div>
+        <div class="stat"><div class="val">128K</div><div class="label">chars</div></div>
+      </div>
+    </div>
+    <div class="prompt-grid">
+      <a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_galaxy.html" target="_blank">
+          <div class="prompt-name">Three.js Particle Galaxy</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">12K chars · 87s</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_fps.html" target="_blank">
+          <div class="prompt-name">FPS Raycasting Engine</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">34K chars · 242s</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_flight.html" target="_blank">
+          <div class="prompt-name">3D Flight Simulation</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">52K chars · 504s</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_ocean.html" target="_blank">
+          <div class="prompt-name">Three.js Wave Ocean Shader</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">11K chars · 84s</div>
+        </a><a class="prompt-tile complete" href="deliverables/ornith-35b-q6-100k_breakout.html" target="_blank">
+          <div class="prompt-name">Breakout Canvas Game</div>
+          <span class="prompt-quality q-complete">COMPLETE</span>
+          <div class="prompt-meta">20K chars · 242s</div>
+        </a>
+    </div>
+  </section>
+  <div class="footer">Generated by Hermes · MiniV local AI benchmark · 2026-07-07 21:23</div>
+</div>
+</body>
+</html>
