@@ -200,6 +200,23 @@
 </div>
 
 
+<div class="tier t0">
+  <div class="tier-label"><span class="icon">🚀</span> BEST-REAL TURBOQUANT + MTP VALIDATION <span class="count">July 08, 2026 · 8/8 PASS</span></div>
+  <div class="impact-hero">
+    <div class="impact-copy">
+      <div class="impact-kicker">Proven optimizations only · no DFlash mixed in</div>
+      <div class="impact-title">Architect-35B Q6 remains the strongest current MiniV production lane.</div>
+      <p>Top 35B Q6 MoE/MTP lanes were re-tested with the proven stack: TurboQuant <code>turbo4/turbo3</code>, MTP speculative decoding, <code>ubatch=1024</code>, flash attention, performance governor, swappiness=10, THP=always, adaptive timeouts, and separated llama-server timings.</p>
+      <div class="link-row"><a class="link-pill" href="best-real-bench/index.html">Open best-real validation</a><a class="link-pill" href="best-real-bench/results.json">Best-real JSON</a><a class="link-pill" href="data/best-real-tq-mtp-20260708.json">Data mirror</a></div>
+    </div>
+    <div class="impact-grid">
+      <div class="impact-card"><strong>PASS rate</strong><span>8/8 deterministic tasks passed across architect-35b-q6 and qwen36-35b-q6.</span></div>
+      <div class="impact-card"><strong>Architect short/medium</strong><span>76.3 decode tok/s average · 91.0% MTP acceptance · 3/3 PASS.</span></div>
+      <div class="impact-card"><strong>Architect deep context</strong><span>360.2 prefill tok/s · 49.4 decode tok/s · 91.9% MTP · PASS.</span></div>
+    </div>
+  </div>
+</div>
+
 <div class="tier t3">
   <div class="tier-label"><span class="icon">⚡</span> DFLASH PILOT UPDATE <span class="count">July 08, 2026</span></div>
   <div class="impact-hero">
@@ -207,7 +224,7 @@
       <div class="impact-kicker">Runtime pilot · measured negative</div>
       <div class="impact-title">DFlash activated, but was slower than baseline on MiniV Vulkan.</div>
       <p>Q8 DFlash drafters were tested against Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B using a separate llama.cpp DFlash Vulkan build. Prefill, decode, wall decode, and draft acceptance remain separated. Decision: do not promote DFlash to production MiniV yet.</p>
-      <div class="link-row"><a class="link-pill" href="dflash-bench/index.html">Open DFlash pilot report</a><a class="link-pill" href="dflash-bench/results.json">Public JSON dataset</a><a class="link-pill" href="dflash-bench/comparisons.csv">Comparison CSV</a></div>
+      <div class="link-row"><a class="link-pill" href="dflash-bench/index.html">Open DFlash pilot report</a><a class="link-pill" href="dflash-bench/turboquant-followup/index.html">TurboQuant follow-up appendix</a><a class="link-pill" href="dflash-bench/results.json">Public JSON dataset</a><a class="link-pill" href="dflash-bench/comparisons.csv">Comparison CSV</a></div>
     </div>
     <div class="impact-grid">
       <div class="impact-card"><strong>Best baseline tested</strong><span>Qwen3.6 35B-A3B Q6_K_XL: 51.07 decode tok/s</span></div>

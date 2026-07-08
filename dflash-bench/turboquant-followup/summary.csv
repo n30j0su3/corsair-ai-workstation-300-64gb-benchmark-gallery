@@ -1,0 +1,6 @@
+case_id,mode,n_max,status,load_sec,prefill_tps,decode_tps,wall_decode_tps,completion_tokens,draft_tokens_accepted,draft_tokens_generated,draft_acceptance_rate_pct
+baseline_tq,baseline,0,OK,74.391,93.653,9.347,9.109,256,,,
+dflash_tq_n2,dflash,2,OK,80.064,82.543,7.004,6.849,256,0,507,0.0
+dflash_tq_n4,dflash,4,OK,80.246,82.826,5.395,5.304,256,0,1010,0.0
+dflash_tq_n8,dflash,8,OK,78.123,77.333,2.421,2.402,256,0,2004,0.0
+dflash_tq_n12,dflash,12,OK,72.099,77.266,2.337,2.319,256,0,2982,0.0

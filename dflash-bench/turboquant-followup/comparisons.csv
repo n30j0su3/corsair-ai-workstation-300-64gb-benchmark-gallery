@@ -1,0 +1,5 @@
+case_id,n_max,baseline_decode_tps,dflash_decode_tps,delta_pct,draft_tokens_accepted,draft_tokens_generated,draft_acceptance_rate_pct
+dflash_tq_n2,2,9.347,7.004,-25.066,0,507,0.0
+dflash_tq_n4,4,9.347,5.395,-42.279,0,1010,0.0
+dflash_tq_n8,8,9.347,2.421,-74.096,0,2004,0.0
+dflash_tq_n12,12,9.347,2.337,-74.998,0,2982,0.0

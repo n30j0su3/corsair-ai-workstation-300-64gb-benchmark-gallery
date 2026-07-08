@@ -36,6 +36,7 @@ Public benchmark artifact for the Corsair AI Workstation 300 / MiniV benchmark g
 ## Files
 
 - `index.html` — human-readable public report.
+- `turboquant-followup/index.html` — follow-up appendix for the integrated TurboQuant+DFlash build.
 - `results.json` — sanitized structured dataset.
 - `summary.csv` — per-case metrics.
 - `comparisons.csv` — baseline vs DFlash comparison table.

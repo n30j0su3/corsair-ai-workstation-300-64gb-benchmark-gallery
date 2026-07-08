@@ -1,0 +1,133 @@
+{
+  "title": "MiniV TurboQuant + DFlash follow-up",
+  "date": "2026-07-08",
+  "run_id": "tq-dflash-qwen27b-20260708_162856",
+  "hardware": "Corsair AI Workstation 300 / MiniV, AMD Ryzen AI MAX 385, Radeon 8050S RADV Vulkan, 64GB UMA",
+  "build": "llama.cpp TurboQuant fork with DFlash experimental backport, version 9681 (8c2b1b3f8)",
+  "target": "Qwen/Qwopus3.6 27B Q6_K",
+  "drafter": "Qwen3.6-27B-DFlash Q8_0",
+  "kv_cache": "TurboQuant K=turbo4, V=turbo3",
+  "context_tokens": 8192,
+  "completion_cap": 256,
+  "decision": "Do not promote TurboQuant + DFlash on MiniV for this target/drafter pair. The integrated build runs, but DFlash acceptance was 0% across all tested n_max values and every DFlash run was slower than TurboQuant baseline.",
+  "methodology": [
+    "Same integrated binary for baseline and DFlash cases",
+    "Prefill/decode/wall/draft metrics kept separate",
+    "Greedy generation, single request, n_max sweep 2/4/8/12",
+    "No combined prefill+decode TPS used"
+  ],
+  "results": [
+    {
+      "case_id": "baseline_tq",
+      "mode": "baseline",
+      "n_max": 0,
+      "status": "OK",
+      "load_sec": 74.391,
+      "prefill_tps": 93.653,
+      "decode_tps": 9.347,
+      "wall_decode_tps": 9.109,
+      "completion_tokens": 256,
+      "draft_tokens_accepted": null,
+      "draft_tokens_generated": null,
+      "draft_acceptance_rate_pct": null
+    },
+    {
+      "case_id": "dflash_tq_n2",
+      "mode": "dflash",
+      "n_max": 2,
+      "status": "OK",
+      "load_sec": 80.064,
+      "prefill_tps": 82.543,
+      "decode_tps": 7.004,
+      "wall_decode_tps": 6.849,
+      "completion_tokens": 256,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 507,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n4",
+      "mode": "dflash",
+      "n_max": 4,
+      "status": "OK",
+      "load_sec": 80.246,
+      "prefill_tps": 82.826,
+      "decode_tps": 5.395,
+      "wall_decode_tps": 5.304,
+      "completion_tokens": 256,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 1010,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n8",
+      "mode": "dflash",
+      "n_max": 8,
+      "status": "OK",
+      "load_sec": 78.123,
+      "prefill_tps": 77.333,
+      "decode_tps": 2.421,
+      "wall_decode_tps": 2.402,
+      "completion_tokens": 256,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 2004,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n12",
+      "mode": "dflash",
+      "n_max": 12,
+      "status": "OK",
+      "load_sec": 72.099,
+      "prefill_tps": 77.266,
+      "decode_tps": 2.337,
+      "wall_decode_tps": 2.319,
+      "completion_tokens": 256,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 2982,
+      "draft_acceptance_rate_pct": 0.0
+    }
+  ],
+  "comparisons": [
+    {
+      "case_id": "dflash_tq_n2",
+      "n_max": 2,
+      "baseline_decode_tps": 9.347,
+      "dflash_decode_tps": 7.004,
+      "delta_pct": -25.066,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 507,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n4",
+      "n_max": 4,
+      "baseline_decode_tps": 9.347,
+      "dflash_decode_tps": 5.395,
+      "delta_pct": -42.279,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 1010,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n8",
+      "n_max": 8,
+      "baseline_decode_tps": 9.347,
+      "dflash_decode_tps": 2.421,
+      "delta_pct": -74.096,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 2004,
+      "draft_acceptance_rate_pct": 0.0
+    },
+    {
+      "case_id": "dflash_tq_n12",
+      "n_max": 12,
+      "baseline_decode_tps": 9.347,
+      "dflash_decode_tps": 2.337,
+      "delta_pct": -74.998,
+      "draft_tokens_accepted": 0,
+      "draft_tokens_generated": 2982,
+      "draft_acceptance_rate_pct": 0.0
+    }
+  ]
+}

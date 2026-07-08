@@ -1,0 +1,9 @@
+model,task,status,score,prefill_tps,decode_tps,thinking_tokens,mtp_accept_pct,total_elapsed_s,prompt_tokens,decode_tokens,finish_reason,detail
+architect-35b-q6,tool_call,PASS,1.0,210.0,80.5,53,90.0,3.0,151,182,stop,5/5 checks passed
+architect-35b-q6,coding_fix,PASS,1.0,235.5,75.3,200,92.7,8.0,156,551,stop,5/5 checks passed
+architect-35b-q6,context_heavy,PASS,1.0,413.4,73.0,862,90.4,26.8,366,1890,stop,6/6 checks passed
+qwen36-35b-q6,tool_call,PASS,1.0,214.4,72.8,86,92.8,3.8,151,218,stop,5/5 checks passed
+qwen36-35b-q6,coding_fix,PASS,1.0,250.8,66.9,548,90.4,20.6,156,1329,stop,5/5 checks passed
+qwen36-35b-q6,context_heavy,PASS,1.0,447.5,64.5,1816,88.5,62.5,366,3977,stop,6/6 checks passed
+architect-35b-q6,deep_context_retrieval,PASS,1.0,360.2,49.4,151,91.9,92.8,30831,348,stop,"needle found, 3/3 checks"
+qwen36-35b-q6,deep_context_retrieval,PASS,1.0,371.1,45.7,250,89.3,96.1,30831,589,stop,"needle found, 3/3 checks"

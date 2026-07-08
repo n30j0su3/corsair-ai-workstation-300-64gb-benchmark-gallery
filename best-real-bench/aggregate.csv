@@ -1,0 +1,5 @@
+model,scope,tasks_passed,tasks_total,avg_score,avg_prefill_tps,avg_decode_tps,avg_mtp_accept_pct,avg_elapsed_s
+architect-35b-q6,4-task full,4,4,1.0,304.8,69.5,91.2,32.6
+qwen36-35b-q6,4-task full,4,4,1.0,321.0,62.5,90.2,45.8
+architect-35b-q6,3-task short/medium,3,3,1.0,286.3,76.3,91.0,12.6
+qwen36-35b-q6,3-task short/medium,3,3,1.0,304.2,68.1,90.6,29.0

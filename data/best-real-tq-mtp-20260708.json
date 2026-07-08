@@ -1,0 +1,181 @@
+{
+  "title": "MiniV best-real TurboQuant+MTP validation",
+  "date": "2026-07-08",
+  "run_ids": [
+    "best-real-tq-mtp-20260708_164920",
+    "best-real-tq-mtp-deep-20260708_165507"
+  ],
+  "hardware": "Corsair AI Workstation 300 / MiniV, AMD Ryzen AI MAX 385, Radeon 8050S RADV Vulkan, 64GB UMA",
+  "methodology": "Bench v2.2 with separated llama-server timing metrics. Proven optimizations only: TurboQuant K=turbo4/V=turbo3, MTP draft, ubatch=1024, flash attention, OS governor=performance, swappiness=10, THP=always, adaptive timeouts.",
+  "decision": "Best production path remains TurboQuant+MTP, not DFlash. architect-35b-q6 is the stronger current best-real lane across these tasks.",
+  "rows": [
+    {
+      "model": "architect-35b-q6",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 210.0,
+      "decode_tps": 80.5,
+      "thinking_tokens": 53,
+      "mtp_accept_pct": 90.0,
+      "total_elapsed_s": 3.0,
+      "prompt_tokens": 151,
+      "decode_tokens": 182,
+      "finish_reason": "stop",
+      "detail": "5/5 checks passed"
+    },
+    {
+      "model": "architect-35b-q6",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 235.5,
+      "decode_tps": 75.3,
+      "thinking_tokens": 200,
+      "mtp_accept_pct": 92.7,
+      "total_elapsed_s": 8.0,
+      "prompt_tokens": 156,
+      "decode_tokens": 551,
+      "finish_reason": "stop",
+      "detail": "5/5 checks passed"
+    },
+    {
+      "model": "architect-35b-q6",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 413.4,
+      "decode_tps": 73.0,
+      "thinking_tokens": 862,
+      "mtp_accept_pct": 90.4,
+      "total_elapsed_s": 26.8,
+      "prompt_tokens": 366,
+      "decode_tokens": 1890,
+      "finish_reason": "stop",
+      "detail": "6/6 checks passed"
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 214.4,
+      "decode_tps": 72.8,
+      "thinking_tokens": 86,
+      "mtp_accept_pct": 92.8,
+      "total_elapsed_s": 3.8,
+      "prompt_tokens": 151,
+      "decode_tokens": 218,
+      "finish_reason": "stop",
+      "detail": "5/5 checks passed"
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 250.8,
+      "decode_tps": 66.9,
+      "thinking_tokens": 548,
+      "mtp_accept_pct": 90.4,
+      "total_elapsed_s": 20.6,
+      "prompt_tokens": 156,
+      "decode_tokens": 1329,
+      "finish_reason": "stop",
+      "detail": "5/5 checks passed"
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 447.5,
+      "decode_tps": 64.5,
+      "thinking_tokens": 1816,
+      "mtp_accept_pct": 88.5,
+      "total_elapsed_s": 62.5,
+      "prompt_tokens": 366,
+      "decode_tokens": 3977,
+      "finish_reason": "stop",
+      "detail": "6/6 checks passed"
+    },
+    {
+      "model": "architect-35b-q6",
+      "task": "deep_context_retrieval",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 360.2,
+      "decode_tps": 49.4,
+      "thinking_tokens": 151,
+      "mtp_accept_pct": 91.9,
+      "total_elapsed_s": 92.8,
+      "prompt_tokens": 30831,
+      "decode_tokens": 348,
+      "finish_reason": "stop",
+      "detail": "needle found, 3/3 checks"
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "task": "deep_context_retrieval",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 371.1,
+      "decode_tps": 45.7,
+      "thinking_tokens": 250,
+      "mtp_accept_pct": 89.3,
+      "total_elapsed_s": 96.1,
+      "prompt_tokens": 30831,
+      "decode_tokens": 589,
+      "finish_reason": "stop",
+      "detail": "needle found, 3/3 checks"
+    }
+  ],
+  "aggregate_full": [
+    {
+      "model": "architect-35b-q6",
+      "scope": "4-task full",
+      "tasks_passed": 4,
+      "tasks_total": 4,
+      "avg_score": 1.0,
+      "avg_prefill_tps": 304.8,
+      "avg_decode_tps": 69.5,
+      "avg_mtp_accept_pct": 91.2,
+      "avg_elapsed_s": 32.6
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "scope": "4-task full",
+      "tasks_passed": 4,
+      "tasks_total": 4,
+      "avg_score": 1.0,
+      "avg_prefill_tps": 321.0,
+      "avg_decode_tps": 62.5,
+      "avg_mtp_accept_pct": 90.2,
+      "avg_elapsed_s": 45.8
+    }
+  ],
+  "aggregate_core": [
+    {
+      "model": "architect-35b-q6",
+      "scope": "3-task short/medium",
+      "tasks_passed": 3,
+      "tasks_total": 3,
+      "avg_score": 1.0,
+      "avg_prefill_tps": 286.3,
+      "avg_decode_tps": 76.3,
+      "avg_mtp_accept_pct": 91.0,
+      "avg_elapsed_s": 12.6
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "scope": "3-task short/medium",
+      "tasks_passed": 3,
+      "tasks_total": 3,
+      "avg_score": 1.0,
+      "avg_prefill_tps": 304.2,
+      "avg_decode_tps": 68.1,
+      "avg_mtp_accept_pct": 90.6,
+      "avg_elapsed_s": 29.0
+    }
+  ]
+}

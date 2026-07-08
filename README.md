@@ -4,7 +4,17 @@
 
 Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>
 
-## Latest Update — 2026-07-07 (Bench v2.2)
+## Latest Update — 2026-07-08 (Best-real + DFlash follow-up)
+
+### What's New
+
+- **Best-real validation**: 2 top 35B Q6 MoE/MTP lanes re-tested with only proven optimizations (`turbo4/turbo3`, MTP, ubatch=1024, OS opts, adaptive timeouts)
+- **8/8 PASS** across short/medium agent tasks + deep-context retrieval addendum
+- **Architect short/medium agent throughput**: 76.3 decode tok/s avg, 91.0% MTP acceptance
+- **Architect deep-context retrieval**: 360.2 prefill tok/s, 49.4 decode tok/s, 91.9% MTP acceptance, PASS
+- **DFlash follow-up appendix**: integrated TurboQuant+DFlash build ran, but had 0.0% draft acceptance and remains not promoted
+
+## Bench v2.2 baseline — 2026-07-07
 
 ### What's New
 
@@ -58,7 +68,8 @@ Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-b
 
 - Public report: [`dflash-bench/index.html`](dflash-bench/index.html)
 - Dataset: [`dflash-bench/results.json`](dflash-bench/results.json), [`summary.csv`](dflash-bench/summary.csv), [`comparisons.csv`](dflash-bench/comparisons.csv)
-- Decision: DFlash is **not promoted** on MiniV yet. In the isolated Vulkan DFlash build, baseline was faster than DFlash on Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B.
+- TurboQuant follow-up appendix: [`dflash-bench/turboquant-followup/index.html`](dflash-bench/turboquant-followup/index.html), [`results.json`](dflash-bench/turboquant-followup/results.json)
+- Decision: DFlash is **not promoted** on MiniV yet. In the isolated Vulkan DFlash build, baseline was faster than DFlash on Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B. In the later TurboQuant+DFlash integrated follow-up, Qwen/Qwopus3.6 27B Q6 + DFlash Q8 had 0.0% draft acceptance and was also slower than TurboQuant baseline.
 - Methodology: load/prefill/decode/wall/draft-acceptance kept separate; no combined TPS.
 
 ## Scope
@@ -71,6 +82,8 @@ This public gallery mirrors the RTX 5060 Ti benchmark gallery structure/design, 
 
 ## Files
 
+- `best-real-bench/index.html` — **2026-07-08 best-real validation** for top 35B Q6 TurboQuant+MTP lanes
+- `data/best-real-tq-mtp-20260708.json` — sanitized best-real validation dataset
 - `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode)
 - `data/miniv-bench-v2.2-results.json` — **latest** benchmark results (21 models, separated metrics)
 - `data/all-local-evaluation-summary.json` — original May 2026 evaluation summary
