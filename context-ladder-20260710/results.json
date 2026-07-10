@@ -1,0 +1,1278 @@
+{
+  "title": "MiniV corrected long-context retrieval ladder",
+  "date": "2026-07-10",
+  "scope": "Public-safe metric artifact. No local paths, addresses, credentials, raw prompts, or model files are included.",
+  "methodology": {
+    "aliases_tested": 21,
+    "rows": 86,
+    "request_classes": [
+      16000,
+      30000,
+      60000,
+      100000,
+      120000
+    ],
+    "rule": "A visible PASS requires exact deterministic marker retrieval in message.content. PARTIAL means recovery only in hidden reasoning. Prompt-token counts are read from llama-server response usage, not estimated.",
+    "caveat": "This is a long-context retrieval envelope, not a general model-quality ranking and not a cross-model speed leaderboard."
+  },
+  "outcome": {
+    "status_counts": {
+      "PASS": 82,
+      "PARTIAL": 1,
+      "FAIL": 2,
+      "HTTP_ERROR": 1
+    },
+    "production_decision": "architect-35b-q6 remains the production default. It passed every tested class through the 120K request class with 117,814 observed prompt tokens.",
+    "routing_guardrail": "No global Q8 promotion follows from this experiment."
+  },
+  "models": [
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117813
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117813
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117814
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117813
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117813
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 4,
+        "PARTIAL": 1
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117814
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 4,
+        "FAIL": 1
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 110630
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 4,
+        "FAIL": 1
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 92021
+    },
+    {
+      "model": "gemma4-26b-q6",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 55153
+    },
+    {
+      "model": "gemma4-26b-q8",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 55153
+    },
+    {
+      "model": "nex-n2-mini-q6",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58739
+    },
+    {
+      "model": "ornith-35b-q6",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58741
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117816
+    },
+    {
+      "model": "ornith-35b-q8",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58741
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117816
+    },
+    {
+      "model": "q8-architect-35b",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58739
+    },
+    {
+      "model": "q8-reasoning-27b",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58739
+    },
+    {
+      "model": "qwen3-coder-next-q4",
+      "declared_context_tokens": 32768,
+      "rows": 2,
+      "status_counts": {
+        "PASS": 1,
+        "HTTP_ERROR": 1
+      },
+      "max_target_class_tokens": 30000,
+      "max_visible_pass_prompt_tokens": 17102
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117818
+    },
+    {
+      "model": "qwen36-35b-q8",
+      "declared_context_tokens": 65536,
+      "rows": 3,
+      "status_counts": {
+        "PASS": 3
+      },
+      "max_target_class_tokens": 60000,
+      "max_visible_pass_prompt_tokens": 58743
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "rows": 5,
+      "status_counts": {
+        "PASS": 5
+      },
+      "max_target_class_tokens": 120000,
+      "max_visible_pass_prompt_tokens": 117814
+    }
+  ],
+  "rows": [
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15663,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 514.8799754062056,
+      "decode_tps": 42.90542167210056,
+      "elapsed_s": 41.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29332,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 397.7428223729727,
+      "decode_tps": 39.09676547196224,
+      "elapsed_s": 87.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58738,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 267.24388311315073,
+      "decode_tps": 32.58632119513059,
+      "elapsed_s": 236.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98012,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 184.00269934216922,
+      "decode_tps": 26.283668019232568,
+      "elapsed_s": 555.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117813,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 159.07856423362642,
+      "decode_tps": 24.230045581756887,
+      "elapsed_s": 765.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15663,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 513.6563457694597,
+      "decode_tps": 37.835487428372744,
+      "elapsed_s": 43.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29332,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 397.63662176585876,
+      "decode_tps": 34.84937730529469,
+      "elapsed_s": 88.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58738,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 267.3745425895249,
+      "decode_tps": 29.706407619076277,
+      "elapsed_s": 240.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98012,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 184.29880931635992,
+      "decode_tps": 24.376329438388332,
+      "elapsed_s": 557.2,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "agentworld-35b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117813,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 159.0300539179723,
+      "decode_tps": 22.37040391969388,
+      "elapsed_s": 791.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 475.13310339447173,
+      "decode_tps": 60.53380556541652,
+      "elapsed_s": 36.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 372.92323642006363,
+      "decode_tps": 53.2142024612969,
+      "elapsed_s": 83.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 251.4573551218563,
+      "decode_tps": 40.43446365360969,
+      "elapsed_s": 239.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98013,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 173.29857166236718,
+      "decode_tps": 30.030167391335045,
+      "elapsed_s": 575.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "architect-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117814,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 149.47370791662453,
+      "decode_tps": 26.60031271098803,
+      "elapsed_s": 795.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15663,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 126.74250102418428,
+      "decode_tps": 16.96079810618966,
+      "elapsed_s": 137.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29332,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 111.11835330894282,
+      "decode_tps": 15.082697068109134,
+      "elapsed_s": 280.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58738,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 85.30442385778552,
+      "decode_tps": 12.023893208506069,
+      "elapsed_s": 707.6,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98012,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 64.89942418798175,
+      "decode_tps": 9.59705590413805,
+      "elapsed_s": 1535.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117813,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 57.87394354682971,
+      "decode_tps": 8.557384109814151,
+      "elapsed_s": 2064.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15663,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 146.06822853202942,
+      "decode_tps": 13.290261506013415,
+      "elapsed_s": 131.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29332,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 124.84325334158956,
+      "decode_tps": 11.93385591884039,
+      "elapsed_s": 255.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58738,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 93.40778858829411,
+      "decode_tps": 10.076524002280173,
+      "elapsed_s": 645.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98012,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 69.32849766602253,
+      "decode_tps": 8.434983166893856,
+      "elapsed_s": 1442.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "coding-coder-27b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117813,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 61.94499461276274,
+      "decode_tps": 7.146196648797138,
+      "elapsed_s": 1935.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 438.846253476184,
+      "decode_tps": 38.754978488306946,
+      "elapsed_s": 78.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 372.9630859292701,
+      "decode_tps": 35.05546146067679,
+      "elapsed_s": 100.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 277.7509770097909,
+      "decode_tps": 25.071431664657155,
+      "elapsed_s": 240.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98013,
+      "status": "PARTIAL",
+      "visible_retrieval": false,
+      "prefill_tps": 205.15182359151385,
+      "decode_tps": 18.603141679807415,
+      "elapsed_s": 561.0,
+      "note": "Marker recovered only in internal reasoning, not visible answer."
+    },
+    {
+      "model": "fast-code-9b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117814,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 181.05676490014704,
+      "decode_tps": 16.38449253375122,
+      "elapsed_s": 698.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 14717,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 252.9049311340577,
+      "decode_tps": 14.374915771977896,
+      "elapsed_s": 59.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 27547,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 202.18252840954995,
+      "decode_tps": 13.761268414641329,
+      "elapsed_s": 138.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 55153,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 141.94557966867444,
+      "decode_tps": 12.293276266305801,
+      "elapsed_s": 390.6,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 92021,
+      "status": "FAIL",
+      "visible_retrieval": false,
+      "prefill_tps": 101.41840445009535,
+      "decode_tps": 11.642334188213301,
+      "elapsed_s": 908.6,
+      "note": "Returned placeholder instead of the exact marker."
+    },
+    {
+      "model": "gemma4-12b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 110630,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 88.71655782104062,
+      "decode_tps": 10.517582363794276,
+      "elapsed_s": 1249.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 14717,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 267.4145673872082,
+      "decode_tps": 12.040310961097756,
+      "elapsed_s": 57.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 27547,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 211.45879290773246,
+      "decode_tps": 11.556455829145658,
+      "elapsed_s": 132.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 55153,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 146.70246790482733,
+      "decode_tps": 10.587392786766944,
+      "elapsed_s": 378.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 92021,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 103.81081240787161,
+      "decode_tps": 9.559677574136218,
+      "elapsed_s": 889.2,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-12b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 110630,
+      "status": "FAIL",
+      "visible_retrieval": false,
+      "prefill_tps": 90.59722625762276,
+      "decode_tps": 9.174196750789223,
+      "elapsed_s": 1223.3,
+      "note": "Returned placeholder instead of the exact marker."
+    },
+    {
+      "model": "gemma4-26b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 14717,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 516.912181513061,
+      "decode_tps": 30.99029487265571,
+      "elapsed_s": 29.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-26b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 27547,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 407.5335362469097,
+      "decode_tps": 28.458570013773947,
+      "elapsed_s": 68.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-26b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 55153,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 283.41462255165953,
+      "decode_tps": 23.66991638838735,
+      "elapsed_s": 195.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-26b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 14717,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 526.0498513820703,
+      "decode_tps": 29.27543303244694,
+      "elapsed_s": 28.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-26b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 27547,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 412.93093469494795,
+      "decode_tps": 26.935881826899248,
+      "elapsed_s": 67.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "gemma4-26b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 55153,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 286.47401023190497,
+      "decode_tps": 23.141462836662,
+      "elapsed_s": 193.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "nex-n2-mini-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 500.7701290873755,
+      "decode_tps": 45.358179148234456,
+      "elapsed_s": 33.6,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "nex-n2-mini-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 390.95925624412547,
+      "decode_tps": 40.92704516251844,
+      "elapsed_s": 82.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "nex-n2-mini-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 265.667393038053,
+      "decode_tps": 33.95283748170284,
+      "elapsed_s": 225.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15666,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 494.8986988233093,
+      "decode_tps": 48.11578261155761,
+      "elapsed_s": 37.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29335,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 388.4970936198089,
+      "decode_tps": 43.403030583729425,
+      "elapsed_s": 80.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58741,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 264.2291108603803,
+      "decode_tps": 35.49433671100793,
+      "elapsed_s": 235.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15666,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 495.0274170489389,
+      "decode_tps": 48.007569193409495,
+      "elapsed_s": 37.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29335,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 389.21160189641915,
+      "decode_tps": 43.217467490081034,
+      "elapsed_s": 80.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58741,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 264.97380877638483,
+      "decode_tps": 35.68934310853719,
+      "elapsed_s": 234.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98015,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 182.89757830239463,
+      "decode_tps": 28.655388409619643,
+      "elapsed_s": 551.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q6-100k",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117816,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 157.8795696497627,
+      "decode_tps": 25.479917523719056,
+      "elapsed_s": 758.6,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15666,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 531.9382286137811,
+      "decode_tps": 41.88883971298952,
+      "elapsed_s": 46.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29335,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 410.9769782239537,
+      "decode_tps": 38.35276575643479,
+      "elapsed_s": 76.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58741,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 275.481640051513,
+      "decode_tps": 31.8270609566113,
+      "elapsed_s": 238.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15666,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 438.2054265417664,
+      "decode_tps": 21.3962564365521,
+      "elapsed_s": 51.9,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29335,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 374.9440292091336,
+      "decode_tps": 19.935998086144185,
+      "elapsed_s": 109.5,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58741,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 290.272035657821,
+      "decode_tps": 17.50713509491838,
+      "elapsed_s": 244.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98015,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 222.87591353436179,
+      "decode_tps": 14.662127634643094,
+      "elapsed_s": 522.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "ornith-9b-q8",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117816,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 198.58571963343482,
+      "decode_tps": 13.547347831650793,
+      "elapsed_s": 630.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-architect-35b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 522.7936216775121,
+      "decode_tps": 55.35747412917509,
+      "elapsed_s": 35.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-architect-35b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 402.0094631231159,
+      "decode_tps": 48.27614052695477,
+      "elapsed_s": 81.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-architect-35b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 267.9342136157751,
+      "decode_tps": 37.37354660506177,
+      "elapsed_s": 227.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-reasoning-27b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 135.353626774247,
+      "decode_tps": 7.199335251817545,
+      "elapsed_s": 150.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-reasoning-27b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 118.18753149240123,
+      "decode_tps": 6.8859493693890155,
+      "elapsed_s": 276.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "q8-reasoning-27b",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 92.25007745017763,
+      "decode_tps": 6.26190170420164,
+      "elapsed_s": 682.6,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen3-coder-next-q4",
+      "declared_context_tokens": 32768,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 17102,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 374.3844094265449,
+      "decode_tps": 44.12097587925432,
+      "elapsed_s": 46.3,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen3-coder-next-q4",
+      "declared_context_tokens": 32768,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": null,
+      "status": "HTTP_ERROR",
+      "visible_retrieval": false,
+      "prefill_tps": null,
+      "decode_tps": null,
+      "elapsed_s": 8.0,
+      "note": "Server/proxy read failure at this request class."
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15668,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 498.7215882595565,
+      "decode_tps": 52.93564547410157,
+      "elapsed_s": 42.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29337,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 389.07616803966005,
+      "decode_tps": 47.050889995705056,
+      "elapsed_s": 90.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58743,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 261.82541334307786,
+      "decode_tps": 36.67017532662649,
+      "elapsed_s": 249.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98017,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 179.61321910991472,
+      "decode_tps": 27.219736735953468,
+      "elapsed_s": 561.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117818,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 154.63693790350945,
+      "decode_tps": 23.418157461644526,
+      "elapsed_s": 788.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15668,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 497.5848966914288,
+      "decode_tps": 50.988425381513515,
+      "elapsed_s": 43.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29337,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 389.0573232221866,
+      "decode_tps": 44.41816491848937,
+      "elapsed_s": 80.0,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "qwen36-35b-q8",
+      "declared_context_tokens": 65536,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58743,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 262.70124979096295,
+      "decode_tps": 34.13567065785698,
+      "elapsed_s": 243.8,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 16000,
+      "observed_prompt_tokens": 15664,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 131.22786116279948,
+      "decode_tps": 17.179378341517936,
+      "elapsed_s": 134.1,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 30000,
+      "observed_prompt_tokens": 29333,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 114.76606815193182,
+      "decode_tps": 15.07729078128554,
+      "elapsed_s": 272.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 60000,
+      "observed_prompt_tokens": 58739,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 88.7098635888663,
+      "decode_tps": 11.621114134090673,
+      "elapsed_s": 686.7,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 100000,
+      "observed_prompt_tokens": 98013,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 67.8673283880431,
+      "decode_tps": 9.0626138468739,
+      "elapsed_s": 1472.4,
+      "note": "Exact marker recovered in visible answer."
+    },
+    {
+      "model": "reasoning-27b-q6",
+      "declared_context_tokens": 131072,
+      "target_context_class_tokens": 120000,
+      "observed_prompt_tokens": 117814,
+      "status": "PASS",
+      "visible_retrieval": true,
+      "prefill_tps": 60.60105371710409,
+      "decode_tps": 8.240719303371375,
+      "elapsed_s": 1978.6,
+      "note": "Exact marker recovered in visible answer."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "algorithm": "sha256",
+  "files": {
+    "index.html": "1a19c30f7d241b80d8359a949a9155b00ed48ce4dfc654f2e01d0206d09978d4",
+    "README.md": "91dbfba063e4b42ef9ad1525339ee06c4fde5862a7ca67ba8f6f7c2a29ecde22",
+    "results.json": "fe493e694f32528f9d5444dd2e5ae82afa1276db943c75e26ba2c76dafd638f5"
+  }
+}

@@ -195,7 +195,7 @@
 </div>
 <div class="header">
   <h1><span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span></h1>
-  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 08, 2026 · Bench v2.2 + DFlash pilot</span></div>
+  <div class="subtitle">MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 10, 2026 · 120K context ladder + Bench v2.2</span></div>
   <div class="header-divider"></div>
 </div>
 
@@ -213,6 +213,23 @@
       <div class="impact-card"><strong>PASS rate</strong><span>8/8 deterministic tasks passed across architect-35b-q6 and qwen36-35b-q6.</span></div>
       <div class="impact-card"><strong>Architect short/medium</strong><span>76.3 decode tok/s average · 91.0% MTP acceptance · 3/3 PASS.</span></div>
       <div class="impact-card"><strong>Architect deep context</strong><span>360.2 prefill tok/s · 49.4 decode tok/s · 91.9% MTP · PASS.</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="tier t4">
+  <div class="tier-label"><span class="icon">🧭</span> CORRECTED 120K CONTEXT RETRIEVAL LADDER <span class="count">July 10, 2026 · 86 rows · 21 aliases</span></div>
+  <div class="impact-hero">
+    <div class="impact-copy">
+      <div class="impact-kicker">Token-accounted retrieval envelope · public-safe evidence</div>
+      <div class="impact-title">Architect-35B Q6 retrieves exactly through the 120K request class.</div>
+      <p>The corrected ladder records authoritative server-reported input tokens instead of relying on client estimates. <code>architect-35b-q6</code> passed every class through 120K, reaching <code>117,814</code> observed prompt tokens. The result reinforces the current TurboQuant + MTP production profile; it does not justify a global Q8 promotion.</p>
+      <div class="link-row"><a class="link-pill" href="context-ladder-20260710/index.html">Open 120K context report</a><a class="link-pill" href="context-ladder-20260710/results.json">Public JSON dataset</a><a class="link-pill" href="context-ladder-20260710/SHA256SUMS.json">Integrity manifest</a></div>
+    </div>
+    <div class="impact-grid">
+      <div class="impact-card"><strong>Visible retrieval PASS</strong><span>82 exact visible-answer passes. PARTIAL and non-pass outcomes remain explicit rather than being hidden inside a single score.</span></div>
+      <div class="impact-card"><strong>Stable default envelope</strong><span>131K configured context · 120K request class · 117.8K observed prompt tokens on architect’s largest visible PASS.</span></div>
+      <div class="impact-card"><strong>Method discipline</strong><span>Prefill and decode stay separate. This ladder is a retrieval probe—not a generic quality or speed leaderboard.</span></div>
     </div>
   </div>
 </div>
@@ -601,7 +618,7 @@ const PAGE_TEXT={
     'hero.title.rtx':'<span class="t">RTX</span><span class="d">_</span><span class="l">5060Ti</span> <span class="d">::</span> <span class="t">TRUST</span><span class="d">_</span><span class="l">GATES</span>',
     'hero.subtitle.rtx':'Vector RTX 5060 Ti CUDA · all-local trust gates · Jackrong comparison frame · <span>Updated May 29, 2026</span>',
     'hero.title.miniv':'<span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span>',
-    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 08, 2026 · Bench v2.2 + DFlash pilot</span>',
+    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · all-local trust gates · <span>Updated July 10, 2026 · 120K context ladder + Bench v2.2</span>',
     'section.creditLabel':'<span class="icon">🧠</span> ORCHESTRATION CREDIT <span class="count">N30</span>',
     'section.metricsLabel.rtx':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">Vector RTX 5060 Ti CUDA</span>',
     'section.metricsLabel.miniv':'<span class="icon">📊</span> FINAL TRUST-GATE METRICS <span class="count">MiniV Vulkan UMA · Bench v2.2</span>',
@@ -637,7 +654,7 @@ const PAGE_TEXT={
     'hero.title.rtx':'<span class="t">RTX</span><span class="d">_</span><span class="l">5060Ti</span> <span class="d">::</span> <span class="t">GATES</span><span class="d">_</span><span class="l">CONFIANZA</span>',
     'hero.subtitle.rtx':'Vector RTX 5060 Ti CUDA · gates locales de confianza · marco comparativo Jackrong · <span>Actualizado 29 mayo 2026</span>',
     'hero.title.miniv':'<span class="t">CORSAIR</span><span class="d">_</span><span class="l">AI_WS_300</span> <span class="d">::</span> <span class="t">MINIV</span><span class="d">_</span><span class="l">VULKAN</span>',
-    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · gates locales de confianza · <span>Actualizado 07 julio 2026 · Bench v2.2</span>',
+    'hero.subtitle.miniv':'MiniV Vulkan UMA · Corsair AI Workstation 300 64GB · gates locales de confianza · <span>Actualizado 10 julio 2026 · ladder de contexto 120K + Bench v2.2</span>',
     'section.creditLabel':'<span class="icon">🧠</span> CRÉDITO DE ORQUESTACIÓN <span class="count">N30</span>',
     'section.metricsLabel.rtx':'<span class="icon">📊</span> MÉTRICAS FINALES DE CONFIANZA <span class="count">Vector RTX 5060 Ti CUDA</span>',
     'section.metricsLabel.miniv':'<span class="icon">📊</span> MÉTRICAS FINALES DE CONFIANZA <span class="count">MiniV Vulkan UMA · Bench v2.2</span>',
