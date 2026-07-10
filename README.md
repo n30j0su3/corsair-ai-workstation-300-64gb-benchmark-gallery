@@ -4,7 +4,16 @@
 
 Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>
 
-## Latest Update — 2026-07-08 (Best-real + DFlash follow-up)
+## Latest Update — 2026-07-10 (Corrected 120K Context Retrieval Ladder)
+
+### What's New
+
+- **Corrected long-context ladder**: 86 token-accounted retrieval rows across 21 registered aliases; public-safe data and browser report are in [`context-ladder-20260710/`](context-ladder-20260710/).
+- **Visible exact retrieval**: 82 PASS, 1 PARTIAL (recovered only in reasoning), 2 deterministic retrieval misses, and 1 server/proxy error—reported explicitly rather than folded into a generic score.
+- **Default verified through 120K class**: `architect-35b-q6` recovered the exact marker at every tested class, reaching **117,814 observed prompt tokens** in its largest visible PASS.
+- **Routing decision unchanged**: TurboQuant + MTP with `architect-35b-q6` remains the production default; the ladder does not justify a global Q8 promotion.
+
+## Previous Update — 2026-07-08 (Best-real + DFlash follow-up)
 
 ### What's New
 
@@ -82,6 +91,8 @@ This public gallery mirrors the RTX 5060 Ti benchmark gallery structure/design, 
 
 ## Files
 
+- `context-ladder-20260710/index.html` — **2026-07-10 corrected long-context retrieval envelope** (21 aliases, 86 rows, public-safe).
+- `context-ladder-20260710/results.json` — sanitized context-ladder metric dataset; no paths, IPs, credentials, raw prompts, or logs.
 - `best-real-bench/index.html` — **2026-07-08 best-real validation** for top 35B Q6 TurboQuant+MTP lanes
 - `data/best-real-tq-mtp-20260708.json` — sanitized best-real validation dataset
 - `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode)
