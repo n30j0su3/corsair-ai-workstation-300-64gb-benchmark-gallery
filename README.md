@@ -1,48 +1,14 @@
 # Corsair AI Workstation 300 64GB Benchmark Gallery
 
-> **FreakingJSON Agencia • MiniV Vulkan UMA benchmark gallery**
+> **FreakingJSON Agencia • MiniV Vulkan UMA benchmark gallery — fully local, zero cloud**
 
-Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>
+Public SPA: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>
 
-## Latest Update — 2026-07-10 (Corrected 120K Context Retrieval Ladder)
+---
 
-### What's New
+## What Is This?
 
-- **Corrected long-context ladder**: 86 token-accounted retrieval rows across 21 registered aliases; public-safe data and browser report are in [`context-ladder-20260710/`](context-ladder-20260710/).
-- **Visible exact retrieval**: 82 PASS, 1 PARTIAL (recovered only in reasoning), 2 deterministic retrieval misses, and 1 server/proxy error—reported explicitly rather than folded into a generic score.
-- **Default verified through 120K class**: `architect-35b-q6` recovered the exact marker at every tested class, reaching **117,814 observed prompt tokens** in its largest visible PASS.
-- **Routing decision unchanged**: TurboQuant + MTP with `architect-35b-q6` remains the production default; the ladder does not justify a global Q8 promotion.
-
-## Previous Update — 2026-07-08 (Best-real + DFlash follow-up)
-
-### What's New
-
-- **Best-real validation**: 2 top 35B Q6 MoE/MTP lanes re-tested with only proven optimizations (`turbo4/turbo3`, MTP, ubatch=1024, OS opts, adaptive timeouts)
-- **8/8 PASS** across short/medium agent tasks + deep-context retrieval addendum
-- **Architect short/medium agent throughput**: 76.3 decode tok/s avg, 91.0% MTP acceptance
-- **Architect deep-context retrieval**: 360.2 prefill tok/s, 49.4 decode tok/s, 91.9% MTP acceptance, PASS
-- **DFlash follow-up appendix**: integrated TurboQuant+DFlash build ran, but had 0.0% draft acceptance and remains not promoted
-
-## Bench v2.2 baseline — 2026-07-07
-
-### What's New
-
-- **21 models benchmarked** with separated prefill/decode/thinking/MTP metrics
-- **84 total runs** across 4 waves (Waves 1-4)
-- **OS-level optimizations**: CPU governor=performance, swappiness=10, THP=always, ubatch=1024
-- **Deep context retrieval solved**: 310s → 92s (3.4x faster) via ubatch fix + adaptive timeouts
-- **11 models with perfect score (1.00)** across all 4 tasks
-- **MTP confirmed**: 8 models with Multi-Token Prediction show 89-94% acceptance rate
-
-### Top 5 Models (by decode speed)
-
-| # | Model | Decode tok/s | Prefill tok/s | MTP% | Score |
-|---|---|---|---|---|---|
-| 1 | architect-35b-q6 | 71.2 | 320.3 | 90% | 1.00 |
-| 2 | qwen36-35b-q6 | 63.8 | 332.7 | 91% | 1.00 |
-| 3 | q8-architect-35b | 62.5 | 361.8 | 92% | 1.00 |
-| 4 | qwen36-35b-q8 | 54.4 | 338.6 | 89% | 1.00 |
-| 5 | ornith-35b-q6 | 52.8 | 328.2 | — | 1.00 |
+This gallery publishes reproducible, public-safe benchmark evidence from the **MiniV Vulkan UMA** stack — a local-first AI inference platform running on a Corsair AI Workstation 300 (64GB UMA, AMD Ryzen AI MAX 385, Radeon 8050S Graphics). All benchmarks are orchestrated and directed by **N30** with zero cloud dependency.
 
 ### Hardware
 
@@ -62,6 +28,79 @@ Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-b
 - **Adaptive timeouts** based on context size (not fixed 600s)
 - **No LLM-as-judge** — deterministic checkers only
 
+---
+
+## Report Index
+
+| Report | Date | Description |
+|--------|------|-------------|
+| [`best-real-bench/`](best-real-bench/index.html) | 2026-07-08 | Best-real TurboQuant+MTP validation — 8/8 PASS across top 35B Q6 lanes |
+| [`context-ladder-20260710/`](context-ladder-20260710/index.html) | 2026-07-10 | Corrected 120K context retrieval ladder — 86 rows, 21 aliases |
+| [`dflash-bench/`](dflash-bench/index.html) | 2026-07-08 | DFlash pilot — measured negative, not promoted |
+| [`dflash-bench/turboquant-followup/`](dflash-bench/turboquant-followup/index.html) | 2026-07-08 | TurboQuant + DFlash follow-up appendix |
+| [`visual-3d-bench/`](visual-3d-bench/index.html) | 2026-07-08 | Visual 3D benchmark — 11 models, 49 HTML deliverables, 0 runtime issues |
+| [`visual-3d-bench/pi-dev/`](visual-3d-bench/pi-dev/index.html) | 2026-07-08 | Pi-dev harness — 15 additional pi-agent-generated deliverables |
+| [`index.html`](index.html) | 2026-07-15 | Main SPA gallery with ES/EN toggle, dark/light mode |
+
+---
+
+## Latest Update — 2026-07-15 (Gallery Overhaul)
+
+### What's New
+
+- **Reference Context section** added at the top of the SPA — explains hardware, methodology, inference backend, and scope for new visitors.
+- **Report Index** added for quick navigation to all benchmark reports.
+- **Visual 3D Benchmark Gallery** now properly linked and discoverable from the main SPA.
+- **Full ES/EN i18n coverage** — all sections (best-real, context ladder, DFlash, visual 3D) now respond to the language toggle. Previously, 3 major sections were English-only.
+- **Anchor navigation** — every report section has a stable ID for direct linking.
+
+## Previous Update — 2026-07-10 (Corrected 120K Context Retrieval Ladder)
+
+- **Corrected long-context ladder**: 86 token-accounted retrieval rows across 21 registered aliases.
+- **Visible exact retrieval**: 82 PASS, 1 PARTIAL, 2 deterministic misses, 1 server error — reported explicitly.
+- **Default verified through 120K**: `architect-35b-q6` reached **117,814 observed prompt tokens**.
+- **Routing decision unchanged**: TurboQuant + MTP with `architect-35b-q6` remains production default.
+
+## Previous Update — 2026-07-08 (Best-real + DFlash + Visual 3D)
+
+### Best-real Validation
+
+- **8/8 PASS** across short/medium agent tasks + deep-context retrieval
+- **Architect short/medium**: 76.3 decode tok/s avg, 91.0% MTP acceptance
+- **Architect deep-context**: 360.2 prefill tok/s, 49.4 decode tok/s, 91.9% MTP
+
+### DFlash Pilot
+
+- Decision: **not promoted**. Baseline was faster than DFlash on all tested models.
+- TurboQuant+DFlash follow-up: 0.0% draft acceptance, also slower than baseline.
+
+### Visual 3D Benchmark
+
+- **11 models** generated **49 HTML deliverables** across 5 visual prompts
+- **Runtime gate green**: 49/49 complete, 0 markdown fences, 0 strict runtime issues
+- Prompts: Three.js Particle Galaxy, FPS Raycasting Engine, 3D Flight Simulation, Wave Ocean Shader, Breakout Canvas Game
+- **Pi-dev harness**: 15 additional pi-agent-generated deliverables verified
+- SHA256 integrity manifest: [`visual-3d-bench/manifest.json`](visual-3d-bench/manifest.json)
+
+## Bench v2.2 Baseline — 2026-07-07
+
+### Key Results
+
+- **21 models benchmarked** with separated prefill/decode/thinking/MTP metrics
+- **84 total runs** across 4 waves
+- **11 models with perfect score (1.00)**
+- **Deep context retrieval solved**: 310s → 92s (3.4x faster) via ubatch optimization
+
+### Top 5 Models (by decode speed)
+
+| # | Model | Decode tok/s | Prefill tok/s | MTP% | Score |
+|---|---|---|---|---|---|
+| 1 | architect-35b-q6 | 71.2 | 320.3 | 90% | 1.00 |
+| 2 | qwen36-35b-q6 | 63.8 | 332.7 | 91% | 1.00 |
+| 3 | q8-architect-35b | 62.5 | 361.8 | 92% | 1.00 |
+| 4 | qwen36-35b-q8 | 54.4 | 338.6 | 89% | 1.00 |
+| 5 | ornith-35b-q6 | 52.8 | 328.2 | — | 1.00 |
+
 ### Key Optimizations Applied
 
 | Optimization | Impact |
@@ -72,31 +111,17 @@ Public SPA target: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-b
 | THP→always | Better memory throughput |
 | Adaptive timeouts | No more false negatives on deep_context |
 
-
-## DFlash Pilot Update — 2026-07-08
-
-- Public report: [`dflash-bench/index.html`](dflash-bench/index.html)
-- Dataset: [`dflash-bench/results.json`](dflash-bench/results.json), [`summary.csv`](dflash-bench/summary.csv), [`comparisons.csv`](dflash-bench/comparisons.csv)
-- TurboQuant follow-up appendix: [`dflash-bench/turboquant-followup/index.html`](dflash-bench/turboquant-followup/index.html), [`results.json`](dflash-bench/turboquant-followup/results.json)
-- Decision: DFlash is **not promoted** on MiniV yet. In the isolated Vulkan DFlash build, baseline was faster than DFlash on Qwen3.6-27B, Qwen3.6-35B-A3B, and Gemma4-26B-A4B. In the later TurboQuant+DFlash integrated follow-up, Qwen/Qwopus3.6 27B Q6 + DFlash Q8 had 0.0% draft acceptance and was also slower than TurboQuant baseline.
-- Methodology: load/prefill/decode/wall/draft-acceptance kept separate; no combined TPS.
-
-## Scope
-
-This public gallery mirrors the RTX 5060 Ti benchmark gallery structure/design, but isolates the MiniV / Corsair AI Workstation 300 64GB Vulkan UMA results.
-
-- Original eval run: `all-local-model-eval-20260528-231052` (May 2026, 26 models)
-- Bench v2.2 update: `2026-07-07` (21 models, 84 runs, separated metrics)
-- N30 credit: `All benchmark orchestration, methodology design, and AI model evaluations directed by N30.`
+---
 
 ## Files
 
-- `context-ladder-20260710/index.html` — **2026-07-10 corrected long-context retrieval envelope** (21 aliases, 86 rows, public-safe).
-- `context-ladder-20260710/results.json` — sanitized context-ladder metric dataset; no paths, IPs, credentials, raw prompts, or logs.
-- `best-real-bench/index.html` — **2026-07-08 best-real validation** for top 35B Q6 TurboQuant+MTP lanes
-- `data/best-real-tq-mtp-20260708.json` — sanitized best-real validation dataset
-- `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode)
-- `data/miniv-bench-v2.2-results.json` — **latest** benchmark results (21 models, separated metrics)
+- `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode, reference context, report navigation)
+- `best-real-bench/` — best-real TurboQuant+MTP validation report + datasets
+- `context-ladder-20260710/` — corrected 120K context retrieval ladder
+- `dflash-bench/` — DFlash pilot report + TurboQuant follow-up appendix
+- `visual-3d-bench/` — visual 3D benchmark gallery (49 deliverables + pi-dev harness + manifests)
+- `data/miniv-bench-v2.2-results.json` — latest benchmark results (21 models)
+- `data/best-real-tq-mtp-20260708.json` — best-real validation dataset
 - `data/all-local-evaluation-summary.json` — original May 2026 evaluation summary
 - `data/miniv-results.json` — original MiniV Vulkan UMA subset
 - `benchmark-metrics.json` — combined public data
