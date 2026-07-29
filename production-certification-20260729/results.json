@@ -1,0 +1,28 @@
+{
+  "title": "MiniV Production Certification — July 29, 2026",
+  "hardware": "Corsair AI Workstation 300 64GB UMA",
+  "backend": "llama-cpp-turboquant Vulkan",
+  "source_suite": {
+    "models": 6,
+    "prompts_per_model": 4,
+    "runs_completed": 24,
+    "evidence_sha256": "fdc54efdac482949d64bc0e91a2e27654f5b36c4f6a94213f745f0e574e0e649"
+  },
+  "results": [
+    {"alias":"architect-35b-q6","avg_decode_tok_s":58.4,"production_role":"default architecture and mixed agent work","decision":"production-default"},
+    {"alias":"reasoning-27b-q6","avg_decode_tok_s":15.5,"production_role":"deliberate reasoning","decision":"production"},
+    {"alias":"coding-coder-27b-q6","avg_decode_tok_s":15.4,"production_role":"quality coding","decision":"production-post-tuning-smoke"},
+    {"alias":"coding-coder-27b-q5","avg_decode_tok_s":15.0,"production_role":"daily coding","decision":"production-post-tuning-smoke"},
+    {"alias":"thinkingcap-27b-q4","avg_decode_tok_s":15.9,"production_role":"Spanish and instruction adherence","decision":"production-unique"},
+    {"alias":"qwen36-35b-q6","avg_decode_tok_s":42.5,"production_role":"development recertification","decision":"dev-only-post-tuning"}
+  ],
+  "post_tuning": {
+    "coder_reasoning_budget": 2048,
+    "coder_smoke": "pass",
+    "qwen36_reasoning": "off",
+    "qwen36_direct_math_smoke": "pass",
+    "thinkingcap_pi_smoke": "pass",
+    "architect_pi_smoke": "pass"
+  },
+  "public_boundary": "No credentials, access URLs, private traces, model paths or internal filesystem details."
+}

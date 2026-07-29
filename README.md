@@ -15,7 +15,7 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 - **APU**: AMD Ryzen AI MAX 385 (16C/16T, up to 5.0 GHz)
 - **GPU**: Radeon 8050S Graphics (RADV Vulkan, GFX1151)
 - **Memory**: 64GB LPDDR5X 8000MHz UMA (48GB VRAM allocation)
-- **Backend**: llama-cpp-turboquant fork (Vulkan build b9677-4595fff0b)
+- **Backend**: llama-cpp-turboquant fork (Vulkan build b9743-c26cbdff)
 
 ### Methodology — Bench v2.2
 
@@ -34,17 +34,27 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 
 | Report | Date | Description |
 |--------|------|-------------|
+| [`production-certification-20260729/`](production-certification-20260729/index.html) | 2026-07-29 | Six-model production suite — 24/24 runs, role-based routing and post-tuning gates |
 | [`best-real-bench/`](best-real-bench/index.html) | 2026-07-08 | Best-real TurboQuant+MTP validation — 8/8 PASS across top 35B Q6 lanes |
 | [`context-ladder-20260710/`](context-ladder-20260710/index.html) | 2026-07-10 | Corrected 120K context retrieval ladder — 86 rows, 21 aliases |
 | [`dflash-bench/`](dflash-bench/index.html) | 2026-07-08 | DFlash pilot — measured negative, not promoted |
 | [`dflash-bench/turboquant-followup/`](dflash-bench/turboquant-followup/index.html) | 2026-07-08 | TurboQuant + DFlash follow-up appendix |
 | [`visual-3d-bench/`](visual-3d-bench/index.html) | 2026-07-08 | Visual 3D benchmark — 11 models, 49 HTML deliverables, 0 runtime issues |
 | [`visual-3d-bench/pi-dev/`](visual-3d-bench/pi-dev/index.html) | 2026-07-08 | Pi-dev harness — 15 additional pi-agent-generated deliverables |
-| [`index.html`](index.html) | 2026-07-15 | Main SPA gallery with ES/EN toggle, dark/light mode |
+| [`index.html`](index.html) | 2026-07-29 | Main SPA gallery with ES/EN toggle, dark/light mode |
 
 ---
 
-## Latest Update — 2026-07-15 (Gallery Overhaul)
+## Latest Update — 2026-07-29 (Production Certification)
+
+- **24/24 live runs** across six models and four task categories.
+- **Architect remains default** at 58.4 average tok/s in the production suite.
+- **ThinkingCap Q4 promoted** for Spanish and instruction adherence.
+- **Coder Q5/Q6 budgets corrected** and post-tuning code smoke verified.
+- **Qwen3.6 Q6 stays dev-only** until the complete suite is rerun under reasoning-disabled settings.
+- Public JSON: [`production-certification-20260729/results.json`](production-certification-20260729/results.json).
+
+## Previous Update — 2026-07-15 (Gallery Overhaul)
 
 ### What's New
 
@@ -116,6 +126,7 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 ## Files
 
 - `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode, reference context, report navigation)
+- `production-certification-20260729/` — production certification report + public-safe JSON
 - `best-real-bench/` — best-real TurboQuant+MTP validation report + datasets
 - `context-ladder-20260710/` — corrected 120K context retrieval ladder
 - `dflash-bench/` — DFlash pilot report + TurboQuant follow-up appendix
