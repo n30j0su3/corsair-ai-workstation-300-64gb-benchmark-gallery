@@ -34,6 +34,7 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 
 | Report | Date | Description |
 |--------|------|-------------|
+| [`portfolio-optimization-v1/`](portfolio-optimization-v1/index.html) | 2026-07-30 | Dense 27B optimization — 64K integrity, YaRN×4, adaptive ubatch, MTP4 and 4-lane visual evidence |
 | [`production-certification-20260729/`](production-certification-20260729/index.html) | 2026-07-29 | Six-model production suite — 24/24 runs, role-based routing and post-tuning gates |
 | [`best-real-bench/`](best-real-bench/index.html) | 2026-07-08 | Best-real TurboQuant+MTP validation — 8/8 PASS across top 35B Q6 lanes |
 | [`context-ladder-20260710/`](context-ladder-20260710/index.html) | 2026-07-10 | Corrected 120K context retrieval ladder — 86 rows, 21 aliases |

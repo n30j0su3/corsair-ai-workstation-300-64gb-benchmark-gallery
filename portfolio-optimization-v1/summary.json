@@ -1,0 +1,24 @@
+{
+  "campaign": "miniv-portfolio-opt-v1-20260730",
+  "published_scope": "public-safe summary",
+  "status": "technical_complete_human_visual_review_pending",
+  "results": {
+    "a1_context": "2/2 PASS",
+    "a2a_prefill": "24/24 PASS",
+    "a2b_decode": "48/48 valid; MTP4 winner 4/4",
+    "b1a_64k_integrity": "3/3 PASS",
+    "b1c_artifacts": "4/4 artifacts; 12/12 viewports PASS"
+  },
+  "dense_policy": {
+    "base": "32768 ctx; ubatch 1024; MTP n=4",
+    "long": "131072 ctx; YaRN x4; ubatch 512; MTP n=4"
+  },
+  "decode_gain_mtp4_vs_mtp2_percent": {
+    "thinkingcap_27b_q4": 11.32,
+    "reasoning_27b_q6": 21.81,
+    "coding_coder_27b_q6": 21.43,
+    "coding_coder_27b_q5": 15.31
+  },
+  "production_default": "architect-35b-q6",
+  "privacy": "No internal paths, hosts, IP addresses, credentials, commands or private configuration included."
+}
