@@ -49,6 +49,8 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 Public-safe packs promoted after runtime QA, three-viewport visual review, manifest verification and fingerprint-bound N30 approval.
 
 <!-- FJSON_BENCHMARK_EXPORTS_START -->
+
+- [architect-35b-q6-full-editorial-20260815](benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html)
 <!-- FJSON_BENCHMARK_EXPORTS_END -->
 
 ---

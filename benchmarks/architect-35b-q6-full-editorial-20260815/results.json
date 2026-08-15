@@ -1,0 +1,88 @@
+{
+  "artifacts": [
+    {
+      "challenge": "d1-visual",
+      "final_status": "PASS",
+      "packaged_path": "deliverables/d1-visual/repaired/index.html",
+      "qa_paths": [
+        "deliverables/d1-visual/qa/index.json",
+        "deliverables/d1-visual/qa/index.json"
+      ],
+      "repair_attempts": 1,
+      "repaired_path": "deliverables/d1-visual/repaired/index.html",
+      "strict_path": "deliverables/d1-visual/strict/index.html"
+    },
+    {
+      "challenge": "d2-ecommerce",
+      "final_status": "PASS",
+      "packaged_path": "deliverables/d2-ecommerce/strict/index.html",
+      "qa_paths": [
+        "deliverables/d2-ecommerce/qa/index.json"
+      ],
+      "repair_attempts": 0,
+      "repaired_path": null,
+      "strict_path": "deliverables/d2-ecommerce/strict/index.html"
+    },
+    {
+      "challenge": "d3-threejs",
+      "final_status": "PASS",
+      "packaged_path": "deliverables/d3-threejs/repaired-packaged/index.html",
+      "qa_paths": [
+        "deliverables/d3-threejs/qa/index.json",
+        "deliverables/d3-threejs/qa/index.json"
+      ],
+      "repair_attempts": 1,
+      "repaired_path": "deliverables/d3-threejs/repaired/index.html",
+      "strict_path": "deliverables/d3-threejs/strict/index.html"
+    }
+  ],
+  "configuration": {
+    "preset": "full-editorial",
+    "provider": "openai-compatible"
+  },
+  "context": {
+    "max_verified": null,
+    "provenance": "unavailable"
+  },
+  "editorial": {
+    "files": [
+      "editorial/article-brief.md",
+      "editorial/claims.json",
+      "editorial/conclusions.md",
+      "editorial/short.md",
+      "editorial/shotlist.json",
+      "editorial/studio-prompts.json",
+      "editorial/walkthrough.md"
+    ]
+  },
+  "evidence": [
+    "events.jsonl"
+  ],
+  "failures": [],
+  "model": {
+    "id": "architect-35b-q6"
+  },
+  "qa": {
+    "status": "PASS",
+    "viewports": [
+      1600,
+      768,
+      480
+    ]
+  },
+  "recommendations": [
+    "Use only for local work matching the verified artifact and runtime gates."
+  ],
+  "run_id": "20260815T200428Z--architect-35b-q6--full-editorial",
+  "speed": {
+    "decode_tps": {
+      "count": 3,
+      "cv": 0.0038580309899543127,
+      "evidence_path": "metrics/speed.json",
+      "mean": 82.46398006559697,
+      "p50": 82.59535246276111,
+      "p95": 82.77096498012205
+    }
+  },
+  "state": "PASS"
+}

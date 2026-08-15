@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Command Center</title>
+<style>
+:root {
+  --bg: #050505;
+  --card: #111111;
+  --border: #222222;
+  --text: #e0e0e0;
+  --text-dim: #666666;
+  --accent: #00d4ff;
+  --accent-dim: #005f73;
+  --success: #2ed573;
+  --danger: #ff4757;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; line-height: 1.5; }
+.container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 16px; }
+h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: 0.5px; }
+.badge { background: var(--accent-dim); color: var(--accent); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+.controls { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
+select { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; font-size: 0.875rem; cursor: pointer; outline: none; }
+select:focus { border-color: var(--accent); }
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; position: relative; overflow: hidden; }
+.kpi-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent); }
+.kpi-label { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.kpi-value { font-size: 1.5rem; font-weight: 700; color: var(--text); }
+.kpi-trend { font-size: 0.75rem; margin-top: 4px; }
+.kpi-trend.up { color: var(--success); }
+.kpi-trend.down { color: var(--danger); }
+.chart-section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; }
+.chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.chart-title { font-size: 1rem; font-weight: 600; }
+.chart-container { width: 100%; height: 300px; position: relative; }
+.bottom-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; }
+.insights-section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+.insights-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; }
+.insights-content { color: var(--text-dim); font-size: 0.875rem; line-height: 1.6; }
+.table-section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; }
+.table-title { font-size: 1rem; font-weight: 600; margin-bottom: 12px; }
+table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+th { text-align: left; color: var(--text-dim); font-weight: 500; padding: 8px; border-bottom: 1px solid var(--border); }
+td { padding: 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+tr:last-child td { border-bottom: none; }
+footer { text-align: center; margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 0.75rem; }
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .bottom-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .kpi-grid { grid-template-columns: 1fr; }
+  .controls { flex-direction: column; }
+  .chart-container { height: 200px; }
+  h1 { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>ECOMMERCE COMMAND CENTER</h1>
+    <span class="badge">SYNTHETIC</span>
+  </header>
+  <div class="controls">
+    <select id="store-filter">
+      <option value="All">All Stores</option>
+      <option value="Downtown">Downtown</option>
+      <option value="Uptown">Uptown</option>
+      <option value="Suburb">Suburb</option>
+    </select>
+    <select id="channel-filter">
+      <option value="All">All Channels</option>
+      <option value="Online">Online</option>
+      <option value="In-Store">In-Store</option>
+      <option value="Marketplace">Marketplace</option>
+    </select>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue</div>
+      <div class="kpi-value" id="kpi-revenue">$0</div>
+      <div class="kpi-trend up" id="kpi-revenue-trend">+0%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Units Sold</div>
+      <div class="kpi-value" id="kpi-units">0</div>
+      <div class="kpi-trend up" id="kpi-units-trend">+0%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avg Conversion</div>
+      <div class="kpi-value" id="kpi-conversion">0%</div>
+      <div class="kpi-trend up" id="kpi-conversion-trend">+0%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Growth Rate</div>
+      <div class="kpi-value" id="kpi-growth">0%</div>
+      <div class="kpi-trend up" id="kpi-growth-trend">+0%</div>
+    </div>
+  </div>
+  <div class="chart-section">
+    <div class="chart-header">
+      <div class="chart-title">Sales Performance</div>
+      <span class="badge">SYNTHETIC</span>
+    </div>
+    <div class="chart-container" id="chart-sales"></div>
+  </div>
+  <div class="bottom-grid">
+    <div class="insights-section">
+      <div class="insights-title">Insights</div>
+      <div class="insights-content" id="insights">Select a filter to view insights.</div>
+    </div>
+    <div class="table-section">
+      <div class="table-title">Recent Transactions</div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Store</th>
+            <th>Channel</th>
+            <th>Revenue</th>
+            <th>Units</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+  <footer>
+    <span class="badge">SYNTHETIC</span> — Data generated for demonstration purposes only.
+  </footer>
+</div>
+<script>
+const DATA = [];
+const STORES = ['Downtown', 'Uptown', 'Suburb'];
+const CHANNELS = ['Online', 'In-Store', 'Marketplace'];
+const DATES = [];
+for (let i = 29; i >= 0; i--) {
+  const d = new Date();
+  d.setDate(d.getDate() - i);
+  DATES.push(d.toISOString().split('T')[0]);
+}
+for (let i = 0; i < 150; i++) {
+  DATA.push({
+    id: i + 1,
+    date: DATES[Math.floor(Math.random() * DATES.length)],
+    store: STORES[Math.floor(Math.random() * STORES.length)],
+    channel: CHANNELS[Math.floor(Math.random() * CHANNELS.length)],
+    revenue: Math.floor(Math.random() * 4000) + 1000,
+    units: Math.floor(Math.random() * 40) + 5,
+    conversion: (Math.random() * 4 + 1).toFixed(2)
+  });
+}
+DATA.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+let state = { store: 'All', channel: 'All' };
+
+function formatCurrency(val) {
+  return '$' + val.toLocaleString();
+}
+
+function updateKPIs(data) {
+  const totalRevenue = data.reduce((sum, d) => sum + d.revenue, 0);
+  const totalUnits = data.reduce((sum, d) => sum + d.units, 0);
+  const avgConversion = data.length ? (data.reduce((sum, d) => sum + parseFloat(d.conversion), 0) / data.length).toFixed(2) : 0;
+  
+  const prevData = DATA.filter(d => {
+    const dDate = new Date(d.date);
+    const dataDate = new Date(data[0]?.date || d.date);
+    return dDate < dataDate;
+  });
+  const prevRevenue = prevData.reduce((sum, d) => sum + d.revenue, 0);
+  const growth = prevRevenue ? ((totalRevenue - prevRevenue) / prevRevenue * 100).toFixed(1) : 0;
+
+  document.getElementById('kpi-revenue').textContent = formatCurrency(totalRevenue);
+  document.getElementById('kpi-units').textContent = totalUnits.toLocaleString();
+  document.getElementById('kpi-conversion').textContent = avgConversion + '%';
+  document.getElementById('kpi-growth').textContent = growth + '%';
+
+  const setTrend = (id, val) => {
+    const el = document.getElementById(id);
+    el.textContent = (val >= 0 ? '+' : '') + val + '%';
+    el.className = 'kpi-trend ' + (val >= 0 ? 'up' : 'down');
+  };
+  setTrend('kpi-revenue-trend', growth);
+  setTrend('kpi-units-trend', growth);
+  setTrend('kpi-conversion-trend', growth);
+  setTrend('kpi-growth-trend', growth);
+}
+
+function drawChart(data) {
+  const container = document.getElementById('chart-sales');
+  container.innerHTML = '';
+  if (!data.length) return;
+
+  const grouped = {};
+  data.forEach(d => {
+    if (!grouped[d.date]) grouped[d.date] = 0;
+    grouped[d.date] += d.revenue;
+  });
+  const dates = Object.keys(grouped).sort();
+  const values = dates.map(d => grouped[d]);
+  const maxVal = Math.max(...values);
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', '100%');
+  svg.setAttribute('height', '100%');
+  svg.setAttribute('viewBox', '0 0 100 100');
+  svg.setAttribute('preserveAspectRatio', 'none');
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const grad = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  grad.setAttribute('id', 'chart-grad');
+  grad.setAttribute('x1', '0'); grad.setAttribute('y1', '0');
+  grad.setAttribute('x2', '0'); grad.setAttribute('y2', '1');
+  const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop1.setAttribute('offset', '0%'); stop1.setAttribute('stop-color', '#00d4ff'); stop1.setAttribute('stop-opacity', '0.5');
+  const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop2.setAttribute('offset', '100%'); stop2.setAttribute('stop-color', '#00d4ff'); stop2.setAttribute('stop-opacity', '0');
+  grad.appendChild(stop1); grad.appendChild(stop2);
+  defs.appendChild(grad);
+  svg.appendChild(defs);
+
+  const step = 100 / (dates.length - 1 || 1);
+  let pathD = '';
+  let areaD = '';
+  dates.forEach((d, i) => {
+    const x = i * step;
+    const y = 100 - (grouped[d] / maxVal * 80) - 10;
+    pathD += (i === 0 ? 'M' : 'L') + x + ',' + y;
+    areaD += (i === 0 ? 'M' : 'L') + x + ',' + y;
+  });
+  areaD += 'L' + (dates.length - 1) * step + ',100 L0,100 Z';
+
+  const area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  area.setAttribute('d', areaD);
+  area.setAttribute('fill', 'url(#chart-grad)');
+  svg.appendChild(area);
+
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  line.setAttribute('d', pathD);
+  line.setAttribute('fill', 'none');
+  line.setAttribute('stroke', '#00d4ff');
+  line.setAttribute('stroke-width', '2');
+  svg.appendChild(line);
+
+  container.appendChild(svg);
+}
+
+function renderTable(data) {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+  const recent = data.slice(-5).reverse();
+  recent.forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${d.date}</td><td>${d.store}</td><td>${d.channel}</td><td>${formatCurrency(d.revenue)}</td><td>${d.units}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function applyFilters() {
+  const filtered = DATA.filter(d => 
+    (state.store === 'All' || d.store === state.store) &&
+    (state.channel === 'All' || d.channel === state.channel)
+  );
+  updateKPIs(filtered);
+  drawChart(filtered);
+  renderTable(filtered);
+}
+
+document.getElementById('store-filter').addEventListener('change', (e) => {
+  state.store = e.target.value;
+  document.getElementById('insights').textContent = 'filtered';
+  applyFilters();
+});
+
+document.getElementById('channel-filter').addEventListener('change', (e) => {
+  state.channel = e.target.value;
+  applyFilters();
+});
+
+applyFilters();
+</script>
+</body>
+</html>

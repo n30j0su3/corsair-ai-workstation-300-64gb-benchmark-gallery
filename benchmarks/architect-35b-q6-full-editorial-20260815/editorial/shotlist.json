@@ -1,0 +1,7 @@
+[
+  {
+    "beat": 1,
+    "asset": "metrics/speed.json",
+    "purpose": "Median decode speed was 82.59535246276111 tok/s."
+  }
+]

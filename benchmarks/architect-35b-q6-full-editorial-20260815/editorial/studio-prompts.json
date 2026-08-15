@@ -1,0 +1,8 @@
+[
+  {
+    "beat": 1,
+    "subject": "local model benchmark evidence",
+    "composition": "metric and source side by side",
+    "why": "Median decode speed was 82.59535246276111 tok/s."
+  }
+]

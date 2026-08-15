@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>FJSON Local Benchmark</title><style>
+:root{--bg:#061018;--card:#0e2030;--text:#f7f7ff;--muted:#90a7b8;--a:#259bb5;--ok:#38d996;--bad:#ff6577}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 20% 0,#10354a,var(--bg) 45%);color:var(--text);font:16px system-ui;display:grid;grid-template-columns:230px 1fr;min-height:100vh}
+nav{padding:28px;position:sticky;top:0;height:100vh;border-right:1px solid #274054}nav:before{content:'FJSON / BENCH';display:block;color:var(--a);font-weight:900;margin-bottom:24px}nav a{display:block;color:var(--muted);text-decoration:none;padding:9px 0}nav a:hover{color:white}
+main{padding:32px;max-width:1200px}section{background:linear-gradient(145deg,#102536,#091722);border:1px solid #274054;border-radius:18px;padding:24px;margin-bottom:20px;box-shadow:0 12px 36px #0006}h2{margin-top:0}pre{white-space:pre-wrap;overflow-wrap:anywhere;color:#b8d0df}.state{display:inline-block;padding:8px 14px;border-radius:999px;background:#24384a}.state.pass{background:#0b513a;color:#b7ffe2}.state.fail{background:#5a1d2a;color:#ffd2da}.metric strong{font-size:48px;color:var(--a);display:block}.metric span{color:var(--muted)}
+@media(max-width:768px){body{display:block}nav{position:static;height:auto;display:flex;gap:16px;overflow:auto;border-right:0;border-bottom:1px solid #274054}nav:before{display:none}nav a{white-space:nowrap}main{padding:18px}}
+</style></head><body><nav><a href="#overview">Overview</a><a href="#speed">Speed</a><a href="#context">Context</a><a href="#artifacts">Artifacts</a><a href="#qa">Qa</a><a href="#editorial">Editorial</a><a href="#evidence">Evidence</a><a href="#recommendations">Recommendations</a><a href="#failures">Failures</a></nav><main><section id="overview"><h2>Run 20260815T200428Z--architect-35b-q6--full-editorial</h2><p>Technical contract status</p><div class="state pass">PASS</div><p>Model: architect-35b-q6</p><p>Visual publication remains subject to human review.</p></section><section id="speed"><h2>Speed</h2><div class="metric"><strong>82.59535246276111</strong><span>decode tok/s p50</span></div></section><section id="context"><h2>Context</h2><pre>{
+  &quot;max_verified&quot;: null,
+  &quot;provenance&quot;: &quot;unavailable&quot;
+}</pre></section><section id="artifacts"><h2>Artifacts</h2><pre>[
+  {
+    &quot;challenge&quot;: &quot;d1-visual&quot;,
+    &quot;final_status&quot;: &quot;PASS&quot;,
+    &quot;packaged_path&quot;: &quot;deliverables/d1-visual/repaired/index.html&quot;,
+    &quot;qa_paths&quot;: [
+      &quot;deliverables/d1-visual/qa/index.json&quot;,
+      &quot;deliverables/d1-visual/qa/index.json&quot;
+    ],
+    &quot;repair_attempts&quot;: 1,
+    &quot;repaired_path&quot;: &quot;deliverables/d1-visual/repaired/index.html&quot;,
+    &quot;strict_path&quot;: &quot;deliverables/d1-visual/strict/index.html&quot;
+  },
+  {
+    &quot;challenge&quot;: &quot;d2-ecommerce&quot;,
+    &quot;final_status&quot;: &quot;PASS&quot;,
+    &quot;packaged_path&quot;: &quot;deliverables/d2-ecommerce/strict/index.html&quot;,
+    &quot;qa_paths&quot;: [
+      &quot;deliverables/d2-ecommerce/qa/index.json&quot;
+    ],
+    &quot;repair_attempts&quot;: 0,
+    &quot;repaired_path&quot;: null,
+    &quot;strict_path&quot;: &quot;deliverables/d2-ecommerce/strict/index.html&quot;
+  },
+  {
+    &quot;challenge&quot;: &quot;d3-threejs&quot;,
+    &quot;final_status&quot;: &quot;PASS&quot;,
+    &quot;packaged_path&quot;: &quot;deliverables/d3-threejs/repaired-packaged/index.html&quot;,
+    &quot;qa_paths&quot;: [
+      &quot;deliverables/d3-threejs/qa/index.json&quot;,
+      &quot;deliverables/d3-threejs/qa/index.json&quot;
+    ],
+    &quot;repair_attempts&quot;: 1,
+    &quot;repaired_path&quot;: &quot;deliverables/d3-threejs/repaired/index.html&quot;,
+    &quot;strict_path&quot;: &quot;deliverables/d3-threejs/strict/index.html&quot;
+  }
+]</pre></section><section id="qa"><h2>Qa</h2><pre>{
+  &quot;status&quot;: &quot;PASS&quot;,
+  &quot;viewports&quot;: [
+    1600,
+    768,
+    480
+  ]
+}</pre></section><section id="editorial"><h2>Editorial</h2><pre>{
+  &quot;files&quot;: [
+    &quot;editorial/article-brief.md&quot;,
+    &quot;editorial/claims.json&quot;,
+    &quot;editorial/conclusions.md&quot;,
+    &quot;editorial/short.md&quot;,
+    &quot;editorial/shotlist.json&quot;,
+    &quot;editorial/studio-prompts.json&quot;,
+    &quot;editorial/walkthrough.md&quot;
+  ]
+}</pre></section><section id="evidence"><h2>Evidence</h2><pre>[
+  &quot;events.jsonl&quot;
+]</pre></section><section id="recommendations"><h2>Recommendations</h2><pre>[
+  &quot;Use only for local work matching the verified artifact and runtime gates.&quot;
+]</pre></section><section id="failures"><h2>Failures</h2><pre>[]</pre></section></main><script id="benchmark-data" type="application/json">{"artifacts": [{"challenge": "d1-visual", "final_status": "PASS", "packaged_path": "deliverables/d1-visual/repaired/index.html", "qa_paths": ["deliverables/d1-visual/qa/index.json", "deliverables/d1-visual/qa/index.json"], "repair_attempts": 1, "repaired_path": "deliverables/d1-visual/repaired/index.html", "strict_path": "deliverables/d1-visual/strict/index.html"}, {"challenge": "d2-ecommerce", "final_status": "PASS", "packaged_path": "deliverables/d2-ecommerce/strict/index.html", "qa_paths": ["deliverables/d2-ecommerce/qa/index.json"], "repair_attempts": 0, "repaired_path": null, "strict_path": "deliverables/d2-ecommerce/strict/index.html"}, {"challenge": "d3-threejs", "final_status": "PASS", "packaged_path": "deliverables/d3-threejs/repaired-packaged/index.html", "qa_paths": ["deliverables/d3-threejs/qa/index.json", "deliverables/d3-threejs/qa/index.json"], "repair_attempts": 1, "repaired_path": "deliverables/d3-threejs/repaired/index.html", "strict_path": "deliverables/d3-threejs/strict/index.html"}], "configuration": {"preset": "full-editorial", "provider": "openai-compatible"}, "context": {"max_verified": null, "provenance": "unavailable"}, "editorial": {"files": ["editorial/article-brief.md", "editorial/claims.json", "editorial/conclusions.md", "editorial/short.md", "editorial/shotlist.json", "editorial/studio-prompts.json", "editorial/walkthrough.md"]}, "evidence": ["events.jsonl"], "failures": [], "model": {"id": "architect-35b-q6"}, "qa": {"status": "PASS", "viewports": [1600, 768, 480]}, "recommendations": ["Use only for local work matching the verified artifact and runtime gates."], "run_id": "20260815T200428Z--architect-35b-q6--full-editorial", "speed": {"decode_tps": {"count": 3, "cv": 0.0038580309899543127, "evidence_path": "metrics/speed.json", "mean": 82.46398006559697, "p50": 82.59535246276111, "p95": 82.77096498012205}}, "state": "PASS"}</script><script>const d=JSON.parse(document.querySelector('#benchmark-data').textContent);document.documentElement.dataset.state=d.state;</script></body></html>

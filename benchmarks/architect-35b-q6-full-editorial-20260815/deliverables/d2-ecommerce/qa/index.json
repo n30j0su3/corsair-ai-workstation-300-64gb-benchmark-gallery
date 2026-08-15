@@ -1,0 +1,57 @@
+{
+  "browser": {
+    "blocked_requests": [],
+    "console_errors": [],
+    "minimum_mean_luminance": null,
+    "status": "PASS",
+    "viewports": [
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 19.88,
+        "screenshot": "index/viewport-1600.png",
+        "visual_pass": true,
+        "width": 1600
+      },
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 21.1,
+        "screenshot": "index/viewport-768.png",
+        "visual_pass": true,
+        "width": 768
+      },
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 20.69,
+        "screenshot": "index/viewport-480.png",
+        "visual_pass": true,
+        "width": 480
+      }
+    ]
+  },
+  "static": {
+    "failures": [],
+    "ids": [
+      "channel-filter",
+      "chart-sales",
+      "insights",
+      "kpi-conversion",
+      "kpi-conversion-trend",
+      "kpi-growth",
+      "kpi-growth-trend",
+      "kpi-revenue",
+      "kpi-revenue-trend",
+      "kpi-units",
+      "kpi-units-trend",
+      "store-filter",
+      "table-body"
+    ],
+    "status": "PASS"
+  },
+  "status": "PASS"
+}

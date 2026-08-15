@@ -1,0 +1,8 @@
+[
+  {
+    "claim": "Median decode speed was 82.59535246276111 tok/s.",
+    "metric_path": "speed.decode_tps.p50",
+    "evidence_path": "metrics/speed.json",
+    "status": "unavailable"
+  }
+]

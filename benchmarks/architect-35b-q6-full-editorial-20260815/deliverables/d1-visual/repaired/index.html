@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Executive Dashboard</title>
+<style>
+:root {
+  --bg-primary: #0a1628;
+  --bg-secondary: #111d33;
+  --bg-card: #152238;
+  --bg-card-hover: #1a2b45;
+  --border: #1e3050;
+  --text-primary: #e8edf5;
+  --text-secondary: #8a9bb8;
+  --text-muted: #5e7294;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.15);
+  --green: #10b981;
+  --red: #ef4444;
+  --yellow: #f59e0b;
+  --purple: #8b5cf6;
+  --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+/* NAV */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.nav-brand {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.nav-brand span { color: var(--accent); }
+.nav-links { display: flex; gap: 1.5rem; align-items: center; }
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.nav-links a:hover, .nav-links a.active { color: var(--text-primary); }
+#theme-toggle {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+#theme-toggle:hover { border-color: var(--accent); color: var(--text-primary); }
+#theme-status {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+}
+/* MAIN */
+main { max-width: 1280px; margin: 0 auto; padding: 2rem; }
+/* HERO */
+.hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.hero h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+.hero p { color: var(--text-secondary); font-size: 0.95rem; margin-top: 0.25rem; }
+.hero-meta { text-align: right; }
+.hero-meta .date { color: var(--text-muted); font-size: 0.8rem; }
+.hero-meta .status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; color: var(--green); margin-top: 0.25rem; }
+.hero-meta .status::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+/* KPI CARDS */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+.kpi-card:hover { border-color: var(--accent); background: var(--bg-card-hover); }
+.kpi-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.kpi-value { font-size: 1.75rem; font-weight: 700; margin: 0.35rem 0; letter-spacing: -0.02em; }
+.kpi-change { font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 0.25rem; }
+.kpi-change.up { color: var(--green); }
+.kpi-change.down { color: var(--red); }
+.kpi-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem; }
+/* CHART SECTION */
+.chart-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.25rem;
+}
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+/* SVG BAR CHART */
+.chart-container { position: relative; }
+.chart-container svg { width: 100%; height: auto; }
+.chart-bar { transition: opacity 0.2s; }
+.chart-bar:hover { opacity: 0.8; }
+.chart-label { fill: var(--text-muted); font-size: 11px; font-family: var(--font); }
+.chart-value { fill: var(--text-secondary); font-size: 11px; font-family: var(--font); }
+.chart-grid { stroke: var(--border); stroke-width: 0.5; }
+/* DONUT CHART */
+.donut-wrap { display: flex; align-items: center; gap: 1.5rem; }
+.donut-legend { display: flex; flex-direction: column; gap: 0.6rem; }
+.legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-label { color: var(--text-secondary); }
+.legend-value { color: var(--text-primary); font-weight: 600; margin-left: auto; }
+/* BOTTOM ROW */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+.table-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.table-row:last-child { border-bottom: none; }
+.table-row .name { font-size: 0.85rem; color: var(--text-primary); }
+.table-row .val { font-size: 0.85rem; font-weight: 600; }
+.table-row .val.up { color: var(--green); }
+.table-row .val.down { color: var(--red); }
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .chart-section { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  main { padding: 1rem; }
+  nav { padding: 0.75rem 1rem; }
+  .kpi-grid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.35rem; }
+  .bottom-grid { grid-template-columns: 1fr; }
+  .donut-wrap { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body id="app">
+
+<nav>
+  <div class="nav-brand"><span>◆</span> Nexus<span>Board</span></div>
+  <div class="nav-links">
+    <a href="#" id="nav-overview" class="active">Overview</a>
+    <a href="#" id="nav-metrics">Metrics</a>
+    <button id="theme-toggle">Toggle Theme</button>
+    <span id="theme-status">theme-light</span>
+  </div>
+</nav>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div>
+      <h1>Executive Overview</h1>
+      <p>Real-time performance snapshot — Q4 2024</p>
+    </div>
+    <div class="hero-meta">
+      <div class="date">Updated Dec 15, 2024 · 09:42 UTC</div>
+      <div class="status">All systems operational</div>
+    </div>
+  </section>
+
+  <!-- KPI CARDS -->
+  <section class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Revenue</div>
+      <div class="kpi-value">$4.82M</div>
+      <div class="kpi-change up">▲ 12.4%</div>
+      <div class="kpi-sub">vs. prior quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Active Users</div>
+      <div class="kpi-value">184K</div>
+      <div class="kpi-change up">▲ 8.1%</div>
+      <div class="kpi-sub">vs. prior quarter</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Churn Rate</div>
+      <div class="kpi-value">2.3%</div>
+      <div class="kpi-change down">▼ 0.4%</div>
+      <div class="kpi-sub">improvement</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">NPS Score</div>
+      <div class="kpi-value">72</div>
+      <div class="kpi-change up">▲ 5 pts</div>
+      <div class="kpi-sub">vs. prior quarter</div>
+    </div>
+  </section>
+
+  <!-- CHARTS -->
+  <section class="chart-section">
+    <div class="card">
+      <div class="card-title">Quarterly Revenue Trend</div>
+      <div class="chart-container">
+        <svg viewBox="0 0 560 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Grid lines -->
+          <line class="chart-grid" x1="40" y1="20" x2="540" y2="20"/>
+          <line class="chart-grid" x1="40" y1="60" x2="540" y2="60"/>
+          <line class="chart-grid" x1="40" y1="100" x2="540" y2="100"/>
+          <line class="chart-grid" x1="40" y1="140" x2="540" y2="140"/>
+          <!-- Y-axis labels -->
+          <text class="chart-label" x="32" y="24" text-anchor="end">5M</text>
+          <text class="chart-label" x="32" y="64" text-anchor="end">4M</text>
+          <text class="chart-label" x="32" y="104" text-anchor="end">3M</text>
+          <text class="chart-label" x="32" y="144" text-anchor="end">2M</text>
+          <!-- Bars -->
+          <rect class="chart-bar" x="60" y="100" width="50" height="40" rx="4" fill="#3b82f6"/>
+          <text class="chart-value" x="85" y="94" text-anchor="middle">2.1M</text>
+          <rect class="chart-bar" x="160" y="80" width="50" height="60" rx="4" fill="#3b82f6"/>
+          <text class="chart-value" x="185" y="74" text-anchor="middle">2.8M</text>
+          <rect class="chart-bar" x="260" y="60" width="50" height="80" rx="4" fill="#3b82f6"/>
+          <text class="chart-value" x="285" y="54" text-anchor="middle">3.4M</text>
+          <rect class="chart-bar" x="360" y="40" width="50" height="100" rx="4" fill="#3b82f6"/>
+          <text class="chart-value" x="385" y="34" text-anchor="middle">4.2M</text>
+          <rect class="chart-bar" x="460" y="20" width="50" height="120" rx="4" fill="#8b5cf6"/>
+          <text class="chart-value" x="485" y="14" text-anchor="middle">4.8M</text>
+          <!-- X-axis labels -->
+          <text class="chart-label" x="85" y="160" text-anchor="middle">Q1</text>
+          <text class="chart-label" x="185" y="160" text-anchor="middle">Q2</text>
+          <text class="chart-label" x="285" y="160" text-anchor="middle">Q3</text>
+          <text class="chart-label" x="385" y="160" text-anchor="middle">Q4</text>
+          <text class="chart-label" x="485" y="160" text-anchor="middle">Q4*</text>
+        </svg>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Revenue by Segment</div>
+      <div class="donut-wrap">
+        <svg viewBox="0 0 120 120" width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#1e3050" stroke-width="16"/>
+          <!-- Enterprise 42% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#3b82f6" stroke-width="16"
+            stroke-dasharray="126.7 175.9" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <!-- SMB 31% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#8b5cf6" stroke-width="16"
+            stroke-dasharray="93.5 209.1" stroke-dashoffset="-126.7" transform="rotate(-90 60 60)"/>
+          <!-- Consumer 27% -->
+          <circle cx="60" cy="60" r="48" fill="none" stroke="#10b981" stroke-width="16"
+            stroke-dasharray="81.4 221.2" stroke-dashoffset="-220.2" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="donut-legend">
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#3b82f6"></span>
+            <span class="legend-label">Enterprise</span>
+            <span class="legend-value">42%</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#8b5cf6"></span>
+            <span class="legend-label">SMB</span>
+            <span class="legend-value">31%</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#10b981"></span>
+            <span class="legend-label">Consumer</span>
+            <span class="legend-value">27%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOTTOM ROW -->
+  <section class="bottom-grid">
+    <div class="card">
+      <div class="card-title">Top Products</div>
+      <div class="table-row"><span class="name">Platform Pro</span><span class="val up">+18.2%</span></div>
+      <div class="table-row"><span class="name">Analytics Suite</span><span class="val up">+14.7%</span></div>
+      <div class="table-row"><span class="name">Cloud Storage</span><span class="val up">+9.3%</span></div>
+      <div class="table-row"><span class="name">API Gateway</span><span class="val down">-2.1%</span></div>
+      <div class="table-row"><span class="name">DevOps Toolkit</span><span class="val up">+6.8%</span></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Regional Performance</div>
+      <div class="table-row"><span class="name">North America</span><span class="val up">+15.4%</span></div>
+      <div class="table-row"><span class="name">Europe</span><span class="val up">+11.2%</span></div>
+      <div class="table-row"><span class="name">Asia Pacific</span><span class="val up">+22.8%</span></div>
+      <div class="table-row"><span class="name">Latin America</span><span class="val down">-3.4%</span></div>
+      <div class="table-row"><span class="name">Middle East</span><span class="val up">+7.1%</span></div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function(){
+  var toggle = document.getElementById('theme-toggle');
+  var status = document.getElementById('theme-status');
+  var isDark = false;
+  toggle.addEventListener('click', function(){
+    isDark = !isDark;
+    status.textContent = isDark ? 'theme-dark' : 'theme-light';
+  });
+})();
+</script>
+</body>
+</html>

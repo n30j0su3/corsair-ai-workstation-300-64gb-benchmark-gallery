@@ -1,0 +1,50 @@
+{
+  "browser": {
+    "blocked_requests": [],
+    "console_errors": [],
+    "minimum_mean_luminance": 6.0,
+    "status": "PASS",
+    "viewports": [
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 61.87,
+        "screenshot": "index/viewport-1600.png",
+        "visual_pass": true,
+        "width": 1600
+      },
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 67.61,
+        "screenshot": "index/viewport-768.png",
+        "visual_pass": true,
+        "width": 768
+      },
+      {
+        "failures": [],
+        "horizontal_overflow": false,
+        "interaction_pass": true,
+        "mean_luminance": 65.95,
+        "screenshot": "index/viewport-480.png",
+        "visual_pass": true,
+        "width": 480
+      }
+    ]
+  },
+  "static": {
+    "failures": [],
+    "ids": [
+      "fallback",
+      "quality-toggle",
+      "reset-camera",
+      "scene",
+      "scene-status",
+      "ui"
+    ],
+    "status": "PASS"
+  },
+  "status": "PASS"
+}
