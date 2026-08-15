@@ -44,6 +44,13 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 | [`visual-3d-bench/pi-dev/`](visual-3d-bench/pi-dev/index.html) | 2026-07-08 | Pi-dev harness — 15 additional pi-agent-generated deliverables |
 | [`index.html`](index.html) | 2026-07-29 | Main SPA gallery with ES/EN toggle, dark/light mode |
 
+## Governed Benchmark Exports
+
+Public-safe packs promoted after runtime QA, three-viewport visual review, manifest verification and fingerprint-bound N30 approval.
+
+<!-- FJSON_BENCHMARK_EXPORTS_START -->
+<!-- FJSON_BENCHMARK_EXPORTS_END -->
+
 ---
 
 ## Latest Update — 2026-07-29 (Production Certification)
