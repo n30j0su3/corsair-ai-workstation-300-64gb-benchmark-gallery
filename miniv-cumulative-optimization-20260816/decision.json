@@ -1,0 +1,26 @@
+{
+  "adjudicated_by": "hermes-reviewer from router journal; harness script died on HTTP 500 before writing decision",
+  "combined_with_p6": {
+    "long_tool_pass": true,
+    "long_tool_rounds": 5,
+    "mtp_pct": [
+      81.3,
+      81.3,
+      81.3
+    ],
+    "sustained_pass": true,
+    "sustained_tps": [
+      17.79,
+      17.76,
+      17.77
+    ]
+  },
+  "disposition": "remove qwen38-27b-q4-131k-stable lane (added same day; no value at 32K over existing qwen38-27b-q4); keep 32K utility evidence",
+  "evidence": "journalctl miniv-router.service 17:29:42 vk::DeviceLostError during needle prefill/decode of qwen38-27b-q4-131k-stable at ~117K tokens (prompt_tokens_precheck=116781); router auto-reloaded child; health ok after",
+  "finished_at": "2026-08-16T22:33:24.635085+00:00",
+  "interpretation": "b10465 + Qwen3.8 dense (Q4 or Q6) + deep context >=~117K = DeviceLost. P3 131K certification applied to b9743 only. Dense Qwen stable envelope on b10465 = 32K. Architect MoE 131K on b10465 = PASS (P2), unaffected.",
+  "needle_pass": false,
+  "needle_status": "FAIL_DEVICE_LOST",
+  "prompt_tokens_precheck": 116781,
+  "verdict": "HOLD_DEVICE_LOST_AT_DEEP_CONTEXT"
+}

@@ -1,13 +1,14 @@
 {
   "schema": "fjson-qwen38-public-intake/v1",
-  "updated": "2026-08-15",
+  "updated": "2026-08-16",
   "hardware": "Corsair AI Workstation 300 · Ryzen AI Max 385 · 64GB UMA · Radeon 8050S",
   "runtime": {
     "backend": "llama.cpp TurboQuant · Vulkan RADV",
-    "production_build": "b9743-c26cbdffc",
-    "candidate_build": "b10465-fca3093c9",
-    "candidate_state": "CANARY_FAIL_DEVICE_LOST",
-    "candidate_gates": {
+    "production_build": "b10465-fca3093c9",
+    "production_promoted": "2026-08-16",
+    "superseded_build": "b9743-c26cbdffc",
+    "superseded_reason": "kept as byte-identical rollback backup in p5 run dir",
+    "candidate_gates_historical_20260816T010243Z": {
       "health": "PASS",
       "exact": "PASS",
       "json": "PASS",
@@ -15,8 +16,14 @@
       "decode_sustained": "FAIL_VULKAN_DEVICE_LOST_AT_1029_TOKENS",
       "restore_architect": "PASS"
     },
-    "candidate_decode_observed_tps": "14.47-15.59 before failure",
-    "candidate_decision": "HOLD",
+    "device_lost_root_cause_20260816": "TWO distinct triggers, both model-class-specific, neither a broken runtime: (1) Qwen3.8 Q6 dense + MTP2 + ubatch>=1024 command-buffer pressure (P1); (2) Qwen3.8 dense (Q4 or Q6) + deep context ~117K on b10465 (P6b) — b9743 passed the same needle at 128,895 tokens (P3). Architect MoE 131K on b10465 is stable (P2/P5).",
+    "dense_deep_context_status": "HOLD on b10465 until upstream Vulkan fix; b9743 remains the certified runtime for Qwen dense 131K workloads.",
+    "promotion_evidence": {
+      "p5_alias_smoke": "25/26 PASS (1 SKIP missing GGUF), deep JSON+tool PASS on architect/coder/agentworld",
+      "journal_device_lost_sigs": "none",
+      "rollback_executed": false,
+      "backups": "wrapper + unit byte-identical in p5-b10465-global-promotion/"
+    },
     "kv_cache": "turbo4 / turbo3",
     "flash_attention": true,
     "mmap": false,
@@ -43,6 +50,9 @@
       "decode_baseline_tps": 10.2731,
       "decode_mtp_tps": 15.0072,
       "mtp_delta_pct": 46.0821,
+      "context_certified_20260816": "131072 on b9743 ONLY (P3). NOT valid on b10465: P6b needle at ~117K on b10465 hit vk::DeviceLost. Dense-Qwen deep context on b10465 remains unstable; certified envelope on b10465 = 32K.",
+      "stable_recipe": "batch2048 / ubatch512 / MTP2 (P1 R2 + P6: 17.77 t/s sustained 3x, 81.3% MTP, 5-round tool session PASS at 32K)",
+      "router_lane": "qwen38-27b-q4 (existing 32K alias); 131k-stable lane added then removed same day after DeviceLost evidence",
       "full_editorial": "NOT_RUN"
     },
     {
@@ -58,7 +68,8 @@
       "decode_mtp_tps": 13.5561,
       "mtp_delta_pct": 74.8506,
       "full_editorial_decode_mean_tps": 14.9308,
-      "full_editorial": "FAIL_D2"
+      "full_editorial": "FAIL_D2",
+      "hold_rationale_20260816": "Task-quality failure (D2 e-commerce console errors) unrelated to runtime. Context 131K certified on b9743 only (P3); on b10465, dense Qwen at deep context (~117K) reproduced DeviceLost (P6b), so both Q4/Q6 dense deep-context lanes stay out of b10465 production until a fix lands upstream."
     }
   ],
   "full_editorial_result": {
@@ -98,9 +109,7 @@
       "three-repetition benchmark receipts"
     ],
     "requires_local_canary": [
-      "64K/131K Q4 context",
-      "new b10465 TurboQuant runtime",
-      "any batch or ubatch increase",
+      "any further batch or ubatch increase beyond the certified recipes",
       "ROCm performance claims"
     ],
     "recipe_corrections": [

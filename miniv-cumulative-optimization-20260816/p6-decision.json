@@ -1,0 +1,29 @@
+{
+  "candidate": "qwen38-27b-q4-131k-stable",
+  "context_certified": "131072",
+  "decode_3x_tps": [
+    17.787586350078954,
+    17.76385851477012,
+    17.770094756991245
+  ],
+  "device_lost": [],
+  "fatal": null,
+  "finished_at": "2026-08-16T21:56:21.985656+00:00",
+  "long_tool_pass": true,
+  "model": "Qwen3.8-27B Q4_K_XL",
+  "mtp_acceptance_pct": [
+    81.3,
+    81.3,
+    81.3
+  ],
+  "needle_error": "HTTPError: HTTP Error 400: Bad Request",
+  "needle_pass": false,
+  "note": "UTILITY_QUALIFIED means the lane can be added to api_server.json catalog if N30 wants broader distribution. HOLD_PARTIAL_EVIDENCE preserves retrieved evidence for triage; HOLD_PENDING means no evidence captured.",
+  "restore_pass": false,
+  "sustained_pass": true,
+  "verdict": "HOLD_PARTIAL_EVIDENCE",
+  "verified_components": [
+    "decode@3x",
+    "tool@5r"
+  ]
+}
