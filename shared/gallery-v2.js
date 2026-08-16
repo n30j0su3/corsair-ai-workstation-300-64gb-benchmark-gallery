@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const state = { data: null, view: 'overview', rank: 'quality', query: '', family: 'all', status: 'all', lang: localStorage.getItem('fjson-gallery-v2-lang') || 'es' };
+  const metricKeyByRank = { quality: 'quality', decode: 'decode_tps', prefill: 'prefill_tps', context: 'context_s' };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const fmt = value => value === null || value === undefined ? 'Pendiente' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -14,6 +15,16 @@
     return `<span class="status status-${status}">${status}</span>`;
   }
 
+  function updateUrl() {
+    const params = new URLSearchParams(location.search);
+    params.set('view', state.view);
+    params.set('rank', state.rank);
+    if (state.query) params.set('q', state.query); else params.delete('q');
+    if (state.family !== 'all') params.set('family', state.family); else params.delete('family');
+    if (state.status !== 'all') params.set('status', state.status); else params.delete('status');
+    history.replaceState({}, '', `${location.pathname}?${params.toString()}${location.hash}`);
+  }
+
   function metric(model, key, suffix = '') {
     const value = model.metrics[key];
     return value === null || value === undefined ? `<span class="model-role">${copy[state.lang].pending}</span>` : `<span class="metric-value">${fmt(value)}${suffix}</span>`;
@@ -24,9 +35,7 @@
     state.view = safe;
     $$('.view-tab').forEach(button => button.setAttribute('aria-selected', String(button.dataset.view === safe)));
     $$('.view-panel').forEach(panel => { panel.hidden = panel.dataset.view !== safe; });
-    if (push) {
-      const url = new URL(location.href); url.searchParams.set('view', safe); history.replaceState({}, '', url);
-    }
+    if (push) updateUrl();
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
@@ -54,14 +63,24 @@
   function rankedModels() {
     const order = state.data.rankings[state.rank] || [];
     const position = new Map(order.map((id, index) => [id, index]));
+    const key = metricKeyByRank[state.rank];
+    const direction = state.rank === 'context' ? 1 : -1;
     return state.data.models.filter(model => {
       const haystack = `${model.id} ${model.family} ${model.quant} ${model.role}`.toLowerCase();
       return (!state.query || haystack.includes(state.query)) && (state.family === 'all' || model.family === state.family) && (state.status === 'all' || model.status === state.status);
-    }).sort((a,b) => (position.get(a.id) ?? 9999) - (position.get(b.id) ?? 9999));
+    }).sort((a,b) => {
+      const aValue = a.metrics[key]; const bValue = b.metrics[key];
+      const aMissing = aValue === null || aValue === undefined;
+      const bMissing = bValue === null || bValue === undefined;
+      if (aMissing !== bMissing) return aMissing ? 1 : -1;
+      if (!aMissing && aValue !== bValue) return direction * (aValue - bValue);
+      return (position.get(a.id) ?? 9999) - (position.get(b.id) ?? 9999);
+    });
   }
 
   function renderRankings() {
     document.body.dataset.rank = state.rank;
+    $$('button[data-rank]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.rank === state.rank)));
     const models = rankedModels();
     $('#result-count').textContent = copy[state.lang].result(models.length);
     $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${metric(m,'quality')}</td><td>${metric(m,'decode_tps')}</td><td>${metric(m,'prefill_tps')}</td><td>${metric(m,'context_s','s')}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';
@@ -90,10 +109,10 @@
   function bind() {
     $$('.view-tab').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     $$('[data-go]').forEach(button => button.addEventListener('click', () => showView(button.dataset.go)));
-    $('#model-search').addEventListener('input', event => { state.query = event.target.value.trim().toLowerCase(); renderRankings(); });
-    $('#family-filter').addEventListener('change', event => { state.family = event.target.value; renderRankings(); });
-    $('#status-filter').addEventListener('change', event => { state.status = event.target.value; renderRankings(); });
-    $$('[data-rank]').forEach(button => button.addEventListener('click', () => { state.rank = button.dataset.rank; $$('[data-rank]').forEach(item => item.setAttribute('aria-pressed', String(item === button))); renderRankings(); }));
+    $('#model-search').addEventListener('input', event => { state.query = event.target.value.trim().toLowerCase(); renderRankings(); updateUrl(); });
+    $('#family-filter').addEventListener('change', event => { state.family = event.target.value; renderRankings(); updateUrl(); });
+    $('#status-filter').addEventListener('change', event => { state.status = event.target.value; renderRankings(); updateUrl(); });
+    $$('button[data-rank]').forEach(button => button.addEventListener('click', () => { state.rank = button.dataset.rank; renderRankings(); updateUrl(); }));
     $('#lang-toggle').addEventListener('click', () => { state.lang = state.lang === 'es' ? 'en' : 'es'; localStorage.setItem('fjson-gallery-v2-lang', state.lang); applyLanguage(); });
     $('#theme-toggle').addEventListener('click', () => { const next = document.body.dataset.theme === 'light' ? 'dark' : 'light'; document.body.dataset.theme = next; localStorage.setItem('fjson-gallery-v2-theme', next); });
   }
@@ -103,9 +122,18 @@
     const response = await fetch('data/gallery-v2.json');
     if (!response.ok) throw new Error(`Gallery data failed: ${response.status}`);
     state.data = await response.json();
+    const params = new URLSearchParams(location.search);
+    const requestedRank = params.get('rank');
+    if (['quality','decode','prefill','context'].includes(requestedRank)) state.rank = requestedRank;
+    state.query = (params.get('q') || '').toLowerCase();
+    state.family = params.get('family') || 'all';
+    state.status = params.get('status') || 'all';
     renderOverview(); fillFilters(); renderRankings(); renderEvidence(); renderArtifacts(); bind(); applyLanguage();
+    $('#model-search').value = state.query;
+    $('#family-filter').value = state.family;
+    $('#status-filter').value = state.status;
     document.body.dataset.theme = localStorage.getItem('fjson-gallery-v2-theme') || 'dark';
-    showView(new URLSearchParams(location.search).get('view') || 'overview', false);
+    showView(params.get('view') || 'overview', false);
     document.body.classList.remove('is-loading');
   }
 

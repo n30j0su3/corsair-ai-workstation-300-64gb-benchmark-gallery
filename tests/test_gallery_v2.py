@@ -37,7 +37,7 @@ def test_qwen38_is_visible_and_not_claimed_production_before_gates():
     data = json.loads(DATA.read_text(encoding="utf-8"))
     qwen = [model for model in data["models"] if model["id"].startswith("qwen38-27b")]
     assert qwen
-    assert all(model["status"] in {"benchmarking", "candidate", "certified", "utility"} for model in qwen)
+    assert all(model["status"] in {"benchmarking", "candidate", "certified", "utility", "failed"} for model in qwen)
     assert all(model["status"] != "production" for model in qwen)
 
 
@@ -51,7 +51,27 @@ def test_mobile_rank_lens_controls_visible_metric_and_tabs_do_not_smooth_scroll(
     js = APP.read_text(encoding="utf-8")
     css = (ROOT / "shared" / "gallery-v2.css").read_text(encoding="utf-8")
     assert "document.body.dataset.rank = state.rank" in js
+    assert "button[data-rank]" in js
+    assert "$$('[data-rank]')" not in js
     for rank in ("quality", "decode", "prefill", "context"):
         assert f'body[data-rank="{rank}"]' in css
     assert "behavior: 'smooth'" not in js
     assert "scroll-behavior:smooth" not in css
+
+
+def test_rank_filters_are_shareable_deep_links():
+    js = APP.read_text(encoding="utf-8")
+    for token in ("params.get('rank')", "params.get('family')", "params.get('status')"):
+        assert token in js
+    for token in ("params.set('rank', state.rank)", "params.set('family', state.family)", "params.set('status', state.status)"):
+        assert token in js
+
+
+def test_rankings_derive_from_current_metrics_with_missing_values_last():
+    js = APP.read_text(encoding="utf-8")
+    assert "metricKeyByRank" in js
+    assert "aMissing" in js and "bMissing" in js
+    data = json.loads(DATA.read_text(encoding="utf-8"))
+    qwen = {model["id"]: model for model in data["models"] if model["family"] == "Qwen3.8"}
+    assert qwen["qwen38-27b-q4"]["metrics"]["decode_tps"] == 15.01
+    assert qwen["qwen38-27b-q6"]["metrics"]["prefill_tps"] == 80.2

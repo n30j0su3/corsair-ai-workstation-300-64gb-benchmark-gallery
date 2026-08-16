@@ -395,37 +395,37 @@
     {
       "id": "qwen38-27b-q4",
       "family": "Qwen3.8",
-      "quant": "Q4_K_M",
-      "status": "utility",
-      "role": "short interactive utility; benchmark pending",
+      "quant": "UD-Q4_K_XL",
+      "status": "candidate",
+      "role": "measured utility candidate; quality/context pending",
       "metrics": {
         "quality": null,
         "passes": null,
-        "decode_tps": null,
-        "prefill_tps": null,
+        "decode_tps": 15.01,
+        "prefill_tps": 80.81,
         "context_s": null,
-        "mtp_pct": null
+        "mtp_pct": 46.1
       },
       "evidence": [
-        "runtime-intake-20260815"
+        "qwen38-intake-20260815"
       ]
     },
     {
       "id": "qwen38-27b-q6",
       "family": "Qwen3.8",
-      "quant": "Q6_K",
-      "status": "benchmarking",
-      "role": "quality candidate; full-editorial running",
+      "quant": "UD-Q6_K_XL",
+      "status": "failed",
+      "role": "candidate held; D2 failed and b10465 canary DeviceLost",
       "metrics": {
         "quality": null,
         "passes": null,
-        "decode_tps": null,
-        "prefill_tps": null,
+        "decode_tps": 14.93,
+        "prefill_tps": 80.2,
         "context_s": null,
-        "mtp_pct": null
+        "mtp_pct": 74.9
       },
       "evidence": [
-        "full-editorial-20260815-pending"
+        "qwen38-intake-20260815"
       ]
     }
   ],
@@ -524,6 +524,14 @@
     ]
   },
   "evidence": [
+    {
+      "id": "qwen38-intake-20260815",
+      "date": "2026-08-15",
+      "title": "Qwen3.8 27B intake",
+      "kind": "candidate",
+      "href": "qwen38-intake-20260815/index.html",
+      "summary": "Q4/Q6 tooling, MTP speed, Pi forensics and controlled runtime-upgrade gates."
+    },
     {
       "id": "production-certification-20260729",
       "date": "2026-07-29",
