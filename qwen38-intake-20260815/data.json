@@ -1,0 +1,118 @@
+{
+  "schema": "fjson-qwen38-public-intake/v1",
+  "updated": "2026-08-15",
+  "hardware": "Corsair AI Workstation 300 · Ryzen AI Max 385 · 64GB UMA · Radeon 8050S",
+  "runtime": {
+    "backend": "llama.cpp TurboQuant · Vulkan RADV",
+    "production_build": "b9743-c26cbdffc",
+    "candidate_build": "b10465-fca3093c9",
+    "candidate_state": "CANARY_FAIL_DEVICE_LOST",
+    "candidate_gates": {
+      "health": "PASS",
+      "exact": "PASS",
+      "json": "PASS",
+      "tool_call": "PASS",
+      "decode_sustained": "FAIL_VULKAN_DEVICE_LOST_AT_1029_TOKENS",
+      "restore_architect": "PASS"
+    },
+    "candidate_decode_observed_tps": "14.47-15.59 before failure",
+    "candidate_decision": "HOLD",
+    "kv_cache": "turbo4 / turbo3",
+    "flash_attention": true,
+    "mmap": false,
+    "gpu_layers": 99
+  },
+  "model_metadata": {
+    "name": "Qwen3.8-27B",
+    "architecture": "qwen35",
+    "native_context_tokens": 262144,
+    "rope_frequency_base": 10000000.0,
+    "local_base_context_tokens": 32768,
+    "long_lane_state": "PLANNED_CANARY_64K"
+  },
+  "models": [
+    {
+      "id": "qwen38-27b-q4",
+      "quant": "UD-Q4_K_XL",
+      "state": "CANDIDATE",
+      "runtime_gate": "PASS",
+      "tool_call": "PASS",
+      "json": "PASS",
+      "code_tests": "4/4 PASS",
+      "prefill_3304_tps": 80.8068,
+      "decode_baseline_tps": 10.2731,
+      "decode_mtp_tps": 15.0072,
+      "mtp_delta_pct": 46.0821,
+      "full_editorial": "NOT_RUN"
+    },
+    {
+      "id": "qwen38-27b-q6",
+      "quant": "UD-Q6_K_XL",
+      "state": "BENCHMARK_FAIL",
+      "runtime_gate": "PASS",
+      "tool_call": "PASS",
+      "json": "PASS",
+      "code_tests": "4/4 PASS",
+      "prefill_3304_tps": 80.1975,
+      "decode_baseline_tps": 7.753,
+      "decode_mtp_tps": 13.5561,
+      "mtp_delta_pct": 74.8506,
+      "full_editorial_decode_mean_tps": 14.9308,
+      "full_editorial": "FAIL_D2"
+    }
+  ],
+  "full_editorial_result": {
+    "run_id": "20260815T235719Z--qwen38-27b-q6--full-editorial",
+    "state": "FAIL",
+    "decode_mean_tps": 14.93076563972725,
+    "decode_p50_tps": 14.623510858185304,
+    "decode_cv": 0.04099644694443953,
+    "artifacts": {
+      "d1_visual": "PASS",
+      "d2_ecommerce": "FAIL_AFTER_REPAIR_CONSOLE_ERRORS",
+      "d3_threejs": "PASS"
+    }
+  },
+  "pi_forensics": {
+    "pi_fast_tool_call": "DISABLED_BY_WRAPPER",
+    "pi_fast_flag": "--no-tools",
+    "pi_normal_tool_calls": "PASS",
+    "terminal_failure": "CONTEXT_OVERFLOW",
+    "request_tokens": 33119,
+    "available_context_tokens": 32768,
+    "compaction_recovery": "FAILED_AFTER_ONE_RETRY",
+    "conclusion": "The observed pi-fast behavior was a CLI policy, not a model tool-calling failure. The pi session ended because the 32K utility lane was used beyond its context contract."
+  },
+  "external_report_assessment": {
+    "adopted": [
+      "Q6 as quality candidate and Q4 as headroom candidate",
+      "Vulkan with full GPU offload",
+      "no-mmap on UMA",
+      "Flash Attention and quantized KV cache",
+      "separate thinking and non-thinking lanes"
+    ],
+    "already_better_locally": [
+      "TurboQuant turbo4/turbo3 KV cache",
+      "MTP measured with exact-output gate",
+      "router-level lane isolation and rollback",
+      "three-repetition benchmark receipts"
+    ],
+    "requires_local_canary": [
+      "64K/131K Q4 context",
+      "new b10465 TurboQuant runtime",
+      "any batch or ubatch increase",
+      "ROCm performance claims"
+    ],
+    "recipe_corrections": [
+      "Use --spec-type draft-mtp, not mtp",
+      "Use --spec-draft-n-max, not --spec-draft-max",
+      "Treat 15-22 tok/s and 20-30 percent ROCm uplift as estimates until measured locally"
+    ],
+    "not_accepted_as_fact": [
+      "unmeasured 20-30 percent ROCm uplift",
+      "quant-to-context estimates without local memory and retrieval gates",
+      "global MTP or ubatch settings copied from Windows"
+    ]
+  },
+  "ranking_policy": "Quality remains pending until comparable quality gates close. Missing values are not converted to zero or inherited from another model."
+}

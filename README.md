@@ -1,5 +1,17 @@
 # Corsair AI Workstation 300 64GB Benchmark Gallery
 
+## Gallery Index v2 — evidence first
+
+The root landing is now a zero-dependency operational index backed by one canonical file: `data/gallery-v2.json`.
+
+- `index.html`: semantic shell and four primary views — Overview, Rankings, Evidence, Artifacts.
+- `shared/gallery-v2.js`: declarative renderer, ES/EN labels, filters, deep links, rank lenses and theme state.
+- `shared/gallery-v2.css`: responsive design system with no external fonts or plotting runtime.
+- `DESIGN.md`: machine-readable tokens and application rules.
+- `tests/test_gallery_v2.py`: schema, navigation, no-CDN, data integrity and mobile rank-lens contracts.
+
+Quality, decode, prefill and context are intentionally separate lenses. Missing candidate metrics render as `Pending`; they never inherit another model's score and never become zero. Legacy reports remain immutable evidence destinations below the new index.
+
 > **FreakingJSON Agencia • MiniV Vulkan UMA benchmark gallery — fully local, zero cloud**
 
 Public SPA: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>

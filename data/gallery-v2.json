@@ -1,0 +1,615 @@
+{
+  "schema": "fjson-gallery/v2",
+  "updated": "2026-08-15",
+  "hardware": {
+    "name": "Corsair AI Workstation 300",
+    "memory": "64GB UMA",
+    "gpu": "Radeon 8050S",
+    "backend": "Vulkan · TurboQuant"
+  },
+  "summary": {
+    "models": 23,
+    "verified_models": 21,
+    "bench_runs": 84,
+    "visual_artifacts": 49
+  },
+  "models": [
+    {
+      "id": "qwopus36-35b-a3b-q6-mtp",
+      "family": "Qwen3.6",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "local champion",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 71.2,
+        "prefill_tps": 320.3,
+        "context_s": 92,
+        "mtp_pct": 90
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwen36-35b-a3b-q6",
+      "family": "Qwen3.6",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 63.8,
+        "prefill_tps": 332.7,
+        "context_s": 99,
+        "mtp_pct": 91
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus36-35b-a3b-q8-mtp",
+      "family": "Qwen3.6",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 62.5,
+        "prefill_tps": 361.8,
+        "context_s": 93,
+        "mtp_pct": 92
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwen36-35b-a3b-q8",
+      "family": "Qwen3.6",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 54.4,
+        "prefill_tps": 338.6,
+        "context_s": 105,
+        "mtp_pct": 89
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "ornith1-35b-q6",
+      "family": "Ornith",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 52.8,
+        "prefill_tps": 328.2,
+        "context_s": 97,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "ornith1-35b-q6-100k",
+      "family": "Ornith",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 52.6,
+        "prefill_tps": 328.1,
+        "context_s": 97,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "nex-n2-mini-q6",
+      "family": "Specialized",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 49.5,
+        "prefill_tps": 336.1,
+        "context_s": 88,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwen3-coder-next-q4",
+      "family": "Specialized",
+      "quant": "Q4",
+      "status": "candidate",
+      "role": "smoke promoted",
+      "metrics": {
+        "quality": 0.85,
+        "passes": "3/4",
+        "decode_tps": 50.0,
+        "prefill_tps": 228.7,
+        "context_s": 106,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus35-9b-coder-q6-mtp",
+      "family": "Specialized",
+      "quant": "Q6",
+      "status": "candidate",
+      "role": "smoke promoted",
+      "metrics": {
+        "quality": 0.85,
+        "passes": "3/4",
+        "decode_tps": 48.1,
+        "prefill_tps": 439.7,
+        "context_s": 110,
+        "mtp_pct": 89
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "agentworld-35b-a3b-q6",
+      "family": "Specialized",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 46.5,
+        "prefill_tps": 343.6,
+        "context_s": 120,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "ornith1-35b-q8",
+      "family": "Ornith",
+      "quant": "Q8",
+      "status": "candidate",
+      "role": "smoke promoted",
+      "metrics": {
+        "quality": 0.85,
+        "passes": "3/4",
+        "decode_tps": 45.3,
+        "prefill_tps": 372.5,
+        "context_s": 103,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "gemma4-26b-a4b-q6",
+      "family": "Gemma 4",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 39.7,
+        "prefill_tps": 404.8,
+        "context_s": 84,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "gemma4-26b-a4b-q8",
+      "family": "Gemma 4",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 36.7,
+        "prefill_tps": 421.9,
+        "context_s": 83,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "agentworld-35b-a3b-q8",
+      "family": "Specialized",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 32.6,
+        "prefill_tps": 329.3,
+        "context_s": 114,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "ornith1-9b-q8",
+      "family": "Ornith",
+      "quant": "Q8",
+      "status": "candidate",
+      "role": "smoke promoted",
+      "metrics": {
+        "quality": 0.77,
+        "passes": "3/4",
+        "decode_tps": 22.6,
+        "prefill_tps": 489.7,
+        "context_s": 94,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus36-27b-v2-q6-mtp",
+      "family": "Qwen3.6",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 19.1,
+        "prefill_tps": 127.2,
+        "context_s": 301,
+        "mtp_pct": 94
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus36-27b-coder-q6-mtp",
+      "family": "Qwen3.6",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 19.0,
+        "prefill_tps": 128.6,
+        "context_s": 310,
+        "mtp_pct": 93
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "gemma4-12b-q6",
+      "family": "Gemma 4",
+      "quant": "Q6",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 16.6,
+        "prefill_tps": 279.5,
+        "context_s": 166,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus36-27b-coder-q8-mtp",
+      "family": "Qwen3.6",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 14.7,
+        "prefill_tps": 135.7,
+        "context_s": 293,
+        "mtp_pct": 93
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "gemma4-12b-q8",
+      "family": "Gemma 4",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 0.92,
+        "passes": "4/4",
+        "decode_tps": 13.2,
+        "prefill_tps": 286.2,
+        "context_s": 159,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwopus36-27b-v2-q8",
+      "family": "Qwen3.6",
+      "quant": "Q8",
+      "status": "certified",
+      "role": "framework ready",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "4/4",
+        "decode_tps": 7.4,
+        "prefill_tps": 139.0,
+        "context_s": 300,
+        "mtp_pct": null
+      },
+      "evidence": [
+        "bench-v2.2"
+      ]
+    },
+    {
+      "id": "qwen38-27b-q4",
+      "family": "Qwen3.8",
+      "quant": "UD-Q4_K_XL",
+      "status": "candidate",
+      "role": "measured utility candidate; quality/context pending",
+      "metrics": {
+        "quality": null,
+        "passes": null,
+        "decode_tps": 15.01,
+        "prefill_tps": 80.81,
+        "context_s": null,
+        "mtp_pct": 46.1
+      },
+      "evidence": [
+        "qwen38-intake-20260815"
+      ]
+    },
+    {
+      "id": "qwen38-27b-q6",
+      "family": "Qwen3.8",
+      "quant": "UD-Q6_K_XL",
+      "status": "failed",
+      "role": "candidate held; D2 failed and b10465 canary DeviceLost",
+      "metrics": {
+        "quality": null,
+        "passes": null,
+        "decode_tps": 14.93,
+        "prefill_tps": 80.2,
+        "context_s": null,
+        "mtp_pct": 74.9
+      },
+      "evidence": [
+        "qwen38-intake-20260815"
+      ]
+    }
+  ],
+  "rankings": {
+    "quality": [
+      "qwopus36-35b-a3b-q6-mtp",
+      "qwen36-35b-a3b-q6",
+      "qwopus36-35b-a3b-q8-mtp",
+      "qwen36-35b-a3b-q8",
+      "ornith1-35b-q6",
+      "ornith1-35b-q6-100k",
+      "nex-n2-mini-q6",
+      "qwopus36-27b-v2-q6-mtp",
+      "qwopus36-27b-coder-q6-mtp",
+      "qwopus36-27b-coder-q8-mtp",
+      "qwopus36-27b-v2-q8",
+      "agentworld-35b-a3b-q6",
+      "gemma4-26b-a4b-q6",
+      "gemma4-26b-a4b-q8",
+      "agentworld-35b-a3b-q8",
+      "gemma4-12b-q6",
+      "gemma4-12b-q8",
+      "qwen3-coder-next-q4",
+      "qwopus35-9b-coder-q6-mtp",
+      "ornith1-35b-q8",
+      "ornith1-9b-q8"
+    ],
+    "decode": [
+      "qwopus36-35b-a3b-q6-mtp",
+      "qwen36-35b-a3b-q6",
+      "qwopus36-35b-a3b-q8-mtp",
+      "qwen36-35b-a3b-q8",
+      "ornith1-35b-q6",
+      "ornith1-35b-q6-100k",
+      "qwen3-coder-next-q4",
+      "nex-n2-mini-q6",
+      "qwopus35-9b-coder-q6-mtp",
+      "agentworld-35b-a3b-q6",
+      "ornith1-35b-q8",
+      "gemma4-26b-a4b-q6",
+      "gemma4-26b-a4b-q8",
+      "agentworld-35b-a3b-q8",
+      "ornith1-9b-q8",
+      "qwopus36-27b-v2-q6-mtp",
+      "qwopus36-27b-coder-q6-mtp",
+      "gemma4-12b-q6",
+      "qwopus36-27b-coder-q8-mtp",
+      "gemma4-12b-q8",
+      "qwopus36-27b-v2-q8"
+    ],
+    "prefill": [
+      "ornith1-9b-q8",
+      "qwopus35-9b-coder-q6-mtp",
+      "gemma4-26b-a4b-q8",
+      "gemma4-26b-a4b-q6",
+      "ornith1-35b-q8",
+      "qwopus36-35b-a3b-q8-mtp",
+      "agentworld-35b-a3b-q6",
+      "qwen36-35b-a3b-q8",
+      "nex-n2-mini-q6",
+      "qwen36-35b-a3b-q6",
+      "agentworld-35b-a3b-q8",
+      "ornith1-35b-q6",
+      "ornith1-35b-q6-100k",
+      "qwopus36-35b-a3b-q6-mtp",
+      "gemma4-12b-q8",
+      "gemma4-12b-q6",
+      "qwen3-coder-next-q4",
+      "qwopus36-27b-v2-q8",
+      "qwopus36-27b-coder-q8-mtp",
+      "qwopus36-27b-coder-q6-mtp",
+      "qwopus36-27b-v2-q6-mtp"
+    ],
+    "context": [
+      "nex-n2-mini-q6",
+      "qwopus36-35b-a3b-q6-mtp",
+      "qwopus36-35b-a3b-q8-mtp",
+      "ornith1-35b-q6",
+      "ornith1-35b-q6-100k",
+      "qwen36-35b-a3b-q6",
+      "qwen36-35b-a3b-q8",
+      "qwopus36-27b-coder-q8-mtp",
+      "qwopus36-27b-v2-q8",
+      "qwopus36-27b-v2-q6-mtp",
+      "qwopus36-27b-coder-q6-mtp",
+      "gemma4-26b-a4b-q8",
+      "gemma4-26b-a4b-q6",
+      "agentworld-35b-a3b-q8",
+      "agentworld-35b-a3b-q6",
+      "gemma4-12b-q8",
+      "gemma4-12b-q6",
+      "ornith1-35b-q8",
+      "qwen3-coder-next-q4",
+      "qwopus35-9b-coder-q6-mtp",
+      "ornith1-9b-q8"
+    ]
+  },
+  "evidence": [
+    {
+      "id": "qwen38-intake-20260815",
+      "date": "2026-08-15",
+      "title": "Qwen3.8 27B intake",
+      "kind": "candidate",
+      "href": "qwen38-intake-20260815/index.html",
+      "summary": "Q4/Q6 tooling, MTP speed, Pi forensics and controlled runtime-upgrade gates."
+    },
+    {
+      "id": "production-certification-20260729",
+      "date": "2026-07-29",
+      "title": "Production certification",
+      "kind": "certification",
+      "href": "production-certification-20260729/index.html",
+      "summary": "24/24 live tasks; role-based production routing."
+    },
+    {
+      "id": "portfolio-optimization-v1",
+      "date": "2026-07-30",
+      "title": "Dense 27B optimization",
+      "kind": "optimization",
+      "href": "portfolio-optimization-v1/index.html",
+      "summary": "64K integrity, YaRN, adaptive ubatch and visual evidence."
+    },
+    {
+      "id": "context-ladder-20260710",
+      "date": "2026-07-10",
+      "title": "Context ladder",
+      "kind": "context",
+      "href": "context-ladder-20260710/index.html",
+      "summary": "Token-accounted retrieval ladder across 21 aliases."
+    },
+    {
+      "id": "best-real-bench",
+      "date": "2026-07-08",
+      "title": "Best-real agents",
+      "kind": "agentic",
+      "href": "best-real-bench/index.html",
+      "summary": "Real task validation for top local lanes."
+    },
+    {
+      "id": "visual-3d-bench",
+      "date": "2026-07-08",
+      "title": "Visual 3D",
+      "kind": "visual",
+      "href": "visual-3d-bench/index.html",
+      "summary": "49 executable HTML deliverables and runtime evidence."
+    },
+    {
+      "id": "dflash-bench",
+      "date": "2026-07-08",
+      "title": "DFlash pilot",
+      "kind": "negative",
+      "href": "dflash-bench/index.html",
+      "summary": "Measured negative result; not promoted."
+    },
+    {
+      "id": "architect-full-editorial-20260815",
+      "date": "2026-08-15",
+      "title": "Architect full editorial",
+      "kind": "artifact",
+      "href": "benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html",
+      "summary": "Governed D1/D2/D3 export with three-viewport QA."
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "visual-3d-bench",
+      "date": "2026-07-08",
+      "title": "Visual 3D",
+      "kind": "visual",
+      "href": "visual-3d-bench/index.html",
+      "summary": "49 executable HTML deliverables and runtime evidence."
+    },
+    {
+      "id": "architect-full-editorial-20260815",
+      "date": "2026-08-15",
+      "title": "Architect full editorial",
+      "kind": "artifact",
+      "href": "benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html",
+      "summary": "Governed D1/D2/D3 export with three-viewport QA."
+    }
+  ],
+  "methodology": {
+    "quality": "Deterministic task gates; no LLM-as-judge.",
+    "speed": "Prefill and decode reported separately from native timings.",
+    "status": "Candidate is never presented as production before complete gates."
+  }
+}
