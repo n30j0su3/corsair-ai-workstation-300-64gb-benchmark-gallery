@@ -39,6 +39,7 @@ def test_qwen38_is_visible_and_not_claimed_production_before_gates():
     assert qwen
     assert all(model["status"] in {"benchmarking", "candidate", "certified", "utility", "failed"} for model in qwen)
     assert all(model["status"] != "production" for model in qwen)
+    assert '<option value="failed">Failed</option>' in INDEX.read_text(encoding="utf-8")
 
 
 def test_app_renders_filters_and_accessible_state():
