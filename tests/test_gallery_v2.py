@@ -74,5 +74,27 @@ def test_rankings_derive_from_current_metrics_with_missing_values_last():
     assert "aMissing" in js and "bMissing" in js
     data = json.loads(DATA.read_text(encoding="utf-8"))
     qwen = {model["id"]: model for model in data["models"] if model["family"] == "Qwen3.8"}
-    assert qwen["qwen38-27b-q4"]["metrics"]["decode_tps"] == 15.01
-    assert qwen["qwen38-27b-q6"]["metrics"]["prefill_tps"] == 80.2
+    assert qwen["qwen38-27b-q4-fast"]["metrics"]["decode_tps"] == 21.8
+    assert qwen["qwen38-27b-q4"]["metrics"]["decode_tps"] == 20.5
+    assert qwen["qwen38-27b-q6"]["metrics"]["prefill_tps"] == 52.4
+
+
+def test_sovereign_closure_is_public_safe_and_scope_guarded():
+    closure = json.loads((ROOT / "data" / "miniv-sovereign-closure-20260821.json").read_text(encoding="utf-8"))
+    assert closure["final_status"] == "SOVEREIGN_SAFE_PLAN_COMPLETE"
+    assert closure["phases"][1]["status"] == "DATA_BLOCKED_VERIFIED"
+    assert closure["phases"][1]["blocker"]["verified_deficit_gb"] == 18.23
+    assert closure["phases"][2]["contract_checks"] == "6/6"
+    assert closure["phases"][3]["valid_tasks"] == "4/4"
+    assert closure["phases"][5]["integrity"]["manifest"] == "54/54 SHA256 PASS"
+    assert closure["phases"][6]["status"] == "BLOCKED_NO_RECEIPT"
+    assert closure["luna_audit_correction"]["verdict"] == "FAIL_CONTRACT_AND_EXECUTION"
+
+
+def test_latest_gallery_exposes_sovereign_report_and_bounded_gemma():
+    data = json.loads(DATA.read_text(encoding="utf-8"))
+    gemma = next(model for model in data["models"] if model["id"] == "gemma4-e4b-q4-mtp")
+    assert gemma["status"] == "candidate"
+    assert gemma["metrics"]["passes"] == "4/4 valid tasks"
+    assert any(item["id"] == "miniv-sovereign-closure-20260821" for item in data["evidence"])
+    assert (ROOT / "miniv-sovereign-closure-20260821" / "index.html").is_file()

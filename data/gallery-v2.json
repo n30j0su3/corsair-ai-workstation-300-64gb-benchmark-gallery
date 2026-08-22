@@ -1,6 +1,6 @@
 {
   "schema": "fjson-gallery/v2",
-  "updated": "2026-08-15",
+  "updated": "2026-08-21",
   "hardware": {
     "name": "Corsair AI Workstation 300",
     "memory": "64GB UMA",
@@ -8,8 +8,8 @@
     "backend": "Vulkan · TurboQuant"
   },
   "summary": {
-    "models": 23,
-    "verified_models": 21,
+    "models": 25,
+    "verified_models": 24,
     "bench_runs": 84,
     "visual_artifacts": 49
   },
@@ -397,35 +397,74 @@
       "family": "Qwen3.8",
       "quant": "UD-Q4_K_XL",
       "status": "candidate",
-      "role": "measured utility candidate; quality/context pending",
+      "role": "technical pass selectable nondefault · reasoning budget 2048",
       "metrics": {
-        "quality": null,
-        "passes": null,
-        "decode_tps": 15.01,
-        "prefill_tps": 80.81,
+        "quality": 1.0,
+        "passes": "3/3",
+        "decode_tps": 20.5,
+        "prefill_tps": 53.1,
         "context_s": null,
-        "mtp_pct": 46.1
+        "mtp_pct": 90.5
       },
       "evidence": [
-        "qwen38-intake-20260815"
+        "miniv-consolidation-20260820",
+        "miniv-sovereign-closure-20260821"
       ]
     },
     {
       "id": "qwen38-27b-q6",
       "family": "Qwen3.8",
       "quant": "UD-Q6_K_XL",
-      "status": "failed",
-      "role": "candidate held; D2 failed and b10465 canary DeviceLost",
+      "status": "candidate",
+      "role": "technical pass selectable nondefault · reasoning budget 2048",
       "metrics": {
-        "quality": null,
-        "passes": null,
-        "decode_tps": 14.93,
-        "prefill_tps": 80.2,
+        "quality": 1.0,
+        "passes": "3/3",
+        "decode_tps": 17.4,
+        "prefill_tps": 52.4,
         "context_s": null,
-        "mtp_pct": 74.9
+        "mtp_pct": 90.8
       },
       "evidence": [
-        "qwen38-intake-20260815"
+        "miniv-consolidation-20260820",
+        "miniv-sovereign-closure-20260821"
+      ]
+    },
+    {
+      "id": "gemma4-e4b-q4-mtp",
+      "family": "Gemma 4 E4B",
+      "quant": "Q4_K_M + MTP Q8_0",
+      "status": "candidate",
+      "role": "bounded auxiliary canary; router publication pending",
+      "metrics": {
+        "quality": null,
+        "passes": "4/4 valid tasks",
+        "decode_tps": 25.46,
+        "prefill_tps": 37.95,
+        "context_s": null,
+        "mtp_pct": 80.3
+      },
+      "evidence": [
+        "miniv-sovereign-closure-20260821"
+      ]
+    },
+    {
+      "id": "qwen38-27b-q4-fast",
+      "family": "Qwen3.8",
+      "quant": "UD-Q4_K_XL",
+      "status": "utility",
+      "role": "technical pass selectable nondefault · reasoning off",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "3/3",
+        "decode_tps": 21.8,
+        "prefill_tps": 54.1,
+        "context_s": null,
+        "mtp_pct": 98.6
+      },
+      "evidence": [
+        "miniv-consolidation-20260820",
+        "miniv-sovereign-closure-20260821"
       ]
     }
   ],
@@ -451,7 +490,11 @@
       "qwen3-coder-next-q4",
       "qwopus35-9b-coder-q6-mtp",
       "ornith1-35b-q8",
-      "ornith1-9b-q8"
+      "ornith1-9b-q8",
+      "gemma4-e4b-q4-mtp",
+      "qwen38-27b-q4-fast",
+      "qwen38-27b-q4",
+      "qwen38-27b-q6"
     ],
     "decode": [
       "qwopus36-35b-a3b-q6-mtp",
@@ -474,7 +517,11 @@
       "gemma4-12b-q6",
       "qwopus36-27b-coder-q8-mtp",
       "gemma4-12b-q8",
-      "qwopus36-27b-v2-q8"
+      "qwopus36-27b-v2-q8",
+      "gemma4-e4b-q4-mtp",
+      "qwen38-27b-q4-fast",
+      "qwen38-27b-q4",
+      "qwen38-27b-q6"
     ],
     "prefill": [
       "ornith1-9b-q8",
@@ -497,7 +544,11 @@
       "qwopus36-27b-v2-q8",
       "qwopus36-27b-coder-q8-mtp",
       "qwopus36-27b-coder-q6-mtp",
-      "qwopus36-27b-v2-q6-mtp"
+      "qwopus36-27b-v2-q6-mtp",
+      "gemma4-e4b-q4-mtp",
+      "qwen38-27b-q4-fast",
+      "qwen38-27b-q4",
+      "qwen38-27b-q6"
     ],
     "context": [
       "nex-n2-mini-q6",
@@ -520,7 +571,11 @@
       "ornith1-35b-q8",
       "qwen3-coder-next-q4",
       "qwopus35-9b-coder-q6-mtp",
-      "ornith1-9b-q8"
+      "ornith1-9b-q8",
+      "gemma4-e4b-q4-mtp",
+      "qwen38-27b-q4-fast",
+      "qwen38-27b-q4",
+      "qwen38-27b-q6"
     ]
   },
   "evidence": [
@@ -587,6 +642,22 @@
       "kind": "artifact",
       "href": "benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html",
       "summary": "Governed D1/D2/D3 export with three-viewport QA."
+    },
+    {
+      "id": "miniv-sovereign-closure-20260821",
+      "date": "2026-08-21",
+      "title": "Sovereign SOL closure",
+      "kind": "certification",
+      "href": "miniv-sovereign-closure-20260821/index.html",
+      "summary": "R0–R5 safe closure: Architect control 3/3, Qwen contract 6/6, Gemma valid tasks 4/4, integrity 54/54; R6 remains separately gated."
+    },
+    {
+      "id": "miniv-consolidation-20260820",
+      "date": "2026-08-20",
+      "title": "b10465 Qwen consolidation",
+      "kind": "certification",
+      "href": "data/miniv-consolidation-20260820.json",
+      "summary": "Five current Qwen lanes with bounded direct receipts; Q4-fast/Q4/Q6 each passed 3/3 and remain non-default."
     }
   ],
   "artifacts": [
@@ -605,11 +676,29 @@
       "kind": "artifact",
       "href": "benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html",
       "summary": "Governed D1/D2/D3 export with three-viewport QA."
+    },
+    {
+      "id": "miniv-sovereign-closure-20260821",
+      "date": "2026-08-21",
+      "title": "Sovereign SOL closure",
+      "kind": "certification",
+      "href": "miniv-sovereign-closure-20260821/index.html",
+      "summary": "R0–R5 safe closure: Architect control 3/3, Qwen contract 6/6, Gemma valid tasks 4/4, integrity 54/54; R6 remains separately gated."
     }
   ],
   "methodology": {
     "quality": "Deterministic task gates; no LLM-as-judge.",
     "speed": "Prefill and decode reported separately from native timings.",
     "status": "Candidate is never presented as production before complete gates."
+  },
+  "latest": {
+    "status": "SOVEREIGN_SAFE_PLAN_COMPLETE",
+    "default": "architect-35b-q6",
+    "architect_control": "3/3 · 78.98–91.93 tok/s",
+    "qwen_contract": "6/6",
+    "gemma_valid_tasks": "4/4 · mean 25.46 tok/s",
+    "integrity": "54/54 SHA256 PASS",
+    "r6": "BLOCKED_NO_RECEIPT",
+    "luna_audit": "FAIL_CONTRACT_AND_EXECUTION"
   }
 }

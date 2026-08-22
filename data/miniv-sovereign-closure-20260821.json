@@ -1,0 +1,142 @@
+{
+  "schema": "fjson-public-miniv-sovereign-closure/v1",
+  "published_at": "2026-08-21",
+  "executor": "gpt-5.6-sol",
+  "delegation_used": false,
+  "hardware": {
+    "platform": "Corsair AI Workstation 300",
+    "product_memory_class": "64GB UMA",
+    "observed_runtime_ram_gib": 15.26,
+    "observed_runtime_available_gib_at_r1": 7.09,
+    "observed_runtime_free_swap_gib_at_r1": 3.13,
+    "backend": "Vulkan / bounded CPU-only canaries where declared"
+  },
+  "final_status": "SOVEREIGN_SAFE_PLAN_COMPLETE",
+  "phases": [
+    {
+      "phase": "R0",
+      "status": "EXECUTOR_VERIFIED",
+      "scope": "Gemma 4 E4B + MTP2 runtime reproducibility on two llama.cpp candidates",
+      "runs": [
+        {
+          "candidate": "b10465-fca3093c",
+          "mode": "CPU-only bounded canary",
+          "decode_tps": 28.53,
+          "prefill_tps": 39.87,
+          "draft_accepted": "12/12",
+          "exact_output": true
+        },
+        {
+          "candidate": "mainline-b10438",
+          "mode": "CPU-only bounded canary",
+          "decode_tps": 23.45,
+          "prefill_tps": 32.45,
+          "draft_accepted": "10/10",
+          "exact_output": true
+        }
+      ]
+    },
+    {
+      "phase": "R1",
+      "status": "DATA_BLOCKED_VERIFIED",
+      "scope": "Architect protected-default control and matched-candidate feasibility",
+      "control": {
+        "model": "architect-35b-q6",
+        "exact_output_pass": "3/3",
+        "decode_tps_min": 78.98,
+        "decode_tps_mean": 85.29,
+        "decode_tps_max": 91.93,
+        "draft_acceptance_pct_range": "85.1–97.4"
+      },
+      "blocker": {
+        "model_size_gb": 29.21,
+        "available_ram_plus_free_swap_gb": 10.98,
+        "verified_deficit_gb": 18.23,
+        "decision": "No unsafe matched concurrent run; maintenance apply requires separate approval"
+      }
+    },
+    {
+      "phase": "R2",
+      "status": "EXECUTOR_VERIFIED",
+      "scope": "Qwen3.8 current artifacts and router contract reconciliation",
+      "contract_checks": "6/6",
+      "lanes": [
+        "qwen38-27b-q4-fast",
+        "qwen38-27b-q4",
+        "qwen38-27b-q6"
+      ],
+      "decision": "TECHNICAL_PASS_SELECTABLE_NONDEFAULT",
+      "boundary": "No fresh unsafe 27B swap; historical direct runtime receipts remain separate"
+    },
+    {
+      "phase": "R3",
+      "status": "EXECUTOR_VERIFIED",
+      "scope": "Gemma 4 E4B sovereign task battery",
+      "model": "gemma4-e4b-q4-mtp",
+      "valid_tasks": "4/4",
+      "decode_tps_min": 22.50,
+      "decode_tps_mean": 25.46,
+      "decode_tps_max": 30.48,
+      "aggregate_draft_acceptance_pct": 80.3,
+      "tasks": [
+        "exact output",
+        "strict JSON",
+        "tool call",
+        "executable code 4/4"
+      ],
+      "boundary": "CPU-only bounded canary; no production-router mutation"
+    },
+    {
+      "phase": "R4",
+      "status": "EXECUTOR_VERIFIED",
+      "scope": "Integration decision readback",
+      "production_default": "architect-35b-q6 preserved",
+      "gemma_publication": "pending separate router apply/reload gate",
+      "dflash2": "PARK_BLOCKED_UPSTREAM",
+      "llama_cpp_pr_27342": "OPEN/BLOCKED at campaign close"
+    },
+    {
+      "phase": "R5",
+      "status": "EXECUTOR_VERIFIED",
+      "scope": "Closure, offline SPA, browser QA, Wiki and integrity seal",
+      "integrity": {
+        "manifest": "54/54 SHA256 PASS",
+        "phase_receipts": 6,
+        "sealed_evidence_refs": 45,
+        "browser_console_errors": 0,
+        "secret_scan": "PASS"
+      }
+    },
+    {
+      "phase": "R6",
+      "status": "BLOCKED_NO_RECEIPT",
+      "scope": "Maintenance/apply gate",
+      "decision": "Requires separate explicit owner approval"
+    }
+  ],
+  "production_readback": {
+    "health": "ok",
+    "loaded_default": "architect-35b-q6",
+    "canaries_free": true,
+    "new_oom_or_restart_during_sovereign_campaign": false,
+    "production_mutations": 0
+  },
+  "luna_audit_correction": {
+    "verdict": "FAIL_CONTRACT_AND_EXECUTION",
+    "r0_prior_pass_rebutted": true,
+    "r1_entry_gate": "SKIPPED",
+    "guardrail": "STRUCTURAL_FALSE_GREEN",
+    "runtime_after_audit": "RESTORED_HEALTHY",
+    "publication_rule": "Luna outputs are historical audit evidence, not certification authority"
+  },
+  "methodology": {
+    "evidence_classes_separated": [
+      "fresh sovereign canary",
+      "production control",
+      "historical direct receipt reconciliation",
+      "upstream status"
+    ],
+    "no_overclaim_rule": "Blocked and bounded results are not promoted to production PASS",
+    "credit": "All benchmark orchestration, methodology design, and AI model evaluations directed by N30"
+  }
+}

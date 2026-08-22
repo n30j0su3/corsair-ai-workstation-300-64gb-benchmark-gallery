@@ -1,0 +1,13 @@
+# MiniV sovereign public gallery manifest — 2026-08-21
+# SHA-256; public-safe update surfaces only
+
+b14c859a5c57235f1ccb7d7c7175a6c0f66acd024eea666b99f16645b545c7b2  README.md
+bfb0ed46091ae067dad4e9cc66ba54d2b08a5b61ac3fc8740d5c4b4b71fe5410  index.html
+7667eaa2bd64858959b1a334ed5ad996f201480fa7949310dcc07ad3de9f3503  shared/gallery-v2.js
+fbd682e68bdcd5b1e2429a9fc79b63eb0f2fef1428b3396f6f1fbd79d2502024  data/gallery-v2.json
+b2d76cc6ce057b2896cb88d5d5c3751cf5dfa52a529ec11e9a5f481ba3e062a0  data/miniv-consolidation-20260820.json
+d8cbb55c396e4d5818ec4183f5bf8a7f2f0708bd7237c7cc28262a3a8f743f01  data/miniv-sovereign-closure-20260821.json
+ed76d8c862657a31facf0f266b53118055f6b9e425f1a1c8a9825bb6679aa833  miniv-sovereign-closure-20260821/index.html
+d8cbb55c396e4d5818ec4183f5bf8a7f2f0708bd7237c7cc28262a3a8f743f01  miniv-sovereign-closure-20260821/data.json
+7705f4a6fcb060603bc737e0d3565a75c74e73ba70822267015d3f17d1e11056  miniv-cumulative-optimization-20260816/index.html
+bfe2d9649a02c1cf51570a9f1e471c7de5d5b0736ab52797802977eaa4d3fea2  tests/test_gallery_v2.py

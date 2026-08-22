@@ -50,7 +50,8 @@
       ['01','Default agentic','architect-35b-q6','Arquitectura, UI y trabajo mixto con gates productivos.'],
       ['02','Contexto largo','architect-35b-q6','Único default respaldado por ladder profundo publicado.'],
       ['03','Español estricto','thinkingcap-27b-q4','Carril especializado; úsalo por adherencia, no por velocidad.'],
-      ['04','Nueva generación','qwen38-27b-q6','Candidato Qwen3.8: visible, todavía fuera de producción.']
+      ['04','Nueva generación','qwen38-27b-q4','Contrato actual 6/6 reconciliado; seleccionable, no default.'],
+      ['05','Auxiliar soberano','gemma4-e4b-q4-mtp','Canary CPU-only 4/4; publicación del alias pendiente de apply gate.']
     ];
     $('#intent-grid').innerHTML = intents.map(([n,title,model,body]) => `<article class="intent-card"><span class="number">${n}</span><h3>${title}</h3><p>${body}</p><code>${model}</code></article>`).join('');
     const map = modelMap();

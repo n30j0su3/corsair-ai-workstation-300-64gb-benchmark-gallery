@@ -27,7 +27,7 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 - **APU**: AMD Ryzen AI MAX 385 (16C/16T, up to 5.0 GHz)
 - **GPU**: Radeon 8050S Graphics (RADV Vulkan, GFX1151)
 - **Memory**: 64GB LPDDR5X 8000MHz UMA (48GB VRAM allocation)
-- **Backend**: llama-cpp-turboquant fork (Vulkan build b9743-c26cbdff)
+- **Backend**: llama-cpp-turboquant fork (current evidence includes b10465-fca3093c and bounded mainline comparison)
 
 ### Methodology — Bench v2.2
 
@@ -46,6 +46,7 @@ This gallery publishes reproducible, public-safe benchmark evidence from the **M
 
 | Report | Date | Description |
 |--------|------|-------------|
+| [`miniv-sovereign-closure-20260821/`](miniv-sovereign-closure-20260821/index.html) | 2026-08-21 | Sovereign R0–R5 closure — Architect control 3/3, Qwen contract 6/6, Gemma E4B 4/4, integrity 54/54; R6 remains gated |
 | [`portfolio-optimization-v1/`](portfolio-optimization-v1/index.html) | 2026-07-30 | Dense 27B optimization — 64K integrity, YaRN×4, adaptive ubatch, MTP4 and 4-lane visual evidence |
 | [`production-certification-20260729/`](production-certification-20260729/index.html) | 2026-07-29 | Six-model production suite — 24/24 runs, role-based routing and post-tuning gates |
 | [`best-real-bench/`](best-real-bench/index.html) | 2026-07-08 | Best-real TurboQuant+MTP validation — 8/8 PASS across top 35B Q6 lanes |
@@ -67,7 +68,18 @@ Public-safe packs promoted after runtime QA, three-viewport visual review, manif
 
 ---
 
-## Latest Update — 2026-07-29 (Production Certification)
+## Latest Update — 2026-08-21 (Sovereign SOL closure)
+
+- **R0:** Gemma 4 E4B + MTP2 reproduced on b10465 and mainline bounded CPU-only canaries; exact outputs and 100% draft acceptance in both smokes.
+- **R1:** Architect protected-default control passed **3/3** at **78.98–91.93 decode tok/s**. A matched concurrent candidate is `DATA_BLOCKED_VERIFIED`: the measured resource deficit is **18.23 GB**.
+- **R2:** current Qwen3.8 Q4-fast/Q4/Q6 router contract reconciled **6/6** against direct receipts; selectable non-default, with no unsafe fresh 27B swap.
+- **R3:** Gemma E4B passed **4/4 valid tasks** (exact, strict JSON, tool call, executable code), averaging **25.46 decode tok/s** in the bounded canary.
+- **R4–R5:** Architect remained loaded, production mutations stayed at zero, and closure integrity finished **54/54 SHA256 PASS**.
+- **R6:** `BLOCKED_NO_RECEIPT`; any maintenance/apply action requires separate explicit owner approval.
+- Luna's earlier run is published only as corrected audit history: `FAIL_CONTRACT_AND_EXECUTION`, `R1_ENTRY_GATE=SKIPPED`, structural guardrail false-green.
+- Public JSON: [`data/miniv-sovereign-closure-20260821.json`](data/miniv-sovereign-closure-20260821.json).
+
+## Historical Update — 2026-07-29 (Production Certification)
 
 - **24/24 live runs** across six models and four task categories.
 - **Architect remains default** at 58.4 average tok/s in the production suite.

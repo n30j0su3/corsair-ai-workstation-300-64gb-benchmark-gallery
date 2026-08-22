@@ -1,0 +1,315 @@
+{
+  "schema": "fjson-public-miniv-consolidation/v1",
+  "published_at": "2026-08-20",
+  "environment": "MiniV Vulkan UMA",
+  "build": "b10465-fca3093c",
+  "backend_family": "llama-cpp-turboquant Vulkan",
+  "hardware": "Corsair AI Workstation 300 64GB UMA / Radeon 8050S Vulkan",
+  "production_default": {
+    "alias": "architect-35b-q6",
+    "decision": "preserved_default",
+    "reason": "restore verified after every serial phase"
+  },
+  "methodology": {
+    "current_battery": "tool_call, coding_fix, context_heavy",
+    "reasoning_output_contract": "reasoning budget 2048 lanes use max_tokens >= 8192",
+    "deep_context_boundary": "not used as a universal gate when declared ctx-size is lower",
+    "no_overclaim_rule": "upstream metrics and bounded probes never substitute for local certification",
+    "private_data_excluded": true
+  },
+  "current_qwen_lanes": [
+    {
+      "alias": "qwen38-27b-q4-fast",
+      "current_battery": "3/3 PASS",
+      "historical_technical": "9/9 PASS",
+      "reasoning": "off",
+      "decode_tps": 21.8
+    },
+    {
+      "alias": "qwen38-27b-q4",
+      "current_battery": "3/3 PASS",
+      "historical_technical": "9/9 PASS",
+      "reasoning_budget": 2048,
+      "decode_tps": 20.5
+    },
+    {
+      "alias": "qwen38-27b-q6",
+      "current_battery": "3/3 PASS",
+      "historical_technical": "9/9 PASS",
+      "reasoning_budget": 2048,
+      "decode_tps": 17.4
+    },
+    {
+      "alias": "dense27b-heretic",
+      "current_battery": "3/3 PASS",
+      "historical_technical": "9/9 PASS",
+      "vision_mmproj": true,
+      "reasoning_budget": 2048,
+      "decode_tps": 21.0
+    },
+    {
+      "alias": "qwen38-27b-ridge",
+      "current_battery": "2/3 lexical + 1/1 semantic repair PASS",
+      "historical_technical": "9/9 PASS",
+      "reasoning_budget": 2048,
+      "decode_tps": 24.7
+    }
+  ],
+  "current_battery_rows": [
+    {
+      "model": "qwen38-27b-q4-fast",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 48.0,
+      "decode_tps": 22.5,
+      "thinking_tokens": 0,
+      "mtp_accept_pct": 100.0,
+      "total_elapsed_s": 7.5,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q4-fast",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 51.5,
+      "decode_tps": 21.6,
+      "thinking_tokens": 0,
+      "mtp_accept_pct": 97.4,
+      "total_elapsed_s": 9.0,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q4-fast",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 62.8,
+      "decode_tps": 21.3,
+      "thinking_tokens": 0,
+      "mtp_accept_pct": 98.4,
+      "total_elapsed_s": 24.1,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q4",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 47.0,
+      "decode_tps": 21.2,
+      "thinking_tokens": 44,
+      "mtp_accept_pct": 91.1,
+      "total_elapsed_s": 9.9,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q4",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 50.3,
+      "decode_tps": 19.9,
+      "thinking_tokens": 154,
+      "mtp_accept_pct": 87.6,
+      "total_elapsed_s": 22.7,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q4",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 62.0,
+      "decode_tps": 20.3,
+      "thinking_tokens": 353,
+      "mtp_accept_pct": 92.7,
+      "total_elapsed_s": 53.1,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q6",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 46.4,
+      "decode_tps": 17.8,
+      "thinking_tokens": 44,
+      "mtp_accept_pct": 92.2,
+      "total_elapsed_s": 11.1,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q6",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 49.5,
+      "decode_tps": 17.3,
+      "thinking_tokens": 93,
+      "mtp_accept_pct": 89.3,
+      "total_elapsed_s": 18.3,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-q6",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 61.3,
+      "decode_tps": 17.2,
+      "thinking_tokens": 378,
+      "mtp_accept_pct": 90.9,
+      "total_elapsed_s": 63.3,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "dense27b-heretic",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 46.8,
+      "decode_tps": 21.6,
+      "thinking_tokens": 104,
+      "mtp_accept_pct": 97.0,
+      "total_elapsed_s": 15.3,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "dense27b-heretic",
+      "task": "coding_fix",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 49.9,
+      "decode_tps": 21.0,
+      "thinking_tokens": 73,
+      "mtp_accept_pct": 93.5,
+      "total_elapsed_s": 14.5,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "dense27b-heretic",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 62.1,
+      "decode_tps": 20.4,
+      "thinking_tokens": 405,
+      "mtp_accept_pct": 92.7,
+      "total_elapsed_s": 58.3,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-ridge",
+      "task": "tool_call",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 47.6,
+      "decode_tps": 26.1,
+      "thinking_tokens": 58,
+      "mtp_accept_pct": 92.7,
+      "total_elapsed_s": 9.2,
+      "finish_reason": "stop"
+    },
+    {
+      "model": "qwen38-27b-ridge",
+      "task": "coding_fix",
+      "status": "PASS_SEMANTIC_REPAIR",
+      "score": 1.0,
+      "prefill_tps": 50.8,
+      "decode_tps": 25.1,
+      "thinking_tokens": 189,
+      "mtp_accept_pct": 93.4,
+      "total_elapsed_s": 22.8,
+      "finish_reason": "stop",
+      "lexical_checker": "FAIL_FALSE_NEGATIVE",
+      "semantic_repair": "PASS_EXECUTED_FUNCTION_CASES"
+    },
+    {
+      "model": "qwen38-27b-ridge",
+      "task": "context_heavy",
+      "status": "PASS",
+      "score": 1.0,
+      "prefill_tps": 63.6,
+      "decode_tps": 23.0,
+      "thinking_tokens": 590,
+      "mtp_accept_pct": 84.9,
+      "total_elapsed_s": 57.0,
+      "finish_reason": "stop"
+    }
+  ],
+  "ornith_agentic": {
+    "alias": "ornith15-35b-q6",
+    "decision": "AGENTIC_PASS_WITH_CONTEXT_LIMIT",
+    "matched_tasks": "5/5 versus qwen38-27b-q6 control",
+    "upstream_reference_claims": {
+      "terminal_bench_2_1": 68.5,
+      "swe_bench_verified": 79.0,
+      "toolathlon_verified": 48.7
+    },
+    "local_long_context": "not certified"
+  },
+  "experimental_probe": {
+    "smoke_aliases": {
+      "count": 12,
+      "pass": 12,
+      "decision": "EXPERIMENTAL_SMOKE_PASS_NOT_CERTIFIED"
+    },
+    "long_aliases": {
+      "count": 5,
+      "pass": 5,
+      "decision": "CONTEXT_PROBE_PASS_NOT_LONG_CERTIFIED",
+      "scope": "bounded ~180-section retrieval probe; no 70K/100K reasoning claim"
+    },
+    "decision": "probe evidence only; no silent promotion"
+  },
+  "gallery_boundary": "Public-safe consolidated receipts for 2026-08-20; historical July 2026 pages remain unchanged and labeled historical.",
+  "source_receipts": [
+    "P0-RECEIPT.json",
+    "P1-QWEN-RECEIPT.json",
+    "P1-ORNITH-RECEIPT.json",
+    "P2-RECEIPT.json",
+    "P3-RECEIPT.json"
+  ],
+  "p5_yagni_final_certification": {
+    "status": "EXECUTOR_VERIFIED_WITH_SCOPE_GUARD",
+    "aliases": [
+      {
+        "alias": "gemma4-12b-q6",
+        "decision": "CERTIFIED_WITH_SCOPE_GUARD",
+        "compact_tasks": "3/3 PASS",
+        "quality_gates": "3/4 raw PASS + strict JSON repair PASS"
+      },
+      {
+        "alias": "gemma4-26b-q6",
+        "decision": "CERTIFIED_WITH_SCOPE_GUARD",
+        "compact_tasks": "3/3 PASS",
+        "quality_gates": "3/4 raw PASS + strict JSON repair PASS"
+      },
+      {
+        "alias": "qwopus36-27b-coder-compat-mtp-q6-not-yet",
+        "decision": "CERTIFIED_WITH_SCOPE_GUARD",
+        "compact_tasks": "2/3 raw PASS + semantic coding repair PASS",
+        "quality_gates": "4/4 PASS"
+      },
+      {
+        "alias": "qwopus36-27b-coder-mtp-q6-not-yet",
+        "decision": "CERTIFIED_WITH_SCOPE_GUARD",
+        "compact_tasks": "2/3 raw PASS + semantic coding repair PASS",
+        "quality_gates": "4/4 PASS"
+      }
+    ],
+    "context": {
+      "ornith-35b-q6": "44K retrieval PASS; long reasoning PARTIAL due strict evidence_section contract",
+      "ornith-35b-q6-100k": "44K retrieval PASS; no 100K reasoning promotion",
+      "production_decision": "keep Architect default; no 100K promotion"
+    },
+    "restore": {
+      "alias": "architect-35b-q6",
+      "status": "loaded",
+      "marker": "ARCHITECT_P5_FINAL_RESTORE_OK"
+    },
+    "evidence": "reports/miniv-local-model-consolidation-20260820/P5-ALIASES and P5-CONTEXT"
+  }
+}
