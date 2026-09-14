@@ -1,6 +1,6 @@
 {
   "schema": "fjson-gallery/v2",
-  "updated": "2026-08-21",
+  "updated": "2026-09-14",
   "hardware": {
     "name": "Corsair AI Workstation 300",
     "memory": "64GB UMA",
@@ -8,10 +8,10 @@
     "backend": "Vulkan · TurboQuant"
   },
   "summary": {
-    "models": 25,
-    "verified_models": 24,
-    "bench_runs": 84,
-    "visual_artifacts": 49
+    "models": 26,
+    "verified_models": 25,
+    "bench_runs": 96,
+    "visual_artifacts": 64
   },
   "models": [
     {
@@ -393,6 +393,24 @@
       ]
     },
     {
+      "id": "qwen38-flash-next-ud-iq3-xxs",
+      "family": "Qwen3.8 Flash-Next",
+      "quant": "UD-IQ3_XXS + MTP Q8_0",
+      "status": "candidate",
+      "role": "MoE expert-cache lane · on-demand governed · 48-slot profile · non-default",
+      "metrics": {
+        "quality": 1.0,
+        "passes": "3/3",
+        "decode_tps": 35.76,
+        "prefill_tps": 232.0,
+        "context_s": 131072,
+        "mtp_pct": 78
+      },
+      "evidence": [
+        "flash-next-expert-cache-20260912"
+      ]
+    },
+    {
       "id": "qwen38-27b-q4",
       "family": "Qwen3.8",
       "quant": "UD-Q4_K_XL",
@@ -408,7 +426,7 @@
       },
       "evidence": [
         "miniv-consolidation-20260820",
-        "miniv-sovereign-closure-20260821"
+        "miniv-historical-closure-20260821"
       ]
     },
     {
@@ -427,7 +445,7 @@
       },
       "evidence": [
         "miniv-consolidation-20260820",
-        "miniv-sovereign-closure-20260821"
+        "miniv-historical-closure-20260821"
       ]
     },
     {
@@ -445,7 +463,7 @@
         "mtp_pct": 80.3
       },
       "evidence": [
-        "miniv-sovereign-closure-20260821"
+        "miniv-historical-closure-20260821"
       ]
     },
     {
@@ -464,7 +482,7 @@
       },
       "evidence": [
         "miniv-consolidation-20260820",
-        "miniv-sovereign-closure-20260821"
+        "miniv-historical-closure-20260821"
       ]
     }
   ],
@@ -481,6 +499,7 @@
       "qwopus36-27b-coder-q6-mtp",
       "qwopus36-27b-coder-q8-mtp",
       "qwopus36-27b-v2-q8",
+      "qwen38-flash-next-ud-iq3-xxs",
       "agentworld-35b-a3b-q6",
       "gemma4-26b-a4b-q6",
       "gemma4-26b-a4b-q8",
@@ -511,6 +530,7 @@
       "gemma4-26b-a4b-q6",
       "gemma4-26b-a4b-q8",
       "agentworld-35b-a3b-q8",
+      "qwen38-flash-next-ud-iq3-xxs",
       "ornith1-9b-q8",
       "qwopus36-27b-v2-q6-mtp",
       "qwopus36-27b-coder-q6-mtp",
@@ -540,6 +560,7 @@
       "qwopus36-35b-a3b-q6-mtp",
       "gemma4-12b-q8",
       "gemma4-12b-q6",
+      "qwen38-flash-next-ud-iq3-xxs",
       "qwen3-coder-next-q4",
       "qwopus36-27b-v2-q8",
       "qwopus36-27b-coder-q8-mtp",
@@ -575,7 +596,8 @@
       "gemma4-e4b-q4-mtp",
       "qwen38-27b-q4-fast",
       "qwen38-27b-q4",
-      "qwen38-27b-q6"
+      "qwen38-27b-q6",
+      "qwen38-flash-next-ud-iq3-xxs"
     ]
   },
   "evidence": [
@@ -585,7 +607,7 @@
       "title": "Qwen3.8 27B intake",
       "kind": "candidate",
       "href": "qwen38-intake-20260815/index.html",
-      "summary": "Q4/Q6 tooling, MTP speed, Pi forensics and controlled runtime-upgrade gates."
+      "summary": "Q4/Q6 tooling, MTP speed, controlled runtime-upgrade gates and bounded forensics."
     },
     {
       "id": "production-certification-20260729",
@@ -625,7 +647,7 @@
       "title": "Visual 3D",
       "kind": "visual",
       "href": "visual-3d-bench/index.html",
-      "summary": "49 executable HTML deliverables and runtime evidence."
+      "summary": "64 executable HTML deliverables: 49 primary artifacts plus 15 secondary artifacts."
     },
     {
       "id": "dflash-bench",
@@ -644,20 +666,28 @@
       "summary": "Governed D1/D2/D3 export with three-viewport QA."
     },
     {
-      "id": "miniv-sovereign-closure-20260821",
+      "id": "miniv-historical-closure-20260821",
       "date": "2026-08-21",
-      "title": "Sovereign SOL closure",
+      "title": "Historical closure (Aug)",
       "kind": "certification",
-      "href": "miniv-sovereign-closure-20260821/index.html",
+      "href": "miniv-historical-closure-20260821/index.html",
       "summary": "R0–R5 safe closure: Architect control 3/3, Qwen contract 6/6, Gemma valid tasks 4/4, integrity 54/54; R6 remains separately gated."
     },
     {
       "id": "miniv-consolidation-20260820",
       "date": "2026-08-20",
-      "title": "b10465 Qwen consolidation",
+      "title": "Qwen consolidation (Aug)",
       "kind": "certification",
       "href": "data/miniv-consolidation-20260820.json",
       "summary": "Five current Qwen lanes with bounded direct receipts; Q4-fast/Q4/Q6 each passed 3/3 and remain non-default."
+    },
+    {
+      "id": "flash-next-expert-cache-20260912",
+      "date": "2026-09-12",
+      "title": "Flash-Next expert cache",
+      "kind": "REPORT",
+      "href": "flash-next-expert-cache-20260912/index.html",
+      "summary": "Qwen3.8 Flash-Next UD-IQ3_XXS lane at 48 MoE-cache slots: 32K/32=32.27 tok/s, 64K/32=34.84, 128K/32=35.76, 128K/48 range 36.33–37.92; 24.2× decode vs 1.57 baseline; exact content 3/3 at every rung."
     }
   ],
   "artifacts": [
@@ -667,7 +697,7 @@
       "title": "Visual 3D",
       "kind": "visual",
       "href": "visual-3d-bench/index.html",
-      "summary": "49 executable HTML deliverables and runtime evidence."
+      "summary": "64 executable HTML deliverables: 49 primary artifacts plus 15 secondary artifacts."
     },
     {
       "id": "architect-full-editorial-20260815",
@@ -678,11 +708,11 @@
       "summary": "Governed D1/D2/D3 export with three-viewport QA."
     },
     {
-      "id": "miniv-sovereign-closure-20260821",
+      "id": "miniv-historical-closure-20260821",
       "date": "2026-08-21",
-      "title": "Sovereign SOL closure",
+      "title": "Historical closure (Aug)",
       "kind": "certification",
-      "href": "miniv-sovereign-closure-20260821/index.html",
+      "href": "miniv-historical-closure-20260821/index.html",
       "summary": "R0–R5 safe closure: Architect control 3/3, Qwen contract 6/6, Gemma valid tasks 4/4, integrity 54/54; R6 remains separately gated."
     }
   ],
@@ -692,13 +722,17 @@
     "status": "Candidate is never presented as production before complete gates."
   },
   "latest": {
-    "status": "SOVEREIGN_SAFE_PLAN_COMPLETE",
+    "status": "CURRENT_FLASH_NEXT_OBSERVED",
     "default": "architect-35b-q6",
-    "architect_control": "3/3 · 78.98–91.93 tok/s",
-    "qwen_contract": "6/6",
-    "gemma_valid_tasks": "4/4 · mean 25.46 tok/s",
-    "integrity": "54/54 SHA256 PASS",
-    "r6": "BLOCKED_NO_RECEIPT",
-    "luna_audit": "FAIL_CONTRACT_AND_EXECUTION"
+    "flash_next": {
+      "model": "qwen38-flash-next-ud-iq3-xxs",
+      "decode_best_rung": "37.92 tok/s @ 128K/48-slot",
+      "decode_baseline": "1.57 tok/s @ 32K/0-slot",
+      "headline_speedup": "24.2×",
+      "exact_content": "3/3 at every measured rung",
+      "stability": "13/13 without DeviceLost",
+      "operational_scope": "64K on-demand; 128K benchmark-only",
+      "measured": "2026-09-12"
+    }
   }
 }

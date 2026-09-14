@@ -1,181 +1,73 @@
-# Corsair AI Workstation 300 64GB Benchmark Gallery
+# Corsair AI Workstation 300 Benchmark Gallery
 
-## Gallery Index v2 — evidence first
+<p align="center"><strong>FreakingJSON · Local AI, measured in public</strong></p>
 
-The root landing is now a zero-dependency operational index backed by one canonical file: `data/gallery-v2.json`.
+<p align="center">
+  <a href="https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/">Open the gallery</a> ·
+  <a href="https://github.com/n30j0su3/fjson-local-model-benchmark">Use the public benchmark harness</a> ·
+  <a href="https://freakingjson.com/">FreakingJSON</a>
+</p>
 
-- `index.html`: semantic shell and four primary views — Overview, Rankings, Evidence, Artifacts.
-- `shared/gallery-v2.js`: declarative renderer, ES/EN labels, filters, deep links, rank lenses and theme state.
-- `shared/gallery-v2.css`: responsive design system with no external fonts or plotting runtime.
-- `DESIGN.md`: machine-readable tokens and application rules.
-- `tests/test_gallery_v2.py`: schema, navigation, no-CDN, data integrity and mobile rank-lens contracts.
+This repository publishes interactive benchmark evidence from a **Corsair AI Workstation 300** with 64GB unified memory. It keeps quality, decode, prefill and context as separate lenses, dates every operational claim and distinguishes current state from historical snapshots.
 
-Quality, decode, prefill and context are intentionally separate lenses. Missing candidate metrics render as `Pending`; they never inherit another model's score and never become zero. Legacy reports remain immutable evidence destinations below the new index.
+## Current evidence · September 12, 2026
 
-> **FreakingJSON Agencia • MiniV Vulkan UMA benchmark gallery — fully local, zero cloud**
+### Qwen3.8 Flash-Next + MoE Expert Cache
 
-Public SPA: <https://n30j0su3.github.io/corsair-ai-workstation-300-64gb-benchmark-gallery/>
+| Lens | Published observation |
+|---|---:|
+| Decode baseline | 1.57 tok/s |
+| Decode · 32K / 32 slots | 32.27 tok/s |
+| Decode · 64K / 32 slots | 34.84 tok/s |
+| Decode · 128K / 32 slots | 35.76 tok/s |
+| Decode · 128K / 48 slots | **36.33–37.92 tok/s** |
+| Prefill · 5,660 prompt tokens | ≈164 tok/s |
+| Prefill · 16,860 prompt tokens | ≈232 tok/s |
+| Stability observation | 13 consecutive runs without DeviceLost |
 
----
+**Scope:** Flash-Next is an on-demand, non-default lane. `architect-35b-q6` remains the protected default. These numbers are dated observations on this workstation—not universal quality scores or promises for other hardware.
 
-## What Is This?
+- [Read the visual Flash-Next report](flash-next-expert-cache-20260912/index.html)
+- [Inspect the structured public data](data/flash-next-expert-cache-20260912.json)
+- [Open the public benchmark harness](https://github.com/n30j0su3/fjson-local-model-benchmark)
 
-This gallery publishes reproducible, public-safe benchmark evidence from the **MiniV Vulkan UMA** stack — a local-first AI inference platform running on a Corsair AI Workstation 300 (64GB UMA, AMD Ryzen AI MAX 385, Radeon 8050S Graphics). All benchmarks are orchestrated and directed by **N30** with zero cloud dependency.
+## Public reports
 
-### Hardware
+| Report | Date | Scope |
+|---|---|---|
+| [Flash-Next Expert Cache](flash-next-expert-cache-20260912/index.html) | 2026-09-12 | Current decode, prefill, context ladder and public boundaries |
+| [Historical evidence closure](miniv-historical-closure-20260821/index.html) | 2026-08-21 | Sanitized dated snapshot; not current routing |
+| [Qwen3.8 27B intake](qwen38-intake-20260815/index.html) | 2026-08-15 | Q4/Q6 candidate evidence |
+| [Architect editorial export](benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html) | 2026-08-15 | Public-safe D1 and D3 artifact export |
+| [Portfolio optimization](portfolio-optimization-v1/index.html) | 2026-07-30 | Historical dense-lane comparison |
+| [Production certification](production-certification-20260729/index.html) | 2026-07-29 | Historical six-model snapshot |
+| [Context ladder](context-ladder-20260710/index.html) | 2026-07-10 | Token-accounted retrieval ladder |
+| [Best-real agents](best-real-bench/index.html) | 2026-07-08 | Real-task artifact validation |
+| [DFlash pilot](dflash-bench/index.html) | 2026-07-08 | Negative result retained publicly |
+| [Visual 3D collection](visual-3d-bench/index.html) | 2026-07-08 | 64 interactive artifacts: 49 primary plus 15 secondary |
 
-- **APU**: AMD Ryzen AI MAX 385 (16C/16T, up to 5.0 GHz)
-- **GPU**: Radeon 8050S Graphics (RADV Vulkan, GFX1151)
-- **Memory**: 64GB LPDDR5X 8000MHz UMA (48GB VRAM allocation)
-- **Backend**: llama-cpp-turboquant fork (current evidence includes b10465-fca3093c and bounded mainline comparison)
+## How to read the gallery
 
-### Methodology — Bench v2.2
+- **Quality** requires deterministic evidence and visible artifacts.
+- **Decode** measures output generation.
+- **Prefill** measures prompt ingestion and is never blended with decode.
+- **Context** requires correct retrieval, not only allocation.
+- **Candidate** and **utility** states do not imply default promotion.
+- Historical pages are preserved as dated evidence and can differ from current routing.
 
-- **4 tasks**: tool_call, coding_fix, context_heavy, deep_context_retrieval
-- **Separated metrics** from llama-server API `timings` object:
-  - `prompt_per_second` = prefill speed (input processing)
-  - `predicted_per_second` = decode speed (output generation)
-  - `reasoning_content` = thinking tokens (separated from output)
-  - `draft_n` / `draft_n_accepted` = MTP acceptance rate
-- **Adaptive timeouts** based on context size (not fixed 600s)
-- **No LLM-as-judge** — deterministic checkers only
+## Public boundaries
 
----
+The published tree intentionally excludes private session details, host paths, execution identities, operational topology, raw logs and internal QA packages. Public data is limited to dated aggregate measurements, model identity, hardware class, visible artifacts and decision boundaries.
 
-## Report Index
+## Hardware
 
-| Report | Date | Description |
-|--------|------|-------------|
-| [`miniv-sovereign-closure-20260821/`](miniv-sovereign-closure-20260821/index.html) | 2026-08-21 | Sovereign R0–R5 closure — Architect control 3/3, Qwen contract 6/6, Gemma E4B 4/4, integrity 54/54; R6 remains gated |
-| [`portfolio-optimization-v1/`](portfolio-optimization-v1/index.html) | 2026-07-30 | Dense 27B optimization — 64K integrity, YaRN×4, adaptive ubatch, MTP4 and 4-lane visual evidence |
-| [`production-certification-20260729/`](production-certification-20260729/index.html) | 2026-07-29 | Six-model production suite — 24/24 runs, role-based routing and post-tuning gates |
-| [`best-real-bench/`](best-real-bench/index.html) | 2026-07-08 | Best-real TurboQuant+MTP validation — 8/8 PASS across top 35B Q6 lanes |
-| [`context-ladder-20260710/`](context-ladder-20260710/index.html) | 2026-07-10 | Corrected 120K context retrieval ladder — 86 rows, 21 aliases |
-| [`dflash-bench/`](dflash-bench/index.html) | 2026-07-08 | DFlash pilot — measured negative, not promoted |
-| [`dflash-bench/turboquant-followup/`](dflash-bench/turboquant-followup/index.html) | 2026-07-08 | TurboQuant + DFlash follow-up appendix |
-| [`visual-3d-bench/`](visual-3d-bench/index.html) | 2026-07-08 | Visual 3D benchmark — 11 models, 49 HTML deliverables, 0 runtime issues |
-| [`visual-3d-bench/pi-dev/`](visual-3d-bench/pi-dev/index.html) | 2026-07-08 | Pi-dev harness — 15 additional pi-agent-generated deliverables |
-| [`index.html`](index.html) | 2026-07-29 | Main SPA gallery with ES/EN toggle, dark/light mode |
+- **System:** Corsair AI Workstation 300
+- **Processor:** AMD Ryzen AI MAX 385
+- **Graphics:** Radeon 8050S · Vulkan RADV
+- **Memory:** 64GB LPDDR5X UMA
 
-## Governed Benchmark Exports
+## Credits
 
-Public-safe packs promoted after runtime QA, three-viewport visual review, manifest verification and fingerprint-bound N30 approval.
+Benchmark direction, methodology and model evaluation: **N30 · FreakingJSON**.
 
-<!-- FJSON_BENCHMARK_EXPORTS_START -->
-
-- [architect-35b-q6-full-editorial-20260815](benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html)
-<!-- FJSON_BENCHMARK_EXPORTS_END -->
-
----
-
-## Latest Update — 2026-08-21 (Sovereign SOL closure)
-
-- **R0:** Gemma 4 E4B + MTP2 reproduced on b10465 and mainline bounded CPU-only canaries; exact outputs and 100% draft acceptance in both smokes.
-- **R1:** Architect protected-default control passed **3/3** at **78.98–91.93 decode tok/s**. A matched concurrent candidate is `DATA_BLOCKED_VERIFIED`: the measured resource deficit is **18.23 GB**.
-- **R2:** current Qwen3.8 Q4-fast/Q4/Q6 router contract reconciled **6/6** against direct receipts; selectable non-default, with no unsafe fresh 27B swap.
-- **R3:** Gemma E4B passed **4/4 valid tasks** (exact, strict JSON, tool call, executable code), averaging **25.46 decode tok/s** in the bounded canary.
-- **R4–R5:** Architect remained loaded, production mutations stayed at zero, and closure integrity finished **54/54 SHA256 PASS**.
-- **R6:** `BLOCKED_NO_RECEIPT`; any maintenance/apply action requires separate explicit owner approval.
-- Luna's earlier run is published only as corrected audit history: `FAIL_CONTRACT_AND_EXECUTION`, `R1_ENTRY_GATE=SKIPPED`, structural guardrail false-green.
-- Public JSON: [`data/miniv-sovereign-closure-20260821.json`](data/miniv-sovereign-closure-20260821.json).
-
-## Historical Update — 2026-07-29 (Production Certification)
-
-- **24/24 live runs** across six models and four task categories.
-- **Architect remains default** at 58.4 average tok/s in the production suite.
-- **ThinkingCap Q4 promoted** for Spanish and instruction adherence.
-- **Coder Q5/Q6 budgets corrected** and post-tuning code smoke verified.
-- **Qwen3.6 Q6 stays dev-only** until the complete suite is rerun under reasoning-disabled settings.
-- Public JSON: [`production-certification-20260729/results.json`](production-certification-20260729/results.json).
-
-## Previous Update — 2026-07-15 (Gallery Overhaul)
-
-### What's New
-
-- **Reference Context section** added at the top of the SPA — explains hardware, methodology, inference backend, and scope for new visitors.
-- **Report Index** added for quick navigation to all benchmark reports.
-- **Visual 3D Benchmark Gallery** now properly linked and discoverable from the main SPA.
-- **Full ES/EN i18n coverage** — all sections (best-real, context ladder, DFlash, visual 3D) now respond to the language toggle. Previously, 3 major sections were English-only.
-- **Anchor navigation** — every report section has a stable ID for direct linking.
-
-## Previous Update — 2026-07-10 (Corrected 120K Context Retrieval Ladder)
-
-- **Corrected long-context ladder**: 86 token-accounted retrieval rows across 21 registered aliases.
-- **Visible exact retrieval**: 82 PASS, 1 PARTIAL, 2 deterministic misses, 1 server error — reported explicitly.
-- **Default verified through 120K**: `architect-35b-q6` reached **117,814 observed prompt tokens**.
-- **Routing decision unchanged**: TurboQuant + MTP with `architect-35b-q6` remains production default.
-
-## Previous Update — 2026-07-08 (Best-real + DFlash + Visual 3D)
-
-### Best-real Validation
-
-- **8/8 PASS** across short/medium agent tasks + deep-context retrieval
-- **Architect short/medium**: 76.3 decode tok/s avg, 91.0% MTP acceptance
-- **Architect deep-context**: 360.2 prefill tok/s, 49.4 decode tok/s, 91.9% MTP
-
-### DFlash Pilot
-
-- Decision: **not promoted**. Baseline was faster than DFlash on all tested models.
-- TurboQuant+DFlash follow-up: 0.0% draft acceptance, also slower than baseline.
-
-### Visual 3D Benchmark
-
-- **11 models** generated **49 HTML deliverables** across 5 visual prompts
-- **Runtime gate green**: 49/49 complete, 0 markdown fences, 0 strict runtime issues
-- Prompts: Three.js Particle Galaxy, FPS Raycasting Engine, 3D Flight Simulation, Wave Ocean Shader, Breakout Canvas Game
-- **Pi-dev harness**: 15 additional pi-agent-generated deliverables verified
-- SHA256 integrity manifest: [`visual-3d-bench/manifest.json`](visual-3d-bench/manifest.json)
-
-## Bench v2.2 Baseline — 2026-07-07
-
-### Key Results
-
-- **21 models benchmarked** with separated prefill/decode/thinking/MTP metrics
-- **84 total runs** across 4 waves
-- **11 models with perfect score (1.00)**
-- **Deep context retrieval solved**: 310s → 92s (3.4x faster) via ubatch optimization
-
-### Top 5 Models (by decode speed)
-
-| # | Model | Decode tok/s | Prefill tok/s | MTP% | Score |
-|---|---|---|---|---|---|
-| 1 | architect-35b-q6 | 71.2 | 320.3 | 90% | 1.00 |
-| 2 | qwen36-35b-q6 | 63.8 | 332.7 | 91% | 1.00 |
-| 3 | q8-architect-35b | 62.5 | 361.8 | 92% | 1.00 |
-| 4 | qwen36-35b-q8 | 54.4 | 338.6 | 89% | 1.00 |
-| 5 | ornith-35b-q6 | 52.8 | 328.2 | — | 1.00 |
-
-### Key Optimizations Applied
-
-| Optimization | Impact |
-|---|---|
-| ubatch-size 512→1024 | Prefill 2.7x faster on deep_context |
-| CPU governor→performance | +20-30% TG (CPU 1.4GHz → 4.95GHz) |
-| Swappiness 60→10 | Less swap death on UMA |
-| THP→always | Better memory throughput |
-| Adaptive timeouts | No more false negatives on deep_context |
-
----
-
-## Files
-
-- `index.html` — public single-page gallery (SPA with ES/EN toggle, dark/light mode, reference context, report navigation)
-- `production-certification-20260729/` — production certification report + public-safe JSON
-- `best-real-bench/` — best-real TurboQuant+MTP validation report + datasets
-- `context-ladder-20260710/` — corrected 120K context retrieval ladder
-- `dflash-bench/` — DFlash pilot report + TurboQuant follow-up appendix
-- `visual-3d-bench/` — visual 3D benchmark gallery (49 deliverables + pi-dev harness + manifests)
-- `data/miniv-bench-v2.2-results.json` — latest benchmark results (21 models)
-- `data/best-real-tq-mtp-20260708.json` — best-real validation dataset
-- `data/all-local-evaluation-summary.json` — original May 2026 evaluation summary
-- `data/miniv-results.json` — original MiniV Vulkan UMA subset
-- `benchmark-metrics.json` — combined public data
-
-## Official Links
-
-- GitHub: <https://github.com/n30j0su3>
-- FreakingJSON Linktree: <https://linktr.ee/freakingjson>
-- X/Twitter: <https://x.com/freakingjson>
-- YouTube: <https://www.youtube.com/@freakingjson>
-
-© 2026 FreakingJSON Agencia.
+Licensed under [MIT](LICENSE).

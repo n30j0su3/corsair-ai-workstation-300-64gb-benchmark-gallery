@@ -19,8 +19,9 @@
 
   // Nav items
   var navItems = [
-    { href: prefix + 'index.html',                          icon: '🏠', label: 'Gallery',     id: 'home' },
-    { href: prefix + 'best-real-bench/index.html',          icon: '🚀', label: 'Best-Real',   id: 'best-real' },
+    { href: prefix + 'index.html',                                  icon: '🏠', label: 'Gallery',     id: 'home' },
+    { href: prefix + 'flash-next-expert-cache-20260912/index.html', icon: '◈', label: 'Flash-Next',  id: 'flash-next' },
+    { href: prefix + 'best-real-bench/index.html',                  icon: '🚀', label: 'Best-Real',   id: 'best-real' },
     { href: prefix + 'context-ladder-20260710/index.html',  icon: '🧭', label: '120K Ladder', id: 'context-ladder' },
     { href: prefix + 'dflash-bench/index.html',             icon: '⚡', label: 'DFlash',      id: 'dflash' },
     { href: prefix + 'visual-3d-bench/index.html',          icon: '🎮', label: 'Visual 3D',   id: 'visual-3d' },
@@ -45,7 +46,7 @@
     '<div class="fjson-tnav-inner">' +
       '<div class="fjson-tnav-brand">' +
         '<a href="' + prefix + 'index.html">' +
-          '<span class="fjson-tnav-logo">⬡</span> <span class="fjson-tnav-title">CORSAIR · MINIV</span>' +
+          '<span class="fjson-tnav-logo">FJ</span> <span class="fjson-tnav-title">FREAKINGJSON · MINIV</span>' +
         '</a>' +
       '</div>' +
       '<div class="fjson-tnav-links">';

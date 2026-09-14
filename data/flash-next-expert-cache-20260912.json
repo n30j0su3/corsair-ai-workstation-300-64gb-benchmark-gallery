@@ -1,0 +1,100 @@
+{
+  "schema": "fjson-public-miniv-flash-next/v1",
+  "published_at": "2026-09-14",
+  "measurement_date": "2026-09-12",
+  "hardware": {
+    "name": "Corsair AI Workstation 300",
+    "memory": "64GB LPDDR5X UMA",
+    "gpu": "Radeon 8050S · gfx1151",
+    "backend": "Vulkan RADV",
+    "gtt": "62 GiB configured"
+  },
+  "model": {
+    "alias": "qwen38-flash-next-fast",
+    "name": "Qwen3.8 Flash-Next UD-IQ3_XXS",
+    "quant": "UD-IQ3_XXS + MTP Q8_0",
+    "model_size_gib": 76.1,
+    "status": "64K on-demand validated; 128K benchmark-only; non-default",
+    "protected_default": "architect-35b-q6"
+  },
+  "recipe": {
+    "context_tokens": 131072,
+    "moe_cache_slots": 48,
+    "kv_cache": "q8_0 / q8_0",
+    "parallel": 1,
+    "draft_n_max": 2
+  },
+  "benchmark": {
+    "measurement_grain": "three fresh-load repetitions per context/cache rung",
+    "baseline": {
+      "context_tokens": 32768,
+      "moe_cache_slots": 0,
+      "decode_tokens_per_second": 1.57
+    },
+    "rungs": [
+      {
+        "context_tokens": 32768,
+        "moe_cache_slots": 32,
+        "decode_tokens_per_second": 32.27,
+        "exact_content": "3/3"
+      },
+      {
+        "context_tokens": 65536,
+        "moe_cache_slots": 32,
+        "decode_tokens_per_second": 34.84,
+        "exact_content": "3/3"
+      },
+      {
+        "context_tokens": 131072,
+        "moe_cache_slots": 32,
+        "decode_tokens_per_second": 35.76,
+        "exact_content": "3/3"
+      },
+      {
+        "context_tokens": 131072,
+        "moe_cache_slots": 48,
+        "decode_tokens_per_second_range": [
+          36.33,
+          37.92
+        ],
+        "exact_content": "3/3"
+      }
+    ],
+    "prefill_samples": [
+      {
+        "prompt_tokens": 5660,
+        "seconds": 37.1,
+        "prompt_tokens_per_second_approx": 164
+      },
+      {
+        "prompt_tokens": 16860,
+        "seconds": 76.0,
+        "prompt_tokens_per_second_approx": 232
+      }
+    ],
+    "mtp_acceptance_range": [
+      0.78,
+      0.79
+    ],
+    "runs_without_device_lost": 13,
+    "headline_speedup_vs_baseline": "24.2x decode at the best measured 128K/48-slot rung"
+  },
+  "scope": [
+    "Benchmark throughput and exact-content results are dated observations, not universal quality scores.",
+    "The bounded application sample is reported separately and is not averaged with the fresh-load benchmark rungs.",
+    "64K is the on-demand operational ceiling; 128K remains benchmark-only. Architect remains the protected default.",
+    "Prefill and decode are reported separately."
+  ],
+  "credit": "All benchmark orchestration, methodology design, and AI model evaluations directed by N30",
+  "integration_sample": {
+    "result": "PASS",
+    "scope": "one bounded application run",
+    "completion_tokens": 380,
+    "content_words": 309,
+    "decode_tokens_per_second": 32.48115578750777,
+    "prompt_tokens_per_second": 33.81148407056457,
+    "wall_seconds": 13.6,
+    "finish_reason": "stop",
+    "protected_default_restored": true
+  }
+}
