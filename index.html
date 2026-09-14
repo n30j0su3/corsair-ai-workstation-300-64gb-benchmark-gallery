@@ -65,15 +65,15 @@
   </section>
 
   <section id="view-rankings" class="view-panel" role="tabpanel" data-view="rankings" hidden>
-    <div class="section-heading"><div><p class="section-index">02 / RANKINGS</p><h2>Una tabla. Cuatro lentes.</h2></div><p>Ordena por calidad, decode, prefill o contexto. Los datos ausentes se muestran como pendientes, nunca como cero.</p></div>
+    <div class="section-heading"><div><p class="section-index">02 / RANKINGS</p><h2>Compara sin mezclar unidades.</h2></div><p>Cada lente ordena una métrica distinta. Calidad usa score y tareas aprobadas; contexto usa la ventana configurada en tokens, nunca segundos.</p></div>
     <div class="filter-bar">
       <label class="search-field"><span>Buscar modelo</span><input id="model-search" type="search" placeholder="Qwen, Gemma, Q6…" autocomplete="off"></label>
       <label><span>Familia</span><select id="family-filter"><option value="all">Todas</option></select></label>
       <label><span>Estado</span><select id="status-filter"><option value="all">Todos</option><option value="certified">Certified</option><option value="candidate">Candidate</option><option value="benchmarking">Benchmarking</option><option value="utility">Utility</option><option value="failed">Failed</option></select></label>
       <fieldset class="rank-switch" aria-label="Ordenar ranking"><legend>Orden</legend><button type="button" data-rank="quality" aria-pressed="true">Calidad</button><button type="button" data-rank="decode" aria-pressed="false">Decode</button><button type="button" data-rank="prefill" aria-pressed="false">Prefill</button><button type="button" data-rank="context" aria-pressed="false">Contexto</button></fieldset>
     </div>
-    <p id="result-count" class="result-count" aria-live="polite"></p>
-    <div class="table-shell ranking-shell"><table><thead><tr><th>#</th><th>Modelo / rol</th><th>Calidad</th><th>Decode tok/s</th><th>Prefill tok/s</th><th>Contexto</th><th>Estado</th></tr></thead><tbody id="ranking-table-body"></tbody></table></div>
+    <div class="ranking-meta"><p id="result-count" class="result-count" aria-live="polite"></p><p id="rank-explainer" class="rank-explainer"></p></div>
+    <div class="table-shell ranking-shell"><table><thead><tr><th>#</th><th>Modelo / rol</th><th>Calidad</th><th>Decode</th><th>Prefill</th><th>Contexto</th><th>Estado</th></tr></thead><tbody id="ranking-table-body"></tbody></table></div>
   </section>
 
   <section id="view-evidence" class="view-panel" role="tabpanel" data-view="evidence" hidden>

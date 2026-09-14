@@ -1,10 +1,20 @@
 (() => {
   'use strict';
   const state = { data: null, view: 'overview', rank: 'quality', query: '', family: 'all', status: 'all', lang: localStorage.getItem('fjson-gallery-v2-lang') || 'es' };
-  const metricKeyByRank = { quality: 'quality', decode: 'decode_tps', prefill: 'prefill_tps', context: 'context_s' };
+  const metricKeyByRank = { quality: 'quality', decode: 'decode_tps', prefill: 'prefill_tps', context: 'context_tokens' };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const fmt = value => value === null || value === undefined ? 'Pendiente' : Number(value).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const locale = () => state.lang === 'es' ? 'es-CO' : 'en-US';
+  const fmt = (value, digits = 1) => value === null || value === undefined ? copy[state.lang].pending : Number(value).toLocaleString(locale(), { maximumFractionDigits: digits });
+  const formatRate = value => value === null || value === undefined ? `<span class="model-role">${copy[state.lang].pending}</span>` : `<span class="metric-value">${fmt(value)} <small>tok/s</small></span>`;
+  const formatQuality = model => model.metrics.quality === null || model.metrics.quality === undefined
+    ? `<span class="model-role">${copy[state.lang].pending}</span>`
+    : `<span class="metric-value">${fmt(model.metrics.quality * 100, 0)}%</span><span class="metric-detail">${model.metrics.passes || ''}</span>`;
+  const formatContext = value => {
+    if (value === null || value === undefined) return `<span class="model-role">${copy[state.lang].pending}</span>`;
+    const k = value / 1024;
+    return `<span class="metric-value">${Number.isInteger(k) ? k : fmt(k)}K</span><span class="metric-detail">tokens</span>`;
+  };
   const modelMap = () => new Map(state.data.models.map(model => [model.id, model]));
   const copy = {
     es: { tabs: ['Resumen','Rankings','Evidencia','Entregables'], result: n => `${n} modelos visibles`, pending: 'Pendiente' },
@@ -33,6 +43,7 @@
   function showView(view, push = true) {
     const safe = ['overview','rankings','evidence','artifacts'].includes(view) ? view : 'overview';
     state.view = safe;
+    document.body.dataset.view = safe;
     $$('.view-tab').forEach(button => button.setAttribute('aria-selected', String(button.dataset.view === safe)));
     $$('.view-panel').forEach(panel => { panel.hidden = panel.dataset.view !== safe; });
     if (push) updateUrl();
@@ -65,7 +76,7 @@
     const order = state.data.rankings[state.rank] || [];
     const position = new Map(order.map((id, index) => [id, index]));
     const key = metricKeyByRank[state.rank];
-    const direction = state.rank === 'context' ? 1 : -1;
+    const direction = -1;
     return state.data.models.filter(model => {
       const haystack = `${model.id} ${model.family} ${model.quant} ${model.role}`.toLowerCase();
       return (!state.query || haystack.includes(state.query)) && (state.family === 'all' || model.family === state.family) && (state.status === 'all' || model.status === state.status);
@@ -84,7 +95,14 @@
     $$('button[data-rank]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.rank === state.rank)));
     const models = rankedModels();
     $('#result-count').textContent = copy[state.lang].result(models.length);
-    $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${metric(m,'quality')}</td><td>${metric(m,'decode_tps')}</td><td>${metric(m,'prefill_tps')}</td><td>${metric(m,'context_s','s')}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';
+    const explainers = {
+      quality: state.lang === 'es' ? 'Calidad = score determinista y tareas aprobadas; mayor es mejor.' : 'Quality = deterministic score and passed tasks; higher is better.',
+      decode: state.lang === 'es' ? 'Decode = velocidad de generación en tokens por segundo; mayor es mejor.' : 'Decode = generation speed in tokens per second; higher is better.',
+      prefill: state.lang === 'es' ? 'Prefill = velocidad de lectura del prompt en tokens por segundo; mayor es mejor.' : 'Prefill = prompt ingestion speed in tokens per second; higher is better.',
+      context: state.lang === 'es' ? 'Contexto = ventana configurada en la prueba, medida en tokens; no es duración en segundos.' : 'Context = test window configured in tokens, not elapsed seconds.'
+    };
+    $('#rank-explainer').textContent = explainers[state.rank];
+    $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${formatQuality(m)}</td><td>${formatRate(m.metrics.decode_tps)}</td><td>${formatRate(m.metrics.prefill_tps)}</td><td>${formatContext(m.metrics.context_tokens)}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';
   }
 
   function renderEvidence() {

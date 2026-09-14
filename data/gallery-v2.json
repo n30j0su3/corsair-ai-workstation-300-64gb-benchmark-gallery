@@ -25,8 +25,9 @@
         "passes": "4/4",
         "decode_tps": 71.2,
         "prefill_tps": 320.3,
-        "context_s": 92,
-        "mtp_pct": 90
+        "mtp_pct": 90,
+        "runtime_s": 92,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -43,8 +44,9 @@
         "passes": "4/4",
         "decode_tps": 63.8,
         "prefill_tps": 332.7,
-        "context_s": 99,
-        "mtp_pct": 91
+        "mtp_pct": 91,
+        "runtime_s": 99,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -61,8 +63,9 @@
         "passes": "4/4",
         "decode_tps": 62.5,
         "prefill_tps": 361.8,
-        "context_s": 93,
-        "mtp_pct": 92
+        "mtp_pct": 92,
+        "runtime_s": 93,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -79,8 +82,9 @@
         "passes": "4/4",
         "decode_tps": 54.4,
         "prefill_tps": 338.6,
-        "context_s": 105,
-        "mtp_pct": 89
+        "mtp_pct": 89,
+        "runtime_s": 105,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -97,8 +101,9 @@
         "passes": "4/4",
         "decode_tps": 52.8,
         "prefill_tps": 328.2,
-        "context_s": 97,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 97,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -115,8 +120,9 @@
         "passes": "4/4",
         "decode_tps": 52.6,
         "prefill_tps": 328.1,
-        "context_s": 97,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 97,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -133,8 +139,9 @@
         "passes": "4/4",
         "decode_tps": 49.5,
         "prefill_tps": 336.1,
-        "context_s": 88,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 88,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -151,8 +158,9 @@
         "passes": "3/4",
         "decode_tps": 50.0,
         "prefill_tps": 228.7,
-        "context_s": 106,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 106,
+        "context_tokens": 32768
       },
       "evidence": [
         "bench-v2.2"
@@ -169,8 +177,9 @@
         "passes": "3/4",
         "decode_tps": 48.1,
         "prefill_tps": 439.7,
-        "context_s": 110,
-        "mtp_pct": 89
+        "mtp_pct": 89,
+        "runtime_s": 110,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -187,8 +196,9 @@
         "passes": "4/4",
         "decode_tps": 46.5,
         "prefill_tps": 343.6,
-        "context_s": 120,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 120,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -205,8 +215,9 @@
         "passes": "3/4",
         "decode_tps": 45.3,
         "prefill_tps": 372.5,
-        "context_s": 103,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 103,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -223,8 +234,9 @@
         "passes": "4/4",
         "decode_tps": 39.7,
         "prefill_tps": 404.8,
-        "context_s": 84,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 84,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -241,8 +253,9 @@
         "passes": "4/4",
         "decode_tps": 36.7,
         "prefill_tps": 421.9,
-        "context_s": 83,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 83,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -259,8 +272,9 @@
         "passes": "4/4",
         "decode_tps": 32.6,
         "prefill_tps": 329.3,
-        "context_s": 114,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 114,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -277,8 +291,9 @@
         "passes": "3/4",
         "decode_tps": 22.6,
         "prefill_tps": 489.7,
-        "context_s": 94,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 94,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -295,8 +310,9 @@
         "passes": "4/4",
         "decode_tps": 19.1,
         "prefill_tps": 127.2,
-        "context_s": 301,
-        "mtp_pct": 94
+        "mtp_pct": 94,
+        "runtime_s": 301,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -313,8 +329,9 @@
         "passes": "4/4",
         "decode_tps": 19.0,
         "prefill_tps": 128.6,
-        "context_s": 310,
-        "mtp_pct": 93
+        "mtp_pct": 93,
+        "runtime_s": 310,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -331,8 +348,9 @@
         "passes": "4/4",
         "decode_tps": 16.6,
         "prefill_tps": 279.5,
-        "context_s": 166,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 166,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -349,8 +367,9 @@
         "passes": "4/4",
         "decode_tps": 14.7,
         "prefill_tps": 135.7,
-        "context_s": 293,
-        "mtp_pct": 93
+        "mtp_pct": 93,
+        "runtime_s": 293,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -367,8 +386,9 @@
         "passes": "4/4",
         "decode_tps": 13.2,
         "prefill_tps": 286.2,
-        "context_s": 159,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 159,
+        "context_tokens": 131072
       },
       "evidence": [
         "bench-v2.2"
@@ -385,8 +405,9 @@
         "passes": "4/4",
         "decode_tps": 7.4,
         "prefill_tps": 139.0,
-        "context_s": 300,
-        "mtp_pct": null
+        "mtp_pct": null,
+        "runtime_s": 300,
+        "context_tokens": 65536
       },
       "evidence": [
         "bench-v2.2"
@@ -397,14 +418,15 @@
       "family": "Qwen3.8 Flash-Next",
       "quant": "UD-IQ3_XXS + MTP Q8_0",
       "status": "candidate",
-      "role": "MoE expert-cache lane · on-demand governed · 48-slot profile · non-default",
+      "role": "MoE expert-cache lane · 64K on-demand · 128K deep benchmark · 48-slot profile · non-default",
       "metrics": {
         "quality": 1.0,
         "passes": "3/3",
         "decode_tps": 35.76,
         "prefill_tps": 232.0,
-        "context_s": 131072,
-        "mtp_pct": 78
+        "mtp_pct": 78,
+        "runtime_s": null,
+        "context_tokens": 131072
       },
       "evidence": [
         "flash-next-expert-cache-20260912"
@@ -421,8 +443,9 @@
         "passes": "3/3",
         "decode_tps": 20.5,
         "prefill_tps": 53.1,
-        "context_s": null,
-        "mtp_pct": 90.5
+        "mtp_pct": 90.5,
+        "runtime_s": null,
+        "context_tokens": 98304
       },
       "evidence": [
         "miniv-consolidation-20260820",
@@ -440,8 +463,9 @@
         "passes": "3/3",
         "decode_tps": 17.4,
         "prefill_tps": 52.4,
-        "context_s": null,
-        "mtp_pct": 90.8
+        "mtp_pct": 90.8,
+        "runtime_s": null,
+        "context_tokens": null
       },
       "evidence": [
         "miniv-consolidation-20260820",
@@ -459,8 +483,9 @@
         "passes": "4/4 valid tasks",
         "decode_tps": 25.46,
         "prefill_tps": 37.95,
-        "context_s": null,
-        "mtp_pct": 80.3
+        "mtp_pct": 80.3,
+        "runtime_s": null,
+        "context_tokens": null
       },
       "evidence": [
         "miniv-historical-closure-20260821"
@@ -477,8 +502,9 @@
         "passes": "3/3",
         "decode_tps": 21.8,
         "prefill_tps": 54.1,
-        "context_s": null,
-        "mtp_pct": 98.6
+        "mtp_pct": 98.6,
+        "runtime_s": null,
+        "context_tokens": 98304
       },
       "evidence": [
         "miniv-consolidation-20260820",
@@ -572,32 +598,32 @@
       "qwen38-27b-q6"
     ],
     "context": [
-      "nex-n2-mini-q6",
       "qwopus36-35b-a3b-q6-mtp",
-      "qwopus36-35b-a3b-q8-mtp",
-      "ornith1-35b-q6",
-      "ornith1-35b-q6-100k",
       "qwen36-35b-a3b-q6",
-      "qwen36-35b-a3b-q8",
-      "qwopus36-27b-coder-q8-mtp",
-      "qwopus36-27b-v2-q8",
+      "ornith1-35b-q6-100k",
+      "qwopus35-9b-coder-q6-mtp",
+      "agentworld-35b-a3b-q6",
+      "agentworld-35b-a3b-q8",
+      "ornith1-9b-q8",
       "qwopus36-27b-v2-q6-mtp",
       "qwopus36-27b-coder-q6-mtp",
-      "gemma4-26b-a4b-q8",
-      "gemma4-26b-a4b-q6",
-      "agentworld-35b-a3b-q8",
-      "agentworld-35b-a3b-q6",
-      "gemma4-12b-q8",
       "gemma4-12b-q6",
-      "ornith1-35b-q8",
-      "qwen3-coder-next-q4",
-      "qwopus35-9b-coder-q6-mtp",
-      "ornith1-9b-q8",
-      "gemma4-e4b-q4-mtp",
-      "qwen38-27b-q4-fast",
+      "qwopus36-27b-coder-q8-mtp",
+      "gemma4-12b-q8",
+      "qwen38-flash-next-ud-iq3-xxs",
       "qwen38-27b-q4",
+      "qwen38-27b-q4-fast",
+      "qwopus36-35b-a3b-q8-mtp",
+      "qwen36-35b-a3b-q8",
+      "ornith1-35b-q6",
+      "nex-n2-mini-q6",
+      "ornith1-35b-q8",
+      "gemma4-26b-a4b-q6",
+      "gemma4-26b-a4b-q8",
+      "qwopus36-27b-v2-q8",
+      "qwen3-coder-next-q4",
       "qwen38-27b-q6",
-      "qwen38-flash-next-ud-iq3-xxs"
+      "gemma4-e4b-q4-mtp"
     ]
   },
   "evidence": [

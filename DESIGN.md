@@ -16,7 +16,33 @@ colors:
   light-background: "#F3F5F3"
   light-panel: "#FFFFFF"
   light-ink: "#121719"
+  light-muted: "#5B696F"
+  light-line: "#CBD4D5"
+  light-accent: "#087F73"
+  light-attention: "#B6511C"
+  light-success: "#467510"
+  light-warning: "#926400"
 typography:
+  scale:
+    micro: 10px
+    caption: 11px
+    small: 12px
+    small-ui: 13px
+    body: 15px
+    body-emphasis: 16px
+    compact-status: 18px
+    subheading: 21px
+    icon: 22px
+    card-mobile: 25px
+    card: 27px
+    stat: 30px
+    compact-mobile: 32px
+    section-mobile: 34px
+    compact-fluid-min: 38px
+    section-fluid-max: 50px
+    compact-fluid-max: 54px
+    hero-fluid-min: 46px
+    hero-fluid-max: 76px
   display:
     fontFamily: Inter, ui-sans-serif, system-ui
     fontSize: 6.5rem
