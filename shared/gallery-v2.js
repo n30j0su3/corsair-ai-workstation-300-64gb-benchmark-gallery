@@ -99,7 +99,7 @@
       quality: state.lang === 'es' ? 'Calidad = score determinista y tareas aprobadas; mayor es mejor.' : 'Quality = deterministic score and passed tasks; higher is better.',
       decode: state.lang === 'es' ? 'Decode = velocidad de generación en tokens por segundo; mayor es mejor.' : 'Decode = generation speed in tokens per second; higher is better.',
       prefill: state.lang === 'es' ? 'Prefill = velocidad de lectura del prompt en tokens por segundo; mayor es mejor.' : 'Prefill = prompt ingestion speed in tokens per second; higher is better.',
-      context: state.lang === 'es' ? 'Contexto = ventana configurada en la prueba, medida en tokens; no es duración en segundos.' : 'Context = test window configured in tokens, not elapsed seconds.'
+      context: state.lang === 'es' ? 'Contexto = ventana configurada en tokens; K usa bloques de 1024. No es duración en segundos.' : 'Context = test window in tokens; K uses 1024-token blocks. It is not elapsed seconds.'
     };
     $('#rank-explainer').textContent = explainers[state.rank];
     $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${formatQuality(m)}</td><td>${formatRate(m.metrics.decode_tps)}</td><td>${formatRate(m.metrics.prefill_tps)}</td><td>${formatContext(m.metrics.context_tokens)}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';

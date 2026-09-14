@@ -109,6 +109,8 @@ Use oversized, tightly tracked display type only for the primary statement. Tabl
 
 The maximum content width is 1280px. Desktop uses editorial split compositions; tablet collapses to one column; mobile keeps four primary tabs and reduces ranking tables to the metric selected by the active lens. Progressive disclosure is mandatory: Overview, Rankings, Evidence, Artifacts.
 
+Context windows use binary token blocks: `1K = 1024 tokens`. Runtime duration remains a separate metric in seconds and must never be labeled or ranked as context.
+
 ## Shapes
 
 Rectangular controls and flat panels reinforce the technical index. Statuses use a colored left rule rather than pills. Avoid decorative capsules, repeated rounded cards and nested floating surfaces.
