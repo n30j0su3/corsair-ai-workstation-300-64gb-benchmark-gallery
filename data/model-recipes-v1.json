@@ -1,0 +1,231 @@
+{
+  "schema": "fjson-gallery-recipes/v1",
+  "updated": "2026-09-16",
+  "purpose": "Executable llama.cpp recipes used to reproduce every public gallery number. Each recipe names the source lane (miniv-router INI / miniv-lanes / start-server-v2.sh harness / flash-next campaign). Recipes are starting points measured on the Corsair AI Workstation 300 (AMD Ryzen AI MAX 385, Radeon 8050S, 64GB LPDDR5X UMA), not universal quality scores.",
+  "backend_note": "All command recipes are written for the llama-cpp-turboquant Vulkan fork (build b9677-4595fff0b). The TurboQuant KV-cache types (turbo4/turbo3) and --fit/--lazy-mode/--load-mode flags are fork-specific. Each recipe also lists an upstream_equivalent that replaces turbo4/turbo3 with --cache-type-k q8_0 --cache-type-v q8_0 and drops the fork-only flags so the same measurements can be reproduced on vanilla llama.cpp. Adjust -ngl 99 (full GPU offload) and -t 7 to your hardware.",
+  "harness_note": "Bench v2.2 models were served through benchmarks/start-server-v2.sh, which sets per-family sampling (qwen: temp 1.0, presence-penalty 0.2; gemma: temp 1.0, top-k 64), DRY repetition penalty, YaRN rope scaling beyond 32K context, and n-gram speculative decoding for non-MTP models. The 'command' recipe above shows the equivalent llama-server invocation; both produce identical metrics when seed is fixed.",
+  "recipes": {
+    "qwopus36-35b-a3b-q6-mtp": {
+      "title": "Qwopus3.6 35B-A3B MTP Q6_K — local champion",
+      "model_file": "Qwopus3.6-35B-A3B-v1-MTP-Q6_K.gguf",
+      "mmproj": "mmproj-Qwopus3.6-35B-A3B-v1-MTP-F32.gguf",
+      "source": "miniv-router lane architect-35b-q6 (protected default)",
+      "command": "llama-server -m Qwopus3.6-35B-A3B-v1-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --min-p 0 --presence-penalty 0 --repeat-penalty 1.0 --flash-attn 1 --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-35B-A3B-v1-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "notes": "Protected production default. Measured 71.2 tok/s decode, 320.3 tok/s prefill, 90% MTP acceptance."
+    },
+    "qwen36-35b-a3b-q6": {
+      "title": "Qwen3.6 35B-A3B UD-Q6_K_XL",
+      "model_file": "Qwen3.6-35B-A3B-UD-Q6_K_XL.gguf",
+      "mmproj": "Qwen3.6-35B-A3B-mmproj-F16.gguf",
+      "source": "miniv-router lane qwen36-35b-q6",
+      "command": "llama-server -m Qwen3.6-35B-A3B-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning off --spec-type draft-mtp --spec-draft-n-max 2",
+      "upstream_equivalent": "llama-server -m Qwen3.6-35B-A3B-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "63.8 tok/s decode, 332.7 tok/s prefill on the v2.2 battery."
+    },
+    "qwopus36-35b-a3b-q8-mtp": {
+      "title": "Qwopus3.6 35B-A3B MTP Q8_0",
+      "model_file": "Qwopus3.6-35B-A3B-v1-MTP-Q8_0.gguf",
+      "mmproj": "mmproj-Qwopus3.6-35B-A3B-v1-MTP-F32.gguf",
+      "source": "miniv-router lane q8-architect-35b",
+      "command": "llama-server -m Qwopus3.6-35B-A3B-v1-MTP-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning on --reasoning-budget 6144 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be exhaustive.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-35B-A3B-v1-MTP-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "62.5 tok/s decode, 361.8 tok/s prefill, 92% MTP acceptance."
+    },
+    "qwen36-35b-a3b-q8": {
+      "title": "Qwen3.6 35B-A3B UD-Q8_K_XL",
+      "model_file": "Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf",
+      "source": "bench v2.2 wave (start-server-v2.sh, qwen family defaults)",
+      "command": "llama-server -m Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf -ngl 99 -c 65536 -b 512 -ub 1024 --no-mmap -t 15 -fa 1 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --temp 1.0 --top-p 0.95 --top-k 20 --presence-penalty 0.2 --dry-multiplier 0.8 --dry-base 1.75 --dry-allowed-length 3 --reasoning on --reasoning-format deepseek --tools all --spec-type draft-mtp --spec-draft-n-max 1 --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768 --n-predict 8192 --flash-attn on --parallel 1",
+      "upstream_equivalent": "llama-server -m Qwen3.6-35B-A3B-UD-Q8_K_XL.gguf -ngl 99 -c 65536 -b 512 -ub 1024 -t 15 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --spec-type draft-mtp --spec-draft-n-max 1 --parallel 1",
+      "notes": "54.4 tok/s decode, 338.6 tok/s prefill. Q8 max fidelity MoE. Family defaults from start-server-v2.sh harness."
+    },
+    "ornith1-35b-q6": {
+      "title": "Ornith 1.0 35B Q6_K",
+      "model_file": "ornith-1.0-35b-Q6_K.gguf",
+      "source": "miniv-router lane ornith-35b-q6",
+      "command": "llama-server -m ornith-1.0-35b-Q6_K.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now produce the final answer. Be concrete and complete.' --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m ornith-1.0-35b-Q6_K.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --reasoning-budget 4096 --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "52.8 tok/s decode, 328.2 tok/s prefill. Same GGUF as the 100K lane; only ctx-size differs."
+    },
+    "ornith1-35b-q6-100k": {
+      "title": "Ornith 1.0 35B Q6_K — 128K context lane",
+      "model_file": "ornith-1.0-35b-Q6_K.gguf",
+      "source": "miniv-router lane ornith-35b-q6-100k",
+      "command": "llama-server -m ornith-1.0-35b-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now produce the final answer. Be concrete and complete.' --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m ornith-1.0-35b-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "52.6 tok/s decode, 328.1 tok/s prefill at 128K. ornith-1.0 architecture is qwen3moe."
+    },
+    "ornith1-35b-q8": {
+      "title": "Ornith 1.0 35B Q8_0",
+      "model_file": "ornith-1.0-35b-Q8_0.gguf",
+      "source": "miniv-router lane ornith-35b-q8",
+      "command": "llama-server -m ornith-1.0-35b-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 6144 --reasoning-budget-message 'Now produce the final answer. Be concrete and complete.' --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m ornith-1.0-35b-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --reasoning-budget 6144 --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "45.3 tok/s decode, 372.5 tok/s prefill."
+    },
+    "ornith1-9b-q8": {
+      "title": "Ornith 1.0 9B Q8_0",
+      "model_file": "ornith-1.0-9b-Q8_0.gguf",
+      "source": "bench v2.2 wave (start-server-v2.sh, ornith family defaults)",
+      "command": "llama-server -m ornith-1.0-9b-Q8_0.gguf -ngl 99 -c 131072 -b 512 -ub 1024 --no-mmap -t 15 -fa 1 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --temp 0.7 --top-p 0.95 --top-k 20 --presence-penalty 0 --repeat-penalty 1.0 --dry-multiplier 0.8 --dry-base 1.75 --dry-allowed-length 3 --reasoning off --tools all --spec-type ngram-map-k4v --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768 --n-predict 8192 --flash-attn on --parallel 1",
+      "upstream_equivalent": "llama-server -m ornith-1.0-9b-Q8_0.gguf -ngl 99 -c 131072 -b 512 -ub 1024 -t 15 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --parallel 1",
+      "notes": "22.6 tok/s decode, 489.7 tok/s prefill — the highest prefill in the whole battery."
+    },
+    "nex-n2-mini-q6": {
+      "title": "Nex-N2-mini Q6_K_L (Qwen 3.5 base)",
+      "model_file": "nex-agi_Nex-N2-mini-Q6_K_L.gguf",
+      "mmproj": "mmproj-nex-agi_Nex-N2-mini-f16.gguf",
+      "source": "miniv-router lane nex-n2-mini-q6",
+      "command": "llama-server -m nex-agi_Nex-N2-mini-Q6_K_L.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 4096 --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m nex-agi_Nex-N2-mini-Q6_K_L.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --reasoning-budget 4096 --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "49.5 tok/s decode, 336.1 tok/s prefill. Vision-capable with the f16 mmproj."
+    },
+    "qwen3-coder-next-q4": {
+      "title": "Qwen3-Coder-Next Q4_K_M",
+      "model_file": "Qwen3-Coder-Next-Q4_K_M.gguf",
+      "source": "bench v2.2 wave (start-server-v2.sh, qwen family defaults)",
+      "command": "llama-server -m Qwen3-Coder-Next-Q4_K_M.gguf -ngl 99 -c 32768 -b 512 -ub 1024 --no-mmap -t 15 -fa 1 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --temp 1.0 --top-p 0.95 --top-k 20 --presence-penalty 0.2 --dry-multiplier 0.8 --dry-base 1.75 --dry-allowed-length 3 --reasoning on --reasoning-format deepseek --tools all --spec-type ngram-map-k4v --rope-scaling yarn --rope-scale 2 --yarn-orig-ctx 32768 --n-predict 8192 --flash-attn on --parallel 1",
+      "upstream_equivalent": "llama-server -m Qwen3-Coder-Next-Q4_K_M.gguf -ngl 99 -c 32768 -b 512 -ub 1024 -t 15 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --parallel 1",
+      "notes": "50.0 tok/s decode, 228.7 tok/s prefill. Qwen3-Next architecture (qwen3next)."
+    },
+    "qwopus35-9b-coder-q6-mtp": {
+      "title": "Qwopus3.5 9B Coder MTP Q6_K",
+      "model_file": "Qwopus3.5-9B-Coder-MTP-Q6_K.gguf",
+      "source": "miniv-lanes lane fast-code-9b-q6",
+      "command": "llama-server -m Qwopus3.5-9B-Coder-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning on --reasoning-budget 2048 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.5-9B-Coder-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "48.1 tok/s decode, 439.7 tok/s prefill, 89% MTP acceptance."
+    },
+    "agentworld-35b-a3b-q6": {
+      "title": "Qwen-AgentWorld 35B-A3B UD-Q6_K_XL",
+      "model_file": "Qwen-AgentWorld-35B-A3B-UD-Q6_K_XL.gguf",
+      "source": "miniv-router lane agentworld-35b-q6",
+      "command": "llama-server -m Qwen-AgentWorld-35B-A3B-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'We need the final predicted observation now. Finish reasoning and output the simulated environment observation.' --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m Qwen-AgentWorld-35B-A3B-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --reasoning-budget 4096 --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "46.5 tok/s decode, 343.6 tok/s prefill. World-model agent specialist."
+    },
+    "agentworld-35b-a3b-q8": {
+      "title": "Qwen-AgentWorld 35B-A3B UD-Q8_K_XL",
+      "model_file": "Qwen-AgentWorld-35B-A3B-UD-Q8_K_XL.gguf",
+      "source": "miniv-lanes lane agentworld-35b-q8",
+      "command": "llama-server -m Qwen-AgentWorld-35B-A3B-UD-Q8_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --poll 20 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --device Vulkan0 --jinja --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'We need the final predicted observation now. Finish reasoning and output the simulated environment observation.' --temp 0.6 --top-p 0.95 --top-k 20",
+      "upstream_equivalent": "llama-server -m Qwen-AgentWorld-35B-A3B-UD-Q8_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --reasoning on --reasoning-budget 4096 --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "32.6 tok/s decode, 329.3 tok/s prefill."
+    },
+    "gemma4-26b-a4b-q6": {
+      "title": "Gemma 4 26B-A4B IT UD-Q6_K_XL",
+      "model_file": "gemma-4-26B-A4B-it-UD-Q6_K_XL.gguf",
+      "mmproj": "mmproj-F16.gguf",
+      "source": "miniv-router lane gemma4-26b-q6",
+      "command": "llama-server -m gemma-4-26B-A4B-it-UD-Q6_K_XL.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --reasoning off --temp 0.6 --top-p 0.95 --top-k 20 --flash-attn on",
+      "upstream_equivalent": "llama-server -m gemma-4-26B-A4B-it-UD-Q6_K_XL.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "39.7 tok/s decode, 404.8 tok/s prefill. Gemma4 MoE."
+    },
+    "gemma4-26b-a4b-q8": {
+      "title": "Gemma 4 26B-A4B IT UD-Q8_K_XL",
+      "model_file": "gemma-4-26B-A4B-it-UD-Q8_K_XL.gguf",
+      "source": "bench v2.2 wave (start-server-v2.sh, gemma family defaults)",
+      "command": "llama-server -m gemma-4-26B-A4B-it-UD-Q8_K_XL.gguf -ngl 99 -c 65536 -b 512 -ub 1024 --no-mmap -t 15 -fa 1 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --temp 1.0 --top-p 0.95 --top-k 64 --presence-penalty 0 --dry-multiplier 0.8 --dry-base 1.75 --dry-allowed-length 3 --reasoning off --tools all --spec-type ngram-map-k4v --rope-scaling yarn --rope-scale 1 --yarn-orig-ctx 32768 --n-predict 8192 --flash-attn on --parallel 1",
+      "upstream_equivalent": "llama-server -m gemma-4-26B-A4B-it-UD-Q8_K_XL.gguf -ngl 99 -c 65536 -b 512 -ub 1024 -t 15 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --temp 1.0 --top-p 0.95 --top-k 64 --parallel 1",
+      "notes": "36.7 tok/s decode, 421.9 tok/s prefill. Q8 max fidelity Gemma 4 MoE."
+    },
+    "gemma4-12b-q6": {
+      "title": "Gemma 4 12B IT UD-Q6_K_XL",
+      "model_file": "gemma-4-12b-it-UD-Q6_K_XL.gguf",
+      "mmproj": "mmproj-F16.gguf",
+      "source": "miniv-router lane gemma4-12b-q6",
+      "command": "llama-server -m gemma-4-12b-it-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --reasoning off --temp 0.6 --top-p 0.95 --top-k 20 --flash-attn on",
+      "upstream_equivalent": "llama-server -m gemma-4-12b-it-UD-Q6_K_XL.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --temp 0.6 --top-p 0.95 --top-k 20",
+      "notes": "16.6 tok/s decode, 279.5 tok/s prefill. Gemma4 dense 12B."
+    },
+    "gemma4-12b-q8": {
+      "title": "Gemma 4 12B IT UD-Q8_K_XL",
+      "model_file": "gemma-4-12b-it-UD-Q8_K_XL.gguf",
+      "source": "bench v2.2 wave (start-server-v2.sh, gemma family defaults)",
+      "command": "llama-server -m gemma-4-12b-it-UD-Q8_K_XL.gguf -ngl 99 -c 131072 -b 512 -ub 1024 --no-mmap -t 15 -fa 1 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --temp 1.0 --top-p 0.95 --top-k 64 --presence-penalty 0 --dry-multiplier 0.8 --dry-base 1.75 --dry-allowed-length 3 --reasoning on --tools all --spec-type ngram-map-k4v --rope-scaling yarn --rope-scale 1 --yarn-orig-ctx 32768 --n-predict 8192 --flash-attn on --parallel 1",
+      "upstream_equivalent": "llama-server -m gemma-4-12b-it-UD-Q8_K_XL.gguf -ngl 99 -c 131072 -b 512 -ub 1024 -t 15 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn on --temp 1.0 --top-p 0.95 --top-k 64 --parallel 1",
+      "notes": "13.2 tok/s decode, 286.2 tok/s prefill."
+    },
+    "qwopus36-27b-v2-q6-mtp": {
+      "title": "Qwopus3.6 27B v2 MTP Q6_K",
+      "model_file": "Qwopus3.6-27B-v2-MTP-Q6_K.gguf",
+      "source": "bench v2.2 (reasoning-27b-q6 lane)",
+      "command": "llama-server -m Qwopus3.6-27B-v2-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-27B-v2-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "19.1 tok/s decode, 127.2 tok/s prefill, 94% MTP acceptance. Dense 27B; KV per token is high, decode drops at large ctx."
+    },
+    "qwopus36-27b-coder-q6-mtp": {
+      "title": "Qwopus3.6 27B Coder MTP Q6_K",
+      "model_file": "Qwopus3.6-27B-Coder-MTP-Q6_K.gguf",
+      "source": "miniv-router lane coding-coder-27b-q6",
+      "command": "llama-server -m Qwopus3.6-27B-Coder-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-27B-Coder-MTP-Q6_K.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "19.0 tok/s decode, 128.6 tok/s prefill, 93% MTP acceptance."
+    },
+    "qwopus36-27b-coder-q8-mtp": {
+      "title": "Qwopus3.6 27B Coder MTP Q8_0",
+      "model_file": "Qwopus3.6-27B-Coder-MTP-Q8_0.gguf",
+      "source": "bench v2.2 (coding-coder-27b-q8 lane)",
+      "command": "llama-server -m Qwopus3.6-27B-Coder-MTP-Q8_0.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-27B-Coder-MTP-Q8_0.gguf -ngl 99 -c 131072 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "14.7 tok/s decode, 135.7 tok/s prefill, 93% MTP acceptance."
+    },
+    "qwopus36-27b-v2-q8": {
+      "title": "Qwopus3.6 27B v2 Q8_0",
+      "model_file": "Qwopus3.6-27B-v2-Q8_0.gguf",
+      "source": "bench v2.2 (q8-reasoning-27b lane)",
+      "command": "llama-server -m Qwopus3.6-27B-v2-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --jinja --cache-reuse 256 --temp 0.7 --top-p 0.95 --top-k 20 --flash-attn 1 --reasoning off --parallel 1",
+      "upstream_equivalent": "llama-server -m Qwopus3.6-27B-v2-Q8_0.gguf -ngl 99 -c 65536 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --jinja --flash-attn 1 --parallel 1",
+      "notes": "7.4 tok/s decode, 139.0 tok/s prefill. The measured cost of Q8 dense 27B without MTP."
+    },
+    "qwen38-flash-next-ud-iq3-xxs": {
+      "title": "Qwen3.8 Flash-Next UD-IQ3_XXS + MoE expert cache",
+      "model_file": "Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf",
+      "mmproj": "mmproj-Qwen3.8-Flash-Next-F16.gguf",
+      "draft_model": "mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf",
+      "source": "flash-next expert-cache campaign (T1-FINAL 2026-09-12)",
+      "command": "llama-server -m Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf --mmproj mmproj-Qwen3.8-Flash-Next-F16.gguf --moe-cache-profile trace.csv --moe-cache-slots 48 --load-mode mmap --lazy-mode on --fit on --fit-target 4096 -c 131072 -b 512 -ub 256 -t 7 --parallel 1 --jinja --flash-attn on -ctk q8_0 -ctv q8_0 --spec-type draft-mtp --spec-draft-model mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": null,
+      "fork_note": "Requires the thecodacus/llama.cpp fork (expert-cache-igpu-fix @ 49b85268c) for --moe-cache-profile/--moe-cache-slots/--fit/--load-mode/--lazy-mode. Without expert cache this model runs at 1.57 tok/s decode on UMA; with 48-slot cache: 36.3–37.9 tok/s at 128K context.",
+      "notes": "35.76 tok/s decode at the stable 128K/32-slot rung; 232 tok/s prefill; 24.2× vs baseline. MoE expert cache trace has 25,705 rows (sha 5cf3d33b…)."
+    },
+    "qwen38-27b-q4": {
+      "title": "Qwen3.8 27B UD-Q4_K_XL — reasoning budget 2048",
+      "model_file": "Qwen3.8-27B-UD-Q4_K_XL.gguf",
+      "mmproj": "Qwen3.8-27B-UD-mmproj-F16.gguf",
+      "source": "miniv-router lane qwen38-27b-q4",
+      "command": "llama-server -m Qwen3.8-27B-UD-Q4_K_XL.gguf --mmproj Qwen3.8-27B-UD-mmproj-F16.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --reasoning-format deepseek --reasoning on --reasoning-budget 2048 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --temp 1.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwen3.8-27B-UD-Q4_K_XL.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --flash-attn on --reasoning on --temp 1.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "20.5 tok/s decode, 53.1 tok/s prefill, 90.5% MTP acceptance."
+    },
+    "qwen38-27b-q6": {
+      "title": "Qwen3.8 27B UD-Q6_K_XL",
+      "model_file": "Qwen3.8-27B-UD-Q6_K_XL.gguf",
+      "mmproj": "Qwen3.8-27B-UD-mmproj-F16.gguf",
+      "source": "miniv-router lane qwen38-27b-q6",
+      "command": "llama-server -m Qwen3.8-27B-UD-Q6_K_XL.gguf --mmproj Qwen3.8-27B-UD-mmproj-F16.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --reasoning-format deepseek --reasoning on --reasoning-budget 2048 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --temp 1.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwen3.8-27B-UD-Q6_K_XL.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --flash-attn on --reasoning on --temp 1.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "17.4 tok/s decode, 52.4 tok/s prefill, 90.8% MTP acceptance."
+    },
+    "gemma4-e4b-q4-mtp": {
+      "title": "Gemma 4 E4B IT Q4_K_M + MTP Q8_0 draft",
+      "model_file": "gemma-4-E4B-it-Q4_K_M.gguf",
+      "draft_model": "mtp-gemma-4-E4B-it-Q8_0.gguf",
+      "mmproj": "mmproj-F16.gguf",
+      "source": "miniv-router lane gemma4-e4b-q4-mtp",
+      "command": "llama-server -m gemma-4-E4B-it-Q4_K_M.gguf --model-draft mtp-gemma-4-E4B-it-Q8_0.gguf --mmproj mmproj-F16.gguf -ngl 99 -c 16384 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --flash-attn on --jinja --reasoning off --temp 0.6 --top-p 0.95 --top-k 20 --parallel 1 --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m gemma-4-E4B-it-Q4_K_M.gguf --model-draft mtp-gemma-4-E4B-it-Q8_0.gguf -ngl 99 -c 16384 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --flash-attn on --jinja --temp 0.6 --top-p 0.95 --top-k 20 --parallel 1",
+      "notes": "25.46 tok/s decode, 37.95 tok/s prefill, 80.3% acceptance. Bounded auxiliary canary; first-pass benchmark only (not the quality battery)."
+    },
+    "qwen38-27b-q4-fast": {
+      "title": "Qwen3.8 27B UD-Q4_K_XL — reasoning off",
+      "model_file": "Qwen3.8-27B-UD-Q4_K_XL.gguf",
+      "mmproj": "Qwen3.8-27B-UD-mmproj-F16.gguf",
+      "source": "miniv-router lane qwen38-27b-q4-fast",
+      "command": "llama-server -m Qwen3.8-27B-UD-Q4_K_XL.gguf --mmproj Qwen3.8-27B-UD-mmproj-F16.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --reasoning off --temp 0.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m Qwen3.8-27B-UD-Q4_K_XL.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --flash-attn on --reasoning off --temp 0.0 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 2",
+      "notes": "21.8 tok/s decode, 54.1 tok/s prefill, 98.6% MTP acceptance."
+    }
+  }
+}

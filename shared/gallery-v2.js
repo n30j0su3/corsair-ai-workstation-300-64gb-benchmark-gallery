@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const state = { data: null, view: 'overview', rank: 'quality', query: '', family: 'all', status: 'all', lang: localStorage.getItem('fjson-gallery-v2-lang') || 'es' };
+  const state = { data: null, recipes: null, view: 'overview', rank: 'quality', query: '', family: 'all', status: 'all', lang: localStorage.getItem('fjson-gallery-v2-lang') || 'es' };
   const metricKeyByRank = { quality: 'quality', decode: 'decode_tps', prefill: 'prefill_tps', context: 'context_tokens' };
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
@@ -17,8 +17,8 @@
   };
   const modelMap = () => new Map(state.data.models.map(model => [model.id, model]));
   const copy = {
-    es: { tabs: ['Resumen','Rankings','Evidencia','Entregables'], result: n => `${n} modelos visibles`, pending: 'Pendiente' },
-    en: { tabs: ['Overview','Rankings','Evidence','Artifacts'], result: n => `${n} models visible`, pending: 'Pending' }
+    es: { tabs: ['Resumen','Rankings','Evidencia','Entregables'], result: n => `${n} modelos visibles`, pending: 'Pendiente', recipe: 'Receta', openRecipe: 'Ver receta llama.cpp', recipeMissing: 'Receta no publicada todavía — sólo modelos con evidencia comparable tienen receta.', upstreamLabel: 'Equivalente upstream llama.cpp' },
+    en: { tabs: ['Overview','Rankings','Evidence','Artifacts'], result: n => `${n} models visible`, pending: 'Pending', recipe: 'Recipe', openRecipe: 'View llama.cpp recipe', recipeMissing: 'Recipe not published yet — only models with comparable evidence have one.', upstreamLabel: 'Upstream llama.cpp equivalent' }
   };
 
   function statusLabel(status) {
@@ -64,10 +64,10 @@
       ['04','Nueva generación','qwen38-27b-q4','Contrato actual 6/6 reconciliado; seleccionable, no default.'],
       ['05','Auxiliar CPU-only','gemma4-e4b-q4-mtp','Canary CPU-only 4/4; publicación del alias pendiente de apply gate.']
     ];
-    $('#intent-grid').innerHTML = intents.map(([n,title,model,body]) => `<article class="intent-card"><span class="number">${n}</span><h3>${title}</h3><p>${body}</p><code>${model}</code></article>`).join('');
+    $('#intent-grid').innerHTML = intents.map(([n,title,model,body]) => `<article class="intent-card"><span class="number">${n}</span><h3>${title}</h3><p>${body}</p><code class="model-name" data-recipe-id="${model}" tabindex="0" role="button" aria-haspopup="dialog">${model}</code></article>`).join('');
     const map = modelMap();
     $('#overview-ranking').innerHTML = state.data.rankings.quality.slice(0, 5).map((id, index) => {
-      const m = map.get(id); return `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.role}</span></td><td>${metric(m,'quality')}</td><td>${metric(m,'decode_tps','')}</td><td>${statusLabel(m.status)}</td></tr>`;
+      const m = map.get(id); return `<tr><td>${index + 1}</td><td><span class="model-name" data-recipe-id="${m.id}" tabindex="0" role="button" aria-haspopup="dialog">${m.id}</span><span class="model-role">${m.role}</span></td><td>${metric(m,'quality')}</td><td>${metric(m,'decode_tps','')}</td><td>${statusLabel(m.status)}</td></tr>`;
     }).join('');
     $('#hardware-line').textContent = `${state.data.hardware.memory} · ${state.data.hardware.gpu} · ${state.data.hardware.backend}`;
   }
@@ -102,7 +102,7 @@
       context: state.lang === 'es' ? 'Contexto = ventana configurada en tokens; K usa bloques de 1024. No es duración en segundos.' : 'Context = test window in tokens; K uses 1024-token blocks. It is not elapsed seconds.'
     };
     $('#rank-explainer').textContent = explainers[state.rank];
-    $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${formatQuality(m)}</td><td>${formatRate(m.metrics.decode_tps)}</td><td>${formatRate(m.metrics.prefill_tps)}</td><td>${formatContext(m.metrics.context_tokens)}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';
+    $('#ranking-table-body').innerHTML = models.map((m,index) => `<tr><td>${index + 1}</td><td><span class="model-name" data-recipe-id="${m.id}" tabindex="0" role="button" aria-haspopup="dialog">${m.id}</span><span class="model-role">${m.family} · ${m.quant} · ${m.role}</span></td><td>${formatQuality(m)}</td><td>${formatRate(m.metrics.decode_tps)}</td><td>${formatRate(m.metrics.prefill_tps)}</td><td>${formatContext(m.metrics.context_tokens)}</td><td>${statusLabel(m.status)}</td></tr>`).join('') || '<tr><td colspan="7">No hay modelos para estos filtros.</td></tr>';
   }
 
   function renderEvidence() {
@@ -125,6 +125,92 @@
     renderRankings();
   }
 
+  function openRecipeDialog(id) {
+    const dialog = $('#recipe-dialog');
+    if (!dialog) return;
+    const recipe = state.recipes && state.recipes.recipes ? state.recipes.recipes[id] : null;
+    if (!recipe) {
+      const map = modelMap();
+      const model = map.get(id);
+      $('#recipe-dialog-title').textContent = model ? model.id : id;
+      $('#recipe-dialog-source').textContent = copy[state.lang].recipeMissing;
+      $('#recipe-dialog-file').textContent = model ? model.quant || '—' : '—';
+      $('#recipe-dialog-command').textContent = '';
+      $('#recipe-dialog-upstream').textContent = '';
+      $('#recipe-dialog-notes').textContent = '';
+      $('#recipe-dialog-mmproj-cell').hidden = true;
+      $('#recipe-dialog-draft-cell').hidden = true;
+      $('#recipe-upstream-block').hidden = true;
+      $('#recipe-fork-note-block').hidden = true;
+    } else {
+      $('#recipe-dialog-title').textContent = recipe.title || id;
+      $('#recipe-dialog-source').textContent = `Fuente: ${recipe.source || '—'} — ${copy[state.lang].openRecipe}`;
+      $('#recipe-dialog-file').textContent = recipe.model_file || '—';
+      $('#recipe-dialog-command').textContent = recipe.command || '—';
+      $('#recipe-dialog-notes').textContent = recipe.notes || '—';
+      const hasMmproj = !!recipe.mmproj;
+      $('#recipe-dialog-mmproj-cell').hidden = !hasMmproj;
+      $('#recipe-dialog-mmproj').textContent = hasMmproj ? recipe.mmproj : '';
+      const hasDraft = !!recipe.draft_model;
+      $('#recipe-dialog-draft-cell').hidden = !hasDraft;
+      $('#recipe-dialog-draft').textContent = hasDraft ? recipe.draft_model : '';
+      const hasUpstream = !!recipe.upstream_equivalent;
+      $('#recipe-upstream-block').hidden = !hasUpstream;
+      $('#recipe-dialog-upstream').textContent = hasUpstream ? recipe.upstream_equivalent : '';
+      const hasFork = !!recipe.fork_note;
+      $('#recipe-fork-note-block').hidden = !hasFork;
+      $('#recipe-dialog-fork-note').textContent = hasFork ? recipe.fork_note : '';
+    }
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  function closeRecipeDialog() {
+    const dialog = $('#recipe-dialog');
+    if (!dialog) return;
+    if (dialog.open) dialog.close('cancel');
+  }
+
+  function bindRecipeTriggers() {
+    document.addEventListener('click', event => {
+      const target = event.target.closest('[data-recipe-id]');
+      if (!target) return;
+      event.preventDefault();
+      openRecipeDialog(target.dataset.recipeId);
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const target = event.target.closest('[data-recipe-id]');
+      if (!target) return;
+      event.preventDefault();
+      openRecipeDialog(target.dataset.recipeId);
+    });
+    $$('.recipe-copy').forEach(button => {
+      button.addEventListener('click', async () => {
+        const codeEl = document.getElementById(button.dataset.target);
+        if (!codeEl) return;
+        const text = codeEl.textContent || '';
+        try {
+          await navigator.clipboard.writeText(text);
+        } catch (err) {
+          const ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'absolute';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          ta.remove();
+        }
+        const original = button.textContent;
+        button.textContent = '✓';
+        button.classList.add('copied');
+        setTimeout(() => { button.textContent = original; button.classList.remove('copied'); }, 1400);
+      });
+    });
+  }
+
   function bind() {
     $$('.view-tab').forEach(button => button.addEventListener('click', () => showView(button.dataset.view)));
     $$('[data-go]').forEach(button => button.addEventListener('click', () => showView(button.dataset.go)));
@@ -134,13 +220,20 @@
     $$('button[data-rank]').forEach(button => button.addEventListener('click', () => { state.rank = button.dataset.rank; renderRankings(); updateUrl(); }));
     $('#lang-toggle').addEventListener('click', () => { state.lang = state.lang === 'es' ? 'en' : 'es'; localStorage.setItem('fjson-gallery-v2-lang', state.lang); applyLanguage(); });
     $('#theme-toggle').addEventListener('click', () => { const next = document.body.dataset.theme === 'light' ? 'dark' : 'light'; document.body.dataset.theme = next; localStorage.setItem('fjson-gallery-v2-theme', next); });
+    bindRecipeTriggers();
   }
 
   async function boot() {
     document.body.classList.add('is-loading');
-    const response = await fetch('data/gallery-v2.json');
-    if (!response.ok) throw new Error(`Gallery data failed: ${response.status}`);
-    state.data = await response.json();
+    const [dataResp, recipesResp] = await Promise.all([
+      fetch('data/gallery-v2.json'),
+      fetch('data/model-recipes-v1.json')
+    ]);
+    if (!dataResp.ok) throw new Error(`Gallery data failed: ${dataResp.status}`);
+    state.data = await dataResp.json();
+    if (recipesResp.ok) {
+      try { state.recipes = await recipesResp.json(); } catch (err) { state.recipes = null; }
+    }
     const params = new URLSearchParams(location.search);
     const requestedRank = params.get('rank');
     if (['quality','decode','prefill','context'].includes(requestedRank)) state.rank = requestedRank;

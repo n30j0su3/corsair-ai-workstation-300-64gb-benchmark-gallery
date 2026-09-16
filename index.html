@@ -88,5 +88,37 @@
 </main>
 <footer><span>FreakingJSON Agencia · Local-first AI operations</span><span id="hardware-line">64GB UMA · Vulkan</span></footer>
 <script src="shared/gallery-v2.js" defer></script>
+<dialog id="recipe-dialog" class="recipe-dialog" aria-labelledby="recipe-dialog-title">
+  <form method="dialog" class="recipe-dialog-form">
+    <header class="recipe-dialog-head">
+      <p class="section-index" id="recipe-dialog-eyebrow">RECETA · LLAMA.CPP</p>
+      <h2 id="recipe-dialog-title">—</h2>
+      <p id="recipe-dialog-source" class="recipe-source">—</p>
+      <button type="submit" class="recipe-dialog-close" aria-label="Cerrar" value="cancel">×</button>
+    </header>
+    <div class="recipe-dialog-body">
+      <section class="recipe-meta-grid">
+        <div><dt>Modelo</dt><dd id="recipe-dialog-file">—</dd></div>
+        <div id="recipe-dialog-mmproj-cell" hidden><dt>mmproj</dt><dd id="recipe-dialog-mmproj">—</dd></div>
+        <div id="recipe-dialog-draft-cell" hidden><dt>Draft</dt><dd id="recipe-dialog-draft">—</dd></div>
+      </section>
+      <section class="recipe-command-block">
+        <header><h3>Comando ejecutado (TurboQuant fork)</h3><button type="button" class="recipe-copy" data-target="recipe-dialog-command">Copiar</button></header>
+        <pre><code id="recipe-dialog-command">—</code></pre>
+      </section>
+      <section id="recipe-upstream-block" class="recipe-command-block" hidden>
+        <header><h3>Equivalente upstream llama.cpp</h3><button type="button" class="recipe-copy" data-target="recipe-dialog-upstream">Copiar</button></header>
+        <pre><code id="recipe-dialog-upstream">—</code></pre>
+      </section>
+      <section id="recipe-fork-note-block" class="recipe-note" hidden>
+        <p id="recipe-dialog-fork-note"></p>
+      </section>
+      <section class="recipe-notes-block">
+        <h3>Notas</h3>
+        <p id="recipe-dialog-notes">—</p>
+      </section>
+    </div>
+  </form>
+</dialog>
 </body>
 </html>
