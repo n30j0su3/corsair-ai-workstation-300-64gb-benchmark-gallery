@@ -268,9 +268,35 @@ def test_gallery_js_binds_recipe_dialog_to_model_names():
     assert "model-recipes-v1.json" in src
 
 
+def test_every_overview_intent_recipe_trigger_resolves_to_real_content():
+    """Overview aliases must never open an empty recipe dialog."""
+    src = APP.read_text(encoding="utf-8")
+    payload = json.loads(RECIPES.read_text(encoding="utf-8"))
+    recipes = payload["recipes"]
+    aliases = payload.get("aliases", {})
+    intent_ids = re.findall(r"\['\d+','[^']+','([^']+)'", src)
+    assert intent_ids, "overview intent IDs were not found"
+    for intent_id in intent_ids:
+        resolved = aliases.get(intent_id, intent_id)
+        assert resolved in recipes, f"{intent_id}: popup trigger resolves to missing recipe {resolved}"
+        recipe = recipes[resolved]
+        assert recipe.get("model_file"), f"{intent_id}: popup has no model information"
+        assert recipe.get("command"), f"{intent_id}: popup has no executable command"
+
+
+def test_recipe_alias_targets_exist_and_are_resolved_by_the_app():
+    payload = json.loads(RECIPES.read_text(encoding="utf-8"))
+    aliases = payload.get("aliases", {})
+    recipes = payload["recipes"]
+    assert aliases.get("architect-35b-q6") == "qwopus36-35b-a3b-q6-mtp"
+    assert all(target in recipes for target in aliases.values())
+    assert "state.recipes.aliases" in APP.read_text(encoding="utf-8")
+
+
 def test_recipe_dialog_styles_include_mobile_fullscreen():
     css = CSS.read_text(encoding="utf-8")
     assert ".recipe-dialog" in css
+    assert "[hidden]{display:none!important}" in css
     assert "@media (max-width:640px)" in css
     assert "100vw" in css
 

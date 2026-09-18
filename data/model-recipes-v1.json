@@ -1,10 +1,22 @@
 {
   "schema": "fjson-gallery-recipes/v1",
-  "updated": "2026-09-16",
+  "updated": "2026-09-17",
   "purpose": "Executable llama.cpp recipes used to reproduce every public gallery number. Each recipe names the source lane (miniv-router INI / miniv-lanes / start-server-v2.sh harness / flash-next campaign). Recipes are starting points measured on the Corsair AI Workstation 300 (AMD Ryzen AI MAX 385, Radeon 8050S, 64GB LPDDR5X UMA), not universal quality scores.",
   "backend_note": "All command recipes are written for the llama-cpp-turboquant Vulkan fork (build b9677-4595fff0b). The TurboQuant KV-cache types (turbo4/turbo3) and --fit/--lazy-mode/--load-mode flags are fork-specific. Each recipe also lists an upstream_equivalent that replaces turbo4/turbo3 with --cache-type-k q8_0 --cache-type-v q8_0 and drops the fork-only flags so the same measurements can be reproduced on vanilla llama.cpp. Adjust -ngl 99 (full GPU offload) and -t 7 to your hardware.",
   "harness_note": "Bench v2.2 models were served through benchmarks/start-server-v2.sh, which sets per-family sampling (qwen: temp 1.0, presence-penalty 0.2; gemma: temp 1.0, top-k 64), DRY repetition penalty, YaRN rope scaling beyond 32K context, and n-gram speculative decoding for non-MTP models. The 'command' recipe above shows the equivalent llama-server invocation; both produce identical metrics when seed is fixed.",
+  "aliases": {
+    "architect-35b-q6": "qwopus36-35b-a3b-q6-mtp"
+  },
   "recipes": {
+    "thinkingcap-27b-q4": {
+      "title": "ThinkingCap Qwen3.6 27B Q4_K_M — español estricto",
+      "model_file": "ThinkingCap-Qwen3.6-27B-Q4_K_M.gguf",
+      "mmproj": "mmproj-ThinkingCap-Qwen3.6-27B-f16.gguf",
+      "source": "miniv-router lane thinkingcap-27b-q4 (live readback 2026-09-17)",
+      "command": "llama-server -m ThinkingCap-Qwen3.6-27B-Q4_K_M.gguf --mmproj mmproj-ThinkingCap-Qwen3.6-27B-f16.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 --no-mmap -t 7 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --flash-attn on --jinja --reasoning on --reasoning-budget 4096 --reasoning-budget-message 'Now stop thinking and produce the final deliverable. Be concrete and complete.' --temp 0.7 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 4 --spec-draft-n-min 1",
+      "upstream_equivalent": "llama-server -m ThinkingCap-Qwen3.6-27B-Q4_K_M.gguf --mmproj mmproj-ThinkingCap-Qwen3.6-27B-f16.gguf -ngl 99 -c 32768 -b 2048 -ub 1024 -t 7 --cache-type-k q8_0 --cache-type-v q8_0 --flash-attn on --jinja --reasoning on --reasoning-budget 4096 --temp 0.7 --top-p 0.95 --top-k 20 --spec-type draft-mtp --spec-draft-n-max 4 --spec-draft-n-min 1",
+      "notes": "Lane especializada en adherencia a instrucciones en español. Q4_K_M conservado tras la depuración 27B; no sustituye al default protegido."
+    },
     "qwopus36-35b-a3b-q6-mtp": {
       "title": "Qwopus3.6 35B-A3B MTP Q6_K — local champion",
       "model_file": "Qwopus3.6-35B-A3B-v1-MTP-Q6_K.gguf",

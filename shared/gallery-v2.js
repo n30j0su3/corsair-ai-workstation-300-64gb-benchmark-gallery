@@ -128,7 +128,9 @@
   function openRecipeDialog(id) {
     const dialog = $('#recipe-dialog');
     if (!dialog) return;
-    const recipe = state.recipes && state.recipes.recipes ? state.recipes.recipes[id] : null;
+    const aliases = state.recipes && state.recipes.aliases ? state.recipes.aliases : {};
+    const resolvedId = aliases[id] || id;
+    const recipe = state.recipes && state.recipes.recipes ? state.recipes.recipes[resolvedId] : null;
     if (!recipe) {
       const map = modelMap();
       const model = map.get(id);
