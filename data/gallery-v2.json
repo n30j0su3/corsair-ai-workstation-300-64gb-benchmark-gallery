@@ -1,6 +1,6 @@
 {
   "schema": "fjson-gallery/v2",
-  "updated": "2026-09-14",
+  "updated": "2026-11-25",
   "hardware": {
     "name": "Corsair AI Workstation 300",
     "memory": "64GB UMA",
@@ -418,7 +418,7 @@
       "family": "Qwen3.8 Flash-Next",
       "quant": "UD-IQ3_XXS + MTP Q8_0",
       "status": "candidate",
-      "role": "MoE expert-cache lane · 64K on-demand · 128K deep benchmark · 48-slot profile · non-default",
+      "role": "MoE expert-cache lane · 64K on-demand (sustained residency 2026-11-24) · 128K deep benchmark · 48-slot profile · non-default",
       "metrics": {
         "quality": 1.0,
         "passes": "3/3",
@@ -628,6 +628,22 @@
   },
   "evidence": [
     {
+      "id": "flash-next-execution-20261124",
+      "date": "2026-11-25",
+      "title": "How Flash-Next and 27B are run here (model-authored)",
+      "kind": "report",
+      "href": "flash-next-execution-20261124/index.html",
+      "summary": "Executive summary SPA written by Flash-Next itself through a coding agent: recipe, sustained residency, guard readings, its own authoring metrics and the real terminal launch commands."
+    },
+    {
+      "id": "flash-next-ec64-sustained-20261124",
+      "date": "2026-11-24",
+      "title": "Flash-Next EC64 sustained residency",
+      "kind": "sustained",
+      "href": "data/flash-next-ec64-sustained-20261124.json",
+      "summary": "One 10,185 s continuous 64K residency with the default model resident; 39/39 correct requests at 56k–60k tokens; host headroom review."
+    },
+    {
       "id": "qwen38-intake-20260815",
       "date": "2026-08-15",
       "title": "Qwen3.8 27B intake",
@@ -758,7 +774,29 @@
       "exact_content": "3/3 at every measured rung",
       "stability": "13/13 without DeviceLost",
       "operational_scope": "64K on-demand; 128K benchmark-only",
-      "measured": "2026-09-12"
+      "measured": "2026-09-12",
+      "sustained": {
+        "residency_seconds": 10185.4,
+        "requests": "39/39 at 56k–60k prompt tokens",
+        "cold_decode_median_tok_s": {
+          "reasoning_on": 25.69,
+          "reasoning_off": 28.63
+        },
+        "warm_first_token_median_s": {
+          "reasoning_on": 4.33,
+          "reasoning_off": 4.48
+        },
+        "default_model_resident": true,
+        "measured": "2026-11-24",
+        "host_headroom": "MemAvailable minimum 275 MiB; under review"
+      },
+      "agent_authored_summary": {
+        "page": "flash-next-execution-20261124/index.html",
+        "passes": 4,
+        "measured": "2026-11-24/25",
+        "sha256": "0e380590ab734f36abb833f566e2a8ac4fbf8384f1d4625e65b515c656276838",
+        "published_sha256": "56a3a06749d4f681faabc708d6736022b1f27f3c83534e21eca4bc652abc3326"
+      }
     }
   }
 }

@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="description" content="Resumen ejecutivo de cómo el equipo del operador ejecutó Qwen3.8-Flash-Next y Qwen3.8-27B en la máquina local MiniV: receta, lanes, métricas y veredictos.">
+<title>Cómo ejecutamos Qwen3.8-Flash-Next y Qwen3.8-27B en MiniV</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#010403; --fg:#e2e8f0; --fg2:#b0b8c8; --label:#94a3b8;
+  --ac:#06b6d4; --ac2:#40E0D0; --bd:rgba(6,182,212,.2); --bd2:rgba(6,182,212,.38);
+  --mono:ui-monospace,"JetBrains Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.62;overflow-wrap:break-word}
+code,pre,kbd,.mono{font-family:var(--mono)}
+a{color:var(--ac2)}
+:focus-visible{outline:2px solid var(--ac2);outline-offset:3px;border-radius:2px}
+.skip{position:absolute;left:-9999px;top:0;background:#06232b;color:var(--fg);padding:8px 12px;z-index:50}
+.skip:focus{left:8px}
+.shell{max-width:1120px;margin:0 auto;padding:0 16px}
+.prose p,.prose li{max-width:780px}
+.eyebrow{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--label);margin:0 0 10px}
+h1{font-size:clamp(26px,5vw,40px);line-height:1.14;margin:0 0 14px;letter-spacing:-.02em}
+h2{font-size:clamp(20px,3.2vw,26px);margin:0 0 6px;letter-spacing:-.01em}
+h3{font-size:15px;margin:22px 0 8px;color:var(--ac2);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase}
+p{margin:0 0 14px;color:var(--fg2)}
+.lead{color:var(--fg);font-size:17px}
+strong{color:var(--fg);font-weight:600}
+nav.top{position:sticky;top:0;z-index:30;background:rgba(1,4,3,.94);border-bottom:1px solid var(--bd)}
+.nav-in{display:flex;gap:4px;overflow-x:auto;scrollbar-width:thin;padding:0 16px;max-width:1120px;margin:0 auto}
+nav.top a{display:block;white-space:nowrap;text-decoration:none;font-family:var(--mono);font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--label);padding:13px 10px;border-bottom:2px solid transparent}
+nav.top a:hover{color:var(--fg)}
+nav.top a[aria-current="true"]{color:var(--ac2);border-bottom-color:var(--ac)}
+header.hero{border-bottom:1px solid var(--bd);padding:46px 0 34px}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,.85fr);gap:28px;align-items:start}
+.hero-meta{border:1px solid var(--bd);border-left:2px solid var(--ac);padding:16px 18px;background:#03100f}
+.hero-meta dl{margin:0;font-family:var(--mono);font-size:12.5px;color:var(--fg2)}
+.hero-meta dt{color:var(--label);letter-spacing:.1em;text-transform:uppercase;font-size:10.5px;margin-top:12px}
+.hero-meta dt:first-child{margin-top:0}
+.hero-meta dd{margin:2px 0 0;color:var(--fg);overflow-wrap:anywhere}
+section{padding:46px 0;border-bottom:1px solid var(--bd);scroll-margin-top:52px}
+.sec-n{font-family:var(--mono);font-size:12px;color:var(--ac);letter-spacing:.2em}
+.callout{border:1px solid var(--bd2);border-left:3px solid var(--ac);background:#031212;padding:18px 20px;margin:0 0 20px}
+.rows{border-top:1px solid var(--bd)}
+.row{display:grid;grid-template-columns:minmax(0,190px) minmax(0,1fr);gap:14px;padding:16px 0;border-bottom:1px solid var(--bd)}
+.row>dt,.row>dd{margin:0;min-width:0}
+.row>dt{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);padding-top:4px}
+.row>dd p:last-child{margin-bottom:0}
+.scroll{overflow-x:auto;max-width:100%;scrollbar-width:thin;padding-bottom:6px}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+caption{text-align:left;font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);padding-bottom:8px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--bd);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--label);white-space:nowrap;background:#04100f}
+td.num,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+td code,.brk{overflow-wrap:anywhere;font-family:var(--mono)}
+details{border:1px solid var(--bd);margin:16px 0;background:#020c0c}
+details>summary{cursor:pointer;list-style:none;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ac2);padding:13px 16px;border-left:2px solid var(--ac)}
+details>summary::-webkit-details-marker{display:none}
+details>summary::after{content:" +";color:var(--label)}
+details[open]>summary::after{content:" −"}
+details[open]>summary{border-bottom:1px solid var(--bd)}
+.d-body{padding:16px 18px}
+.btn{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg2);background:transparent;border:1px solid var(--bd2);padding:8px 12px;cursor:pointer}
+.btn:hover{color:var(--ac2);border-color:var(--ac)}
+.badge{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.08em;padding:2px 8px;border:1px solid var(--bd2);border-radius:2px;color:var(--ac2);white-space:nowrap}
+.badge.bad{color:#ef6a6a;border-color:rgba(239,106,106,.42)}
+.kpis{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin:18px 0}
+.kpi{grid-column:span 4;min-width:0;border:1px solid var(--bd);padding:14px 15px;background:#03100f}
+.kpi.hero{grid-column:span 12;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:10px}
+.kpi.wide{grid-column:span 6}
+.kpi .lbl{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);margin-bottom:7px}
+.kpi .val{font-family:var(--mono);font-size:24px;color:var(--fg);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .val small{font-size:13px;color:var(--fg2);letter-spacing:0}
+.kpi .src{display:block;font-size:11.5px;color:var(--label);margin-top:7px;font-family:var(--mono);line-height:1.45}
+.bar{position:relative;height:11px;background:rgba(6,182,212,.1);border:1px solid var(--bd);margin:9px 0 4px}
+.bar>span{position:absolute;inset:0 auto 0 0;width:var(--w,0);background:var(--ac);opacity:.85}
+.bar.alt>span{background:var(--ac2);opacity:.6}
+.bar-row{margin:0 0 16px;min-width:0}
+.bar-hd{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:12px;color:var(--fg2);flex-wrap:wrap}
+.bar-hd b{color:var(--fg);font-weight:600}
+.bar-note{font-size:11.5px;color:var(--label);font-family:var(--mono)}
+.steps{list-style:none;margin:22px 0 0;padding:0}
+.steps>li{border-left:2px solid var(--bd2);padding:0 0 6px 20px;margin:0 0 22px;max-width:780px}
+.steps>li:last-child{margin-bottom:0}
+.steps h3{margin-top:0}
+.lbl-inline{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--label);margin-right:6px}
+.evid{font-family:var(--mono);font-size:12px;color:var(--ac2);margin:0}
+.sec-note{font-size:12.5px;color:var(--label);font-family:var(--mono);max-width:780px}
+.bar-block{margin:20px 0 26px;max-width:780px}
+.bar-block .grp{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);margin:0 0 12px}
+.bar.tall{height:20px}
+.bar>.tick{position:absolute;top:-5px;bottom:-5px;left:var(--x,0);width:2px;background:var(--bg);border-left:1px solid var(--ac2);right:auto}
+.bar>.tick.obj{background:#f5b93f;border-left:none}
+.key{color:var(--ac2)}
+.tl{list-style:none;margin:26px 0;padding:0}
+.tl>li{position:relative;padding:0 0 4px 26px;margin:0 0 24px;border-left:1px solid var(--bd);max-width:780px}
+.tl>li::before{content:"";position:absolute;left:-5px;top:9px;width:9px;height:9px;background:var(--ac);border-radius:50%}
+.tl>li:last-child{margin-bottom:0}
+.tl h3{margin-top:0}
+.run{border-top:1px solid var(--bd);padding-top:18px;margin-top:34px}
+.verdict{font-family:var(--mono);font-size:13px;color:var(--ac2);border:1px dashed var(--bd2);padding:12px 14px;background:#031211;overflow-wrap:anywhere}
+.vgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:22px;margin:20px 0 0}
+.vgrid>div{min-width:0}
+.vgrid .ok{grid-column:span 7}
+.vgrid .no{grid-column:span 5}
+.vgrid .lock{grid-column:1/-1}
+.vlist{list-style:none;margin:8px 0 0;padding:0}
+.vlist>li{position:relative;padding:0 0 0 20px;margin:0 0 11px;font-size:15px;color:var(--fg2);max-width:780px}
+.vlist>li::before{position:absolute;left:0;top:0;font-family:var(--mono);font-size:13px}
+.ok .vlist>li::before{content:"✓";color:var(--ac2)}
+.no .vlist>li::before{content:"!";color:#f5b93f}
+.lock .vlist>li::before{content:"×";color:#ef6a6a}
+.dec{list-style:none;margin:10px 0 0;padding:0}
+.dec>li{margin:0 0 12px;padding-left:0;max-width:780px}
+.dec>li .n{font-family:var(--mono);color:var(--ac);font-size:12px;margin-right:8px}
+.chart{margin:26px 0;max-width:780px}
+.ch-t{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ac2);margin:0 0 3px}
+.ch-u,.ch-f{font-family:var(--mono);font-size:11.5px;letter-spacing:.04em;color:var(--label);line-height:1.5;margin:0 0 10px}
+.ch-f{margin:10px 0 0}
+.ch-n{font-size:13.5px;color:var(--fg2);margin:8px 0 0;max-width:780px}
+.ch-legend{list-style:none;display:flex;flex-wrap:wrap;gap:6px 18px;margin:10px 0 0;padding:0;font-family:var(--mono);font-size:11.5px;color:var(--label)}
+.ch-legend>li{display:flex;align-items:center;gap:7px}
+.sw{display:inline-block;width:12px;height:12px;border-radius:2px;flex:none}
+.sw.a{background:var(--ac)}.sw.b{background:var(--ac2);opacity:.7}.sw.c{background:#f5b93f}.sw.d{background:var(--label)}
+.chart>p.grp{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--label);margin:0 0 12px}
+.stack{display:flex;height:34px;border:1px solid var(--bd2);background:#03100f}
+.stack>i{display:block;height:100%;min-width:3px;background:var(--ac)}
+.stack>i.sw-b{background:var(--ac2);opacity:.7}
+.stack>i.sw-c{background:#f5b93f}
+.bar.tt>span{min-width:5px}
+.cmd-t{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ac2);margin:18px 0 0}
+.pl{display:block;width:100%;height:auto;border:1px solid var(--bd);background:#03100f}
+.pl .ax{font-family:var(--mono);font-size:9px;fill:var(--label)}
+.pl .gl{stroke:var(--bd);stroke-width:1;stroke-dasharray:3 4}
+.pl .mk{stroke:var(--label);stroke-width:1;stroke-dasharray:2 3;opacity:.75}
+.pl .l1{fill:none;stroke:var(--ac2);stroke-width:2}
+.pl .l2{fill:none;stroke:#f5b93f;stroke-width:2}
+.cmd{margin:12px 0 6px;padding:13px 15px;border:1px solid var(--bd);background:#03100f;overflow-x:auto;max-width:100%;scrollbar-width:thin}
+.cmd code{display:block;font-family:var(--mono);font-size:12.5px;line-height:1.62;color:var(--fg);white-space:pre}
+.src-list{list-style:none;margin:0;padding:0;font-size:13.5px}
+.src-list>li{margin:0 0 14px;color:var(--fg2);max-width:780px}
+.src-list .f{font-family:var(--mono);font-size:12.5px;color:var(--fg);overflow-wrap:anywhere}
+.src-list .h{display:block;font-family:var(--mono);font-size:11px;color:var(--label);margin-top:3px;overflow-wrap:anywhere}
+.reveal{opacity:0;transform:translateY(12px);transition:opacity .5s ease,transform .5s ease}
+.reveal.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .reveal{opacity:1;transform:none;transition:none}
+}
+@media (max-width:900px){
+  .hero-grid{grid-template-columns:1fr;gap:20px}
+  .kpi{grid-column:span 6}
+}
+@media (max-width:620px){
+  .kpi,.kpi.wide{grid-column:span 12}
+  .row{grid-template-columns:1fr;gap:6px}
+  section{padding:34px 0}
+  .vgrid{grid-template-columns:1fr;gap:16px}
+  .vgrid .ok,.vgrid .no,.vgrid .lock{grid-column:auto}
+  .ch-legend{display:block}
+  .ch-legend>li{margin:0 0 6px}
+}
+footer{padding:34px 0 46px;text-align:center}
+footer .mark{font-family:var(--mono);font-size:13px;color:var(--fg)}
+footer .star{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;color:var(--ac2);margin:12px 0}
+footer .by{font-family:var(--mono);font-size:11.5px;color:var(--label)}
+</style>
+</head>
+<body>
+<a class="skip" href="#contenido">Saltar al contenido</a>
+<header class="hero">
+  <div class="shell hero-grid">
+  <div>
+  <p class="eyebrow">Informe de ejecución · MiniV · 24 de noviembre de 2026</p>
+  <h1>Cómo ejecutamos Qwen3.8-Flash-Next y Qwen3.8-27B en MiniV</h1>
+  <p class="lead">Resumen ejecutivo de la ejecución local de dos modelos sobre la misma máquina: la lane de Flash-Next que hoy está en producción y la lane de Qwen 3.8-27B usada como referencia, con la receta exacta, las métricas medidas y los límites que quedaron abiertos.</p>
+  <p>Todo lo que sigue sale del paquete de datos cerrado de la jornada del 2026-11-24 y de sus archivos de evidencia. Donde un dato no existe, se dice que no se midió.</p>
+  </div>
+  <div class="hero-meta">
+  <dl>
+  <dt>Máquina</dt><dd>MiniV · Corsair AI Workstation 300 (64 GB)</dd>
+  <dt>Motor</dt><dd>llama.cpp, fork thecodacus (build 27c54b4) · Vulkan</dd>
+  <dt>Lane en producción</dt><dd class="brk">qwen38-flash-next-fast · 65536 tokens</dd>
+  <dt>Referencia</dt><dd class="brk">qwen38-27b-v31-candidate · 92160 tokens</dd>
+  <dt>Documento</dt><dd>Escrito por la propia lane Flash-Next mediante pi-dev</dd>
+  </dl>
+  </div>
+  </div>
+</header>
+<nav class="top" aria-label="Navegación por secciones">
+  <div class="nav-in">
+  <a href="#resumen">Resumen</a>
+  <a href="#contexto">Contexto</a>
+  <a href="#proceso">Cómo se ejecuta</a>
+  <a href="#receta">Receta</a>
+  <a href="#lanes">Lanes</a>
+  <a href="#metricas">Métricas</a>
+  <a href="#f1">Carrera sostenida</a>
+  <a href="#veredictos">Veredictos</a>
+  <a href="#autoria">Autoría</a>
+  <a href="#fuentes">Fuentes</a>
+  </div>
+</nav>
+<main id="contenido">
+<section id="resumen" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">01</p>
+  <h2>Resumen ejecutivo</h2>
+  <p class="eyebrow">Resultado principal</p>
+  <div class="callout">
+  <p class="lead" style="margin-bottom:0"><strong>Qwen3.8-Flash-Next con la receta EC64 sostuvo una residencia de 10185 s sin lentitud, bloqueo ni caída</strong>, con 39 solicitudes correctas a 56k–60k tokens de contexto; la misma secuencia corre hoy como la lane <span class="mono">qwen38-flash-next-fast</span>.</p>
+  </div>
+  <dl class="rows">
+  <div class="row">
+  <dt>Implicación práctica</dt>
+  <dd><p>Una lane de 64K sirve trabajo real de autoría en el MiniV local: el portal del stack se escribió con ella y la versión 2 pasó QA de navegador sin desborde.</p></dd>
+  </div>
+  <div class="row">
+  <dt>Decisión siguiente</dt>
+  <dd><p>El operador aceptó operar EC64 con Architect residente, mantuvo <span class="mono">qwen38-flash-next-fast</span> con la secuencia EC64 y destinó <span class="mono">qwen38-flash-next-v31-candidate</span> a experimentos, sin tocar las recetas certificadas.</p></dd>
+  </div>
+  </dl>
+  </div>
+</section>
+<section id="contexto" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">02</p>
+  <h2>Contexto de referencia</h2>
+  <p class="eyebrow">En lenguaje llano</p>
+  <p>MiniV es una estación de trabajo local: una Corsair AI Workstation 300 con 64 GB de memoria unificada, un procesador AMD Ryzen AI MAX 385 y gráficos Radeon 8050S. No hay nube en medio: los modelos se cargan en la propia máquina y todo el tráfico de inferencia ocurre dentro del equipo.</p>
+  <p>El motor es <strong>llama.cpp</strong> en un fork concreto (thecodacus, build 27c54b4) con backend Vulkan: por ahí atiende la GPU de la propia APU. Sobre él hay un router general en su puerto local, con <span class="mono">architect-35b-q6</span> por defecto, y un servidor dedicado para Flash-Next en su puerto dedicado, con un único slot de atención.</p>
+  <p>El agente que escribe el trabajo (pi-dev) no elige puertos a mano: entra por el <strong>selector de lanes</strong> en el puerto del selector, que administra la custodia —quién tiene el equipo ocupado— y la restauración del modelo residente al terminar. Las lanes solo escuchan en <span class="mono">localhost</span>: nada queda expuesto en la red local, y el host del agente (Vector) llega por túnel SSH.</p>
+  <p>Dos familias de modelos se prueban el mismo día: <strong>Qwen3.8-Flash-Next</strong>, un modelo multimodal de expertos que se sirve en cuatro lanes de distinto tamaño de contexto, y <strong>Qwen3.8-27B</strong>, denso, que actúa como referencia de calidad y velocidad junto a él.</p>
+  <details>
+  <summary aria-label="Abrir el detalle técnico de máquina, motor y modelos">Ver detalle técnico: máquina, motor y modelos</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de equipo anfitrión MiniV">
+  <table>
+  <caption>Host</caption>
+  <thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Nombre</td><td>MiniV</td></tr>
+  <tr><td>Equipo</td><td>Corsair AI Workstation 300 (64 GB)</td></tr>
+  <tr><td>Procesador</td><td>AMD Ryzen AI MAX 385</td></tr>
+  <tr><td>Gráficos</td><td>Radeon 8050S · Vulkan RADV</td></tr>
+  <tr><td>Memoria</td><td>64 GB LPDDR5X UMA</td></tr>
+  <tr><td>Swap total</td><td class="num">8192 MiB</td></tr>
+  <tr><td>Acceso</td><td>Las lanes escuchan solo en <span class="mono">localhost</span>; Vector (el host del agente) llega por túnel SSH</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla del motor de inferencia y router">
+  <table>
+  <caption>Runtime</caption>
+  <thead><tr><th scope="col">Campo</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Motor</td><td>llama.cpp, fork thecodacus (build 27c54b4)</td></tr>
+  <tr><td>Backend</td><td>Vulkan</td></tr>
+  <tr><td>Router</td><td><span class="mono">miniv-router</span> en su puerto local (modelo por defecto <span class="mono">architect-35b-q6</span>)</td></tr>
+  <tr><td>Lane Flash-Next</td><td>Servidor dedicado en su puerto dedicado, un solo slot; pi-dev entra por el selector de lanes en el puerto del selector, que administra la custodia y la restauración</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de modelos ejecutados">
+  <table>
+  <caption>Modelos</caption>
+  <thead><tr><th scope="col">Modelo / lane</th><th scope="col">Detalle</th></tr></thead>
+  <tbody>
+  <tr><td>Qwen3.8-Flash-Next</td><td>Pesos <span class="brk">Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf</span></td></tr>
+  <tr><td>Cuantización</td><td>UD-IQ3_XXS</td></tr>
+  <tr><td>Proyección multimodal</td><td class="brk">mmproj-Qwen3.8-Flash-Next-F16.gguf</td></tr>
+  <tr><td>Borrador MTP</td><td class="brk">mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf</td></tr>
+  <tr><td>Qwen3.8-27B</td><td>Lane <span class="mono">qwen38-27b-v31-candidate</span> · puerto de la lane · proveedor pi <span class="mono">miniv-qwen-v31</span></td></tr>
+  </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+  <figure class="chart" role="img" aria-label="Barra apilada de los 65536 MiB de memoria unificada de MiniV: 49152 MiB los reserva el firmware como VRAM dedicada, 16256 MiB los ve Linux como RAM y quedan 128 MiB sin entregar a ninguno de los dos.">
+  <p class="ch-t">G1 · Dónde están los 64 GB</p>
+  <p class="ch-u">MiB sobre 65536 MiB de memoria unificada · barra apilada</p>
+  <div class="stack">
+  <i style="width:75%"></i>
+  <i class="sw-b" style="width:24.8%"></i>
+  <i class="sw-c" style="width:0.2%"></i>
+  </div>
+  <ul class="ch-legend">
+  <li><span class="sw a"></span>VRAM dedicada por el firmware · 49152 MiB (75,0 %)</li>
+  <li><span class="sw b"></span>RAM que ve Linux · 16256 MiB (24,8 %) · 127 bloques de 128 MiB</li>
+  <li><span class="sw c"></span>Bloque sin entregar · 128 MiB (0,2 %)</li>
+  </ul>
+  <p class="ch-f">Fuente: <span class="mono">mapa_memoria</span> de <span class="mono">SERIES.json</span> · journal del kernel (<span class="mono">Detected VRAM RAM=49152M; Capping GTT to 15621M</span>) y <span class="mono">/proc/meminfo</span> de MiniV, leído el 2026-11-25. El <span class="mono">MemTotal</span> de Linux es 15621 MiB y el tope GTT de la GPU es 15621 MiB; el swap del host es 8192 MiB y no está en esta barra.</p>
+  <p class="ch-n">Lectura: de los 65536 MiB, tres cuartas partes no llegan a Linux ni a pie: el firmware se las reserva como VRAM dedicada y a Linux sólo le quedan 16256 MiB, de los que 15621 están vivos. Esos son los números, y son hechos medidos. <strong>Por qué</strong> el firmware deja fuera esa reserva —si es un ajuste de reserva de memoria en el firmware o en el BIOS— sigue siendo una hipótesis bajo investigación: no está confirmada.</p>
+  </figure>
+  </div>
+</section>
+<section id="proceso" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">03</p>
+  <h2>Cómo se ejecuta</h2>
+  <p>Ocho pasos, siempre en el mismo orden, sostenidos por una sola idea: una admisión, una sola carga del modelo y ninguna repetición. Cada paso declara qué se comprueba y deja un archivo de evidencia.</p>
+  <ol class="steps">
+  <li>
+  <h3>1 · Preflight contra el estado real del host</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> MemAvailable, swap y PSI actuales; router con <span class="mono">architect-35b-q6</span> cargado; slots sin <span class="mono">is_processing</span>; sin custodia tomada; identidad de la lane (alias, puerto, secuencia y hashes del runtime).</p>
+  <p class="evid">Evidencia: <span class="mono">PREFLIGHT-ONLY.json</span></p>
+  </li>
+  <li>
+  <h3>2 · Admisión única</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> se emite una sola admisión al final del preflight y se registra su hash; no se reemite.</p>
+  <p class="evid">Evidencia: <span class="mono">ADMISSION.json</span></p>
+  </li>
+  <li>
+  <h3>3 · Custodia y carga única</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> la unidad <span class="mono">miniv-flash-next@&lt;alias&gt;</span> toma la custodia, verifica la receta y carga el modelo una vez, sin reintentos.</p>
+  <p class="evid">Evidencia: <span class="mono">LAUNCH.json</span>, identidad de la invocación</p>
+  </li>
+  <li>
+  <h3>4 · Monitoreo cada 3 s</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> MemAvailable, swap del host y de la unidad, PSI, memoria de la unidad y estado del router.</p>
+  <p class="evid">Evidencia: <span class="mono">monitor.jsonl</span></p>
+  </li>
+  <li>
+  <h3>5 · Trabajo real</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> pi-dev con el proveedor <span class="mono">miniv-flash-next</span>: el modelo lee el paquete de datos y escribe el HTML con write y edit; en F1, ciclos fríos y cálidos con razonamiento encendido y apagado a 56k–60k tokens.</p>
+  <p class="evid">Evidencia: <span class="mono">pi-stdout.jsonl</span>, <span class="mono">server-journal.log</span></p>
+  </li>
+  <li>
+  <h3>6 · Restauración nativa</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> al detenerse la unidad se libera la custodia y el selector vuelve a cargar <span class="mono">architect-35b-q6</span>; se exige unidad inactiva, alias cargado y slot libre.</p>
+  <p class="evid">Evidencia: <span class="mono">RESULT.json</span> (restore)</p>
+  </li>
+  <li>
+  <h3>7 · Verificación independiente</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> métricas recalculadas desde el journal del servidor, el monitor y los eventos de pi; hashes del artefacto; QA de navegador con el modelo ya descargado.</p>
+  <p class="evid">Evidencia: <span class="mono">METRICS.json</span>, <span class="mono">QA-BROWSER.json</span></p>
+  </li>
+  <li>
+  <h3>8 · Preservación</h3>
+  <p><span class="lbl-inline">Qué se comprueba:</span> evidencia, wiki, memoria y repositorios.</p>
+  <p class="evid">Evidencia: <span class="mono">LANE-CONSOLIDATION</span>, wiki <span class="mono">miniv-current</span></p>
+  </li>
+  </ol>
+  </div>
+</section>
+<section id="receta" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">04</p>
+  <h2>La receta</h2>
+  <p>Parámetro por parámetro, la secuencia que quedó en producción: la misma de la lane <span class="mono">qwen38-flash-next-expert-cache-64k</span>, mantenida por decisión del operador y servida hoy como <span class="mono">qwen38-flash-next-fast</span> en su puerto dedicado.</p>
+  <h3>Contexto y lote</h3>
+  <p>Defienden el tamaño de la ventana que se puede cargar y cuánto trabajo se admite a la vez. Cuanto mayor el bloque de procesado del prompt, menos idas y vueltas para meter el contexto; un solo slot deja toda la máquina a una conversación.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros de contexto y lote">
+  <table>
+  <thead><tr><th scope="col">Parámetro</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Contexto</td><td class="num">65536 tokens</td></tr>
+  <tr><td>Lote</td><td class="num">512</td></tr>
+  <tr><td>Micro-lote</td><td class="num">256</td></tr>
+  <tr><td>Hilos</td><td class="num">7</td></tr>
+  <tr><td>Slots</td><td class="num">1</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <h3>Especificación MTP</h3>
+  <p>Fija cómo se usa el borrador multi-token: qué tipo de especulación se declara y entre qué límites puede oscilar, para que el runtime no decida por su cuenta.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros de la especificación MTP">
+  <table>
+  <thead><tr><th scope="col">Parámetro</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Tipo</td><td class="mono">draft-mtp</td></tr>
+  <tr><td>n_max</td><td class="num">2</td></tr>
+  <tr><td>n_min</td><td class="num">1</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <h3>Expert cache</h3>
+  <p>Es la pieza que da nombre a la receta: guarda los expertos del modelo multimodal siguiendo el perfil de trazas medido, de forma que el patrón de expertos del contexto no tenga que rehacerse desde cero.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros de expert cache">
+  <table>
+  <thead><tr><th scope="col">Parámetro</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Perfil</td><td class="mono brk">qwen38-flash-next-trace.csv</td></tr>
+  <tr><td>Slots</td><td class="num">32</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <h3>Carga ajustada</h3>
+  <p>Controla cómo entran los pesos a la memoria unificada: mapa de archivos con carga diferida y un objetivo de ajuste que limita cuánto se fija en RAM, para que la residencia larga no empuje todo a swap de golpe.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros de carga">
+  <table>
+  <thead><tr><th scope="col">Parámetro</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Modo</td><td class="mono">mmap</td></tr>
+  <tr><td>Lazy</td><td class="mono">on</td></tr>
+  <tr><td>Fit</td><td class="mono">on</td></tr>
+  <tr><td>Fit target</td><td class="num">4096 MiB</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <h3>Atención y caché de prefijo</h3>
+  <p>Mantienen la memoria de contexto barata y reutilizable entre peticiones. Aquí está el matiz encontrado: la reutilización de bloque no aporta en Flash-Next por ser multimodal, pero la caché de prefijo normal sí funciona.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros de atención y caché de prefijo">
+  <table>
+  <thead><tr><th scope="col">Parámetro</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Atención</td><td class="mono">flash-attn on, caché KV q8_0 / q8_0</td></tr>
+  <tr><td>cache_reuse</td><td class="num">256</td></tr>
+  <tr><td>cache_ram</td><td>no se pasa; rige el valor por defecto del servidor</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="sec-note">Estado de la secuencia: misma que <span class="mono">qwen38-flash-next-expert-cache-64k</span>; mantenida por decisión del operador.</p>
+  <h3>Comandos del terminal</h3>
+  <p>La receta de arriba existe para ser ejecutada. Estos son los comandos que levantan la lane en MiniV, en el orden en que se usan. Convención de la galería pública: sin rutas de usuario ni puertos reales: todo va en variables y el puerto de ejemplo es <span class="mono">8050</span>. Fuente de banderas y valores: configuración de lanes de MiniV (<span class="mono">miniv-lanes.json</span>, entradas <span class="mono">qwen38-flash-next-fast</span> y <span class="mono">qwen38-27b-v31-candidate</span>), unidad <span class="mono">miniv-flash-next@.service</span> y proveedores de pi, leídos el 2026-11-25. Son los valores reales en producción; sólo las rutas y los puertos se sustituyeron por variables. Las líneas se pueden partir con <span class="mono">\</span> sin cambiar banderas ni valores.</p>
+  <p class="cmd-t">0 · Variables, una vez por terminal</p>
+  <pre class="cmd"><code>BIN=/ruta/al/llama-server                 # build de llama.cpp con backend Vulkan (fork thecodacus)
+RADV=/ruta/a/mesa-radv-aislada            # build de Mesa RADV que acompaña al binario
+MODELOS=/ruta/a/los/gguf-de-flash-next    # modelo, proyección multimodal y borrador MTP
+PERFIL=/ruta/al/perfil-de-expertos.csv    # perfil de caché de expertos de Flash-Next
+PUERTO=8050
+export LD_LIBRARY_PATH="$(dirname "$BIN"):$RADV/libdrm/lib"
+export VK_DRIVER_FILES="$RADV/radeon_icd.x86_64.json"
+export AMDGPU_ASIC_ID_TABLE_PATHS="$RADV/libdrm/share/libdrm"
+export GGML_VK_DISABLE_COOPMAT=0
+export RADV_PERFTEST=aco,gpl</code></pre>
+  <p class="cmd-t">1 · Lanzar la lane qwen38-flash-next-fast · es lo que ejecuta la unidad systemd</p>
+  <pre class="cmd"><code>"$BIN" -m "$MODELOS/Qwen3.8-Flash-Next-UD-IQ3_XXS-00001-of-00003.gguf" \
+  --host 127.0.0.1 --port "$PUERTO" \
+  --mmproj "$MODELOS/mmproj-Qwen3.8-Flash-Next-F16.gguf" \
+  --alias qwen38-flash-next-fast \
+  --moe-cache-profile "$PERFIL" --moe-cache-slots 32 \
+  --load-mode mmap --lazy-mode on --fit on --fit-target 4096 \
+  -c 65536 -b 512 -ub 256 -t 7 --parallel 1 \
+  --jinja --flash-attn on -ctk q8_0 -ctv q8_0 \
+  --spec-type draft-mtp --spec-draft-model "$MODELOS/mtp-Qwen3.8-Flash-Next-shared-Q8_0.gguf" \
+  --spec-draft-n-max 2 --spec-draft-n-min 1 \
+  --cache-reuse 256 --metrics --slots</code></pre>
+  <p class="bar-note">Mientras la lane carga, el servidor responde con error 503; <span class="mono">curl -s "http://localhost:$PUERTO/health"</span> contesta <span class="mono">{"status":"ok"}</span> cuando está lista. En MiniV esa carga tardó entre 136 y 158 s.</p>
+  <p class="cmd-t">2 · Comparación · Qwen3.8-27B, lane qwen38-27b-v31-candidate</p>
+  <pre class="cmd"><code>BIN_TQ=/ruta/al/llama-server-turboquant          # build con tipos de caché turbo4/turbo3
+MODELOS_27B=/ruta/a/los/gguf-de-qwen3.8-27b
+PLANTILLA=/ruta/a/chat_template.jinja</code></pre>
+  <pre class="cmd"><code>"$BIN_TQ" -m "$MODELOS_27B/Qwen3.8-27B-UD-Q4_K_XL.gguf" \
+  --host 127.0.0.1 --port "$PUERTO" \
+  --alias qwen38-27b-v31-candidate \
+  --ctx-size 92160 --batch-size 2048 --ubatch-size 1024 --threads 7 --parallel 1 \
+  --n-gpu-layers 99 --cache-type-k turbo4 --cache-type-v turbo3 --cache-reuse 256 --no-mmap \
+  --flash-attn on --jinja --chat-template-file "$PLANTILLA" \
+  --reasoning on --reasoning-format deepseek --reasoning-budget 2048 \
+  --reasoning-budget-message "Now stop thinking and produce the final deliverable. Be concrete and complete." \
+  --temp 1.0 --top-p 0.95 --top-k 20 --min-p 0.0 --presence-penalty 0.0 --repeat-penalty 1.0 \
+  --spec-type draft-mtp --spec-draft-n-max 2 --spec-draft-n-min 1 \
+  --mmproj "$MODELOS_27B/Qwen3.8-27B-UD-mmproj-F16.gguf" --mmproj-offload \
+  --props --metrics --cache-ram 0 --decision-seqs 0</code></pre>
+  <p class="cmd-t">3 · Con systemd · así corre en MiniV</p>
+  <pre class="cmd"><code>systemctl --user start miniv-flash-next@qwen38-flash-next-fast.service
+systemctl --user status miniv-flash-next@qwen38-flash-next-fast.service
+journalctl --user -u miniv-flash-next@qwen38-flash-next-fast.service -f
+systemctl --user stop miniv-flash-next@qwen38-flash-next-fast.service</code></pre>
+  <p class="sec-note">La unidad ejecuta un preflight de la receta y toma la custodia antes de cargar; al detenerla libera la custodia y restaura el modelo por defecto del router. Para la lane de 27B la unidad es <span class="mono">miniv-flash-next@qwen38-27b-v31-candidate.service</span>, con el mismo <span class="mono">start</span> / <span class="mono">status</span> / <span class="mono">stop</span>.</p>
+  </div>
+</section>
+<section id="lanes" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">05</p>
+  <h2>Las lanes</h2>
+  <p>Siete lanes declaradas en el catálogo del día: cuatro de Flash-Next ordenadas por tamaño de contexto y tres de Qwen3.8-27B. Cada una tiene un papel distinto y explícito, para que la elección no dependa de criterio del momento.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de lanes, modelo, contexto y rol">
+  <table style="min-width:640px">
+  <caption>Lanes disponibles el 2026-11-24</caption>
+  <thead><tr><th scope="col">Alias</th><th scope="col">Modelo</th><th scope="col">Contexto</th><th scope="col">Rol</th></tr></thead>
+  <tbody>
+  <tr><td class="mono brk">qwen38-flash-next-96k</td><td>Qwen3.8-Flash-Next</td><td class="num">98304</td><td>Máximo contexto (promedio 90k–100k)</td></tr>
+  <tr><td class="mono brk">qwen38-flash-next-fast</td><td>Qwen3.8-Flash-Next</td><td class="num">65536</td><td>Máxima velocidad de prefill y decode; secuencia EC64</td></tr>
+  <tr><td class="mono brk">qwen38-flash-next-expert-cache-64k</td><td>Qwen3.8-Flash-Next</td><td class="num">65536</td><td>Mejor combinación de optimizaciones: expert cache, velocidad y baja espera</td></tr>
+  <tr><td class="mono brk">qwen38-flash-next-v31-candidate</td><td>Qwen3.8-Flash-Next</td><td class="num">40960</td><td>Experimentos de recetas sin tocar las certificadas</td></tr>
+  <tr><td class="mono brk">qwen38-27b-q4</td><td>Qwen3.8-27B</td><td class="num">32768</td><td>Referencia de 32k</td></tr>
+  <tr><td class="mono brk">qwen38-27b-q4-fast</td><td>Qwen3.8-27B</td><td class="num">32768</td><td>Razonamiento apagado y prefill optimizado para máxima velocidad</td></tr>
+  <tr><td class="mono brk">qwen38-27b-v31-candidate</td><td>Qwen3.8-27B</td><td class="num">92160</td><td>Lane certificada de contexto máximo</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="sec-note">Las cifras de contexto están en tokens.</p>
+  <figure class="chart" role="img" aria-label="Contexto máximo de cada corrida de la lane Flash-Next junto a su decode mediano: el contexto llega a 60085 tokens en la residencia F1 sin razonamiento, mientras que el decode se mueve entre 25,69 y 31,26 tok/s en las corridas de producción; las dos corridas de la lane candidata v31 caen a 7,47 y 10,37 tok/s. La corrida de Qwen3.8-27B se muestra aparte, como referencia de otro modelo.">
+  <p class="ch-t">G2 · Contexto máximo frente a decode mediano</p>
+  <p class="ch-u">tokens de contexto (arriba) y tok/s de decode (abajo) · cada corrida, en su barra</p>
+  <p class="grp">Qwen3.8-Flash-Next · lanes EC64 y v31</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v1</b> · autoría del portal v1</span><span>49377 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de autor_v1: 49377 tokens"><span style="--w:82.2%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>30,72 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de autor_v1: 30,72 tokens por segundo"><span style="--w:88.2%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v2</b> · corrección del portal</span><span>18371 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de autor_v2: 18371 tokens"><span style="--w:30.6%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>27,31 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de autor_v2: 27,31 tokens por segundo"><span style="--w:78.4%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_1</b> · este documento completo</span><span>53417 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo del pasaje 1: 53417 tokens"><span style="--w:88.9%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>30,07 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano del pasaje 1: 30,07 tokens por segundo"><span style="--w:86.3%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_2</b> · anexo 1, la sección de autoría</span><span>28374 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo del pasaje 2: 28374 tokens"><span style="--w:47.2%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>31,26 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano del pasaje 2: 31,26 tokens por segundo, el mayor de las corridas de trabajo real"><span style="--w:89.7%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_3</b> · anexo 2, ajustes para publicación</span><span>38206 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo del pasaje 3: 38206 tokens"><span style="--w:63.6%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>31,09 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano del pasaje 3: 31,09 tokens por segundo"><span style="--w:89.2%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>f1_con_razonamiento</b> · residencia F1</span><span>56187 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de la residencia F1 con razonamiento: 56187 tokens"><span style="--w:93.5%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>25,69 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de la residencia F1 con razonamiento: 25,69 tokens por segundo"><span style="--w:73.7%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>f1_sin_razonamiento</b> · residencia F1</span><span>60085 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de la residencia F1 sin razonamiento: 60085 tokens, el mayor de todos"><span style="--w:100%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>28,63 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de la residencia F1 sin razonamiento: 28,63 tokens por segundo"><span style="--w:82.2%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>v31_candidata_fria</b> · lane candidata, 40960</span><span>40960 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de la corrida fría de la lane candidata v31: 40960 tokens"><span style="--w:68.2%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>7,47 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de la corrida fría de la lane candidata v31: 7,47 tokens por segundo, el menor de la figura"><span style="--w:21.4%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>v31_candidata_calida</b> · misma lane, en caliente</span><span>40960 tokens</span></div>
+  <div class="bar" role="img" aria-label="Contexto máximo de la corrida caliente de la lane candidata v31: 40960 tokens"><span style="--w:68.2%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>10,37 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de la corrida caliente de la lane candidata v31: 10,37 tokens por segundo"><span style="--w:29.8%"></span></div>
+  </div>
+  <p class="grp">Referencia · Qwen3.8-27B (otro modelo, apartado a propósito)</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>qwen27b</b> · lane <span class="mono">qwen38-27b-v31-candidate</span></span><span>50665 tokens</span></div>
+  <div class="bar alt" role="img" aria-label="Contexto máximo de la corrida de Qwen 3.8-27B: 50665 tokens"><span style="--w:84.3%"></span></div>
+  <div class="bar-hd"><span>decode mediano</span><span>18,58 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode mediano de la corrida de Qwen 3.8-27B: 18,58 tokens por segundo"><span style="--w:53.3%"></span></div>
+  </div>
+  <p class="ch-f">Fuente: <span class="mono">contexto_y_decode</span> de <span class="mono">SERIES.json</span>, recalculado de <span class="mono">METRICS.json</span> y del journal del servidor de cada corrida. Escala de contexto 0–60085 tokens; escala de decode 0–34,84 tok/s, de modo que el borde derecho de cada barra es el piso publicado de 34,84 tok/s medido con un prompt corto (<span class="mono">DATOS.json</span>).</p>
+  <p class="ch-n">Lectura: <strong>esto no es un benchmark controlado</strong>: son corridas de trabajo real, con contextos, duraciones y tareas distintos, así que las barras no son comparables entre sí. Lo que sí se sostiene es que el decode se queda entre 25,69 y 31,26 tok/s pase lo que pase por la ventana, y que ninguna de estas corridas llega al borde derecho de la escala. Los dos valores bajos (7,47 y 10,37 tok/s) son la lane candidata v31 con una receta experimental, no la receta certificada. La barra de Qwen3.8-27B está aparte porque es otro modelo.</p>
+  </figure>
+  </div>
+</section>
+<section id="metricas" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">06</p>
+  <h2>Métricas</h2>
+  <p>Tres corridas del mismo día sobre la misma máquina: dos de Qwen3.8-Flash-Next con la receta EC64 (autoría del portal y su corrección) y una de Qwen3.8-27B escribiendo una versión de comparación del mismo portal. Todas las cifras están recalculadas desde la evidencia, nunca copiadas del transcript.</p>
+  <p><strong>Cómo se tomó cada cifra.</strong> Velocidades y tokens de prefill y decode: mediana por solicitud, recalculada del journal del servidor (<span class="mono">METRICS.json</span>). Tokens nuevos, contexto máximo y truncamiento: journal del servidor. Duración, primera salida y corte: <span class="mono">RESULT.json</span> y <span class="mono">launch.json</span>. Carga: registro de la corrida. Solicitudes, herramientas y compacciones: eventos del cliente pi. Memoria, swap y PSI: <span class="mono">monitor.jsonl</span> cada 3 s. Artefacto: verificación independiente.</p>
+  <h3>Prefill y decode por corrida</h3>
+  <p>Cada barra es la mediana de la corrida y la escala se normaliza al mejor valor del grupo: se compara entre barras del mismo grupo, no entre grupos.</p>
+  <div class="bar-block">
+  <p class="grp">Prefill · tok/s (mediana por solicitud, journal del servidor)</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v1</b> · Flash-Next EC64</span><span>117,72 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Prefill mediano de la corrida autor_v1: 117,72 tokens por segundo"><span style="--w:100%"></span></div>
+  <p class="bar-note">27 solicitudes · 204615 tokens nuevos</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v2</b> · Flash-Next EC64</span><span>110,6 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Prefill mediano de la corrida autor_v2: 110,6 tokens por segundo"><span style="--w:94%"></span></div>
+  <p class="bar-note">9 solicitudes · 12978 tokens nuevos</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>qwen27b</b> · Qwen3.8-27B</span><span>103,6 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Prefill mediano de la corrida de Qwen 27B: 103,6 tokens por segundo"><span style="--w:88%"></span></div>
+  <p class="bar-note">16 solicitudes · 33730 tokens nuevos</p>
+  </div>
+  </div>
+  <div class="bar-block">
+  <p class="grp">Decode · tok/s (mediana por solicitud, journal del servidor)</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v1</b> · Flash-Next EC64</span><span>30,72 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Decode medio de la corrida autor_v1: 30,72 tokens por segundo"><span style="--w:100%"></span></div>
+  <p class="bar-note">27 solicitudes · 44138 tokens</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v2</b> · Flash-Next EC64</span><span>27,31 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Decode medio de la corrida autor_v2: 27,31 tokens por segundo"><span style="--w:88.9%"></span></div>
+  <p class="bar-note">9 solicitudes · 5387 tokens</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>qwen27b</b> · Qwen3.8-27B</span><span>18,58 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode medio de la corrida de Qwen 27B: 18,58 tokens por segundo"><span style="--w:60.5%"></span></div>
+  <p class="bar-note">16 solicitudes · 25163 tokens</p>
+  </div>
+  </div>
+  <figure class="chart" role="img" aria-label="G3: memoria disponible mínima de siete ejecuciones, en MiB, sobre una escala de 0 a 9207 MiB. Qwen3.8-27B de comparación llega a 9207,0 MiB; autor_v2 a 3957,8; sección de autoría a 3771; ajustes para publicación a 3692; autor_v1 a 910,0; este documento completo a 300 y la residencia F1 a 275. Dos marcas señalan los umbrales: criterio de la guarda en 3072 MiB y corte duro en 700 MiB; cuatro ejecuciones quedan por debajo del criterio y tres por debajo incluso de la marca de corte.">
+  <p class="ch-t">G3 · Memoria disponible mínima por ejecución <span class="ch-u">MiB · escala 0–9207 MiB · marcas en 3072 MiB (criterio) y 700 MiB (corte duro)</span></p>
+  <div class="bar-row">
+  <div class="bar-hd"><span>umbrales de la guarda de memoria</span><span>corte duro 700 MiB · criterio 3072 MiB</span></div>
+  <div class="bar" role="img" aria-label="Rail de referencia: el corte duro de 700 MiB queda al 7,6 % del ancho y el criterio de 3072 MiB al 33,4 %, sobre la misma escala de 0 a 9207 MiB"><i class="tick obj" style="--x:7.6%" title="Corte duro: 700 MiB"></i><i class="tick" style="--x:33.4%" title="Criterio de la guarda: 3072 MiB"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v1</b> · autoría del portal v1 · Flash-Next EC64</span><span>910,0 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima de autor_v1: 910,0 MiB, el 9,9 % de la escala; queda por debajo del criterio y cerca de la marca de corte"><span style="--w:9.9%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v2</b> · corrección del portal v2 · Flash-Next EC64</span><span>3957,8 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima de autor_v2: 3957,8 MiB, el 43,0 % de la escala; por encima del criterio"><span style="--w:43%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>qwen27b</b> · Qwen3.8-27B de comparación · referencia, otro modelo</span><span>9207,0 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Memoria disponible mínima de la corrida de Qwen3.8-27B: 9207,0 MiB, la mayor del grupo y tope de la escala"><span style="--w:100%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_1</b> · este documento completo</span><span>300 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima del pasaje 1: 300 MiB, el 3,3 % de la escala; por debajo de la marca de corte"><span style="--w:3.3%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_2</b> · sección de autoría</span><span>3771 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima del pasaje 2: 3771 MiB, el 41,0 % de la escala; por encima del criterio"><span style="--w:41%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_3</b> · ajustes para publicación</span><span>3692 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima del pasaje 3: 3692 MiB, el 40,1 % de la escala; por encima del criterio"><span style="--w:40.1%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>f1</b> · residencia sostenida</span><span>275 MiB</span></div>
+  <div class="bar" role="img" aria-label="Memoria disponible mínima de la residencia F1: 275 MiB, el 3,0 % de la escala; el valor más bajo del grupo"><span style="--w:3%"></span><i class="tick obj" style="--x:7.6%"></i><i class="tick" style="--x:33.4%"></i></div>
+  <p class="bar-note">el valor de la columna es la marca de corte; el monitor a 3 s dejó 12 muestras por debajo de 1 GiB durante la residencia</p>
+  </div>
+  <p class="ch-f">Fuente: <span class="mono">memoria_por_corrida</span> en <span class="mono">SERIES.json</span>, alimentado por el <span class="mono">monitor.jsonl</span> de cada ejecución y por los <span class="mono">AUTORIA-METRICAS*.json</span>. Umbrales: <span class="mono">guardas</span> en el mismo archivo (3072 MiB de criterio, 700 MiB de corte duro, swap total 8192 MiB).</p>
+  <p class="ch-n">Lectura: la barra más alta es la de Qwen3.8-27B, y es la única que respira holgada (9207,0 MiB). Las cuatro ejecuciones cortas de Flash-Next se reparten en dos grupos: <span class="mono">autor_v2</span>, sección de autoría y ajustes para publicación se mantienen entre 3692 y 3957,8 MiB, por encima del criterio; <span class="mono">autor_v1</span> (910,0 MiB), el pasaje 1 (300 MiB) y la residencia F1 (275 MiB) caen por debajo de la marca de corte duro de 700 MiB. La anchura no dice durante cuántos minutos duró esa situación: eso lo cuentan las series de la residencia y el porcentaje de muestras por debajo de 3 GiB que aparece en las tablas. Con la memoria por encima de 3 GiB la guarda no declara fallo; por debajo de la marca de corte, la lentitud extrema y el bloqueo aparecen en el host, y ahí el veredicto cambia.</p>
+  </figure>
+  <figure class="chart" role="img" aria-label="G4: crecimiento de swap del host y pico de swap de la unidad por ejecución, en MiB, sobre una escala común de 0 a 5200 MiB. Con el host: autor_v1 2927, autor_v2 224,7, qwen27b 0, pasaje_1 5126, pasaje_2 480, pasaje_3 166, f1 2705. Con la unidad: autor_v1 361,7, autor_v2 94,5, qwen27b 0,0, pasaje_1 5175, pasaje_2 no registrado, pasaje_3 95, f1 2469. Dos marcas señalan los límites de la guarda: 512 MiB de host y 128 MiB de unidad; el pasaje 1 rebasa los dos.">
+  <p class="ch-t">G4 · Swap del host y swap de la unidad por ejecución <span class="ch-u">MiB · escala 0–5200 MiB · límites 512 MiB (host) y 128 MiB (unidad)</span></p>
+  <div class="bar-row">
+  <div class="bar-hd"><span>límites de la guarda de swap</span><span>unidad 128 MiB · host 512 MiB</span></div>
+  <div class="bar" role="img" aria-label="Rail de referencia: el límite de unidad de 128 MiB queda al 2,5 % del ancho y el de host de 512 MiB al 9,9 %, sobre la misma escala de 0 a 5200 MiB"><i class="tick obj" style="--x:2.5%" title="Límite de swap de unidad: 128 MiB"></i><i class="tick" style="--x:9.9%" title="Límite de crecimiento de swap del host: 512 MiB"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v1</b> · crecimiento del host</span><span>2927 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en autor_v1: 2927 MiB, el 56,3 % de la escala"><span style="--w:56.3%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>361,7 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en autor_v1: 361,7 MiB, el 7,0 % de la escala; supera su límite de 128 MiB"><span style="--w:7%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>autor_v2</b> · crecimiento del host</span><span>224,7 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en autor_v2: 224,7 MiB, el 4,3 % de la escala; por debajo del límite de 512"><span style="--w:4.3%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>94,5 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en autor_v2: 94,5 MiB, el 1,8 % de la escala; dentro de su límite de 128 MiB"><span style="--w:1.8%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <p class="bar-note">adjudicado en <span class="mono">guardas_por_fase</span></p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>qwen27b</b> · Qwen3.8-27B de comparación · crecimiento del host</span><span>0 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Crecimiento de swap del host en la corrida de Qwen3.8-27B: 0 MiB; no hay barra"><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>0,0 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en la corrida de Qwen3.8-27B: 0,0 MiB"><span style="--w:0%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_1</b> · este documento completo · crecimiento del host</span><span>5126 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en el pasaje 1: 5126 MiB, el 98,6 % de la escala; es el mayor del grupo y rebasa el límite de 512"><span style="--w:98.6%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>5175 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en el pasaje 1: 5175 MiB, el 99,5 % de la escala; rebasa por diez veces su límite de 128 MiB"><span style="--w:99.5%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_2</b> · sección de autoría · crecimiento del host</span><span>480 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en el pasaje 2: 480 MiB, el 9,2 % de la escala; dentro del límite de 512"><span style="--w:9.2%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>no registrado</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en el pasaje 2: no registrado, la barra queda vacía"><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <p class="bar-note">no registrado: el monitor miró la unidad plantilla en vez de la de la lane</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>pasaje_3</b> · ajustes para publicación · crecimiento del host</span><span>166 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en el pasaje 3: 166 MiB, el 3,2 % de la escala; dentro del límite de 512"><span style="--w:3.2%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>95 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de swap de la unidad en el pasaje 3: 95 MiB, el 1,8 % de la escala; dentro de su límite de 128 MiB"><span style="--w:1.8%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>f1</b> · residencia sostenida · crecimiento del host</span><span>2705 MiB</span></div>
+  <div class="bar" role="img" aria-label="Crecimiento de swap del host en la residencia F1: 2705 MiB, el 52,0 % de la escala"><span style="--w:52%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <div class="bar-hd"><span>swap de la unidad, pico</span><span>2469 MiB</span></div>
+  <div class="bar alt" role="img" aria-label="Pico de crecimiento de swap de la unidad durante la residencia F1: 2469 MiB, el 47,5 % de la escala"><span style="--w:47.5%"></span><i class="tick obj" style="--x:2.5%"></i><i class="tick" style="--x:9.9%"></i></div>
+  <p class="bar-note">pico de crecimiento de la unidad durante la residencia</p>
+  </div>
+  <p class="ch-f">Fuente: <span class="mono">memoria_por_corrida</span> en <span class="mono">SERIES.json</span>. Límites: <span class="mono">guardas.swap_host_por_fase_mib</span> = 512 MiB y <span class="mono">guardas.swap_unidad_por_fase_mib</span> = 128 MiB, sobre 8192 MiB de swap total.</p>
+  <p class="ch-n">Lectura: las duraciones son distintas (3369,1 s de <span class="mono">autor_v1</span>, 542,8 s de <span class="mono">autor_v2</span>, 1894,8 s de <span class="mono">qwen27b</span>, 5471,1 s del pasaje 1, 637,0 s del 2, 802,2 s del 3 y 10185,4 s de F1), así que la altura de cada barra no es comparable entre filas: lo que se compara aquí es cada fila contra sus dos límites. Con el swap de unidad por encima de 128 MiB y la memoria disponible por encima de 3 GiB, la guarda no declara fallo; sí lo declaran la lentitud extrema, el bloqueo y la detención. En el pasaje 1 el host creció 5126 MiB y la unidad llegó a 5175 MiB con 300 MiB de memoria disponible: ahí el resultado es <span class="mono">FAIL</span>. La corrida de Qwen3.8-27B se muestra aparte por ser otro modelo.</p>
+  </figure>
+  <article class="run">
+  <h3>Corrida 1 · <span class="mono">autor_v1</span></h3>
+  <p>Autoría del portal del stack local, versión 1. Inicio 14:13. Cortada por el presupuesto de tiempo (<span class="mono">TIMEOUT_BUDGET</span>) con el archivo ya completo en disco.</p>
+  <div class="kpis">
+  <div class="kpi hero"><div><span class="lbl">Duración</span><span class="val">3369,1 <small>s</small></span></div><span class="src">RESULT.json y launch.json</span></div>
+  <div class="kpi wide"><span class="lbl">Solicitudes correctas</span><span class="val">27</span><span class="src">Eventos del cliente pi · contexto no truncado</span></div>
+  <div class="kpi"><span class="lbl">Contexto máx.</span><span class="val">49377</span><span class="src">Journal del servidor</span></div>
+  <div class="kpi"><span class="lbl">Carga del modelo</span><span class="val">136 <small>s</small></span><span class="src">Registro de la corrida (INFORME-FINAL)</span></div>
+  </div>
+  <p class="sec-note">Corrida cortada por presupuesto de tiempo con el archivo ya completo; duró 3369,1 s y dejó 2927,4 MiB de swap del host.</p>
+  </article>
+  <article class="run">
+  <h3>Corrida 2 · <span class="mono">autor_v2</span></h3>
+  <p>Corrección del desborde horizontal en 390 px, versión 2 publicada. Inicio 16:10. Sin corte: terminó por sí sola.</p>
+  <div class="kpis">
+  <div class="kpi hero"><div><span class="lbl">Duración</span><span class="val">542,8 <small>s</small></span></div><span class="src">RESULT.json y launch.json</span></div>
+  <div class="kpi"><span class="lbl">Primera salida</span><span class="val">161,4 <small>s</small></span><span class="src">RESULT.json · primer token</span></div>
+  <div class="kpi"><span class="lbl">Solicitudes correctas</span><span class="val">9</span><span class="src">Eventos del cliente pi</span></div>
+  <div class="kpi"><span class="lbl">Contexto máx.</span><span class="val">18371</span><span class="src">Journal del servidor</span></div>
+  <div class="kpi"><span class="lbl">Carga del modelo</span><span class="val">158 <small>s</small></span><span class="src">Registro de la corrida (INFORME-FINAL)</span></div>
+  </div>
+  <p class="sec-note">Entró con 2542,4 MiB de swap ya usada y subió solo 224,7 MiB: la corrección fue mucho más ligera que la primera pasada.</p>
+  </article>
+  <article class="run">
+  <h3>Corrida 3 · <span class="mono">qwen27b</span></h3>
+  <p>Versión de comparación del mismo portal, escrita con Qwen3.8-27B en la lane <span class="mono">qwen38-27b-v31-candidate</span>. Inicio 15:22. Sin corte.</p>
+  <div class="kpis">
+  <div class="kpi hero"><div><span class="lbl">Duración</span><span class="val">1894,8 <small>s</small></span></div><span class="src">RESULT.json y launch.json</span></div>
+  <div class="kpi"><span class="lbl">Primera salida</span><span class="val">46,9 <small>s</small></span><span class="src">RESULT.json · primer token</span></div>
+  <div class="kpi"><span class="lbl">Solicitudes correctas</span><span class="val">16</span><span class="src">Eventos del cliente pi</span></div>
+  <div class="kpi"><span class="lbl">Contexto máx.</span><span class="val">50665</span><span class="src">Journal del servidor</span></div>
+  </div>
+  <p class="sec-note">La corrida de Qwen 27B no dejó registrado un valor de carga del modelo, así que aquí no se muestra.</p>
+  </article>
+  <details>
+  <summary aria-label="Abrir la tabla comparativa de memoria, swap y artefacto de las tres corridas">Las tres corridas frente a frente: memoria, swap y artefacto</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla comparativa de memoria, swap y artefacto por corrida">
+  <table style="min-width:700px">
+  <thead><tr><th scope="col">Medida</th><th scope="col">autor_v1</th><th scope="col">autor_v2</th><th scope="col">qwen27b</th></tr></thead>
+  <tbody>
+  <tr><td>Swap del host antes de arrancar</td><td class="num">0,6 MiB</td><td class="num">2542,4 MiB</td><td class="num">2603,3 MiB</td></tr>
+  <tr><td>Swap del host máxima</td><td class="num">2927,4 MiB</td><td class="num">2767,0 MiB</td><td class="num">2603,3 MiB</td></tr>
+  <tr><td>Swap de la unidad, pico</td><td class="num">361,7 MiB</td><td class="num">94,5 MiB</td><td class="num">0,0 MiB</td></tr>
+  <tr><td>Memoria de la unidad, pico</td><td class="num">10369,2 MiB</td><td class="num">11221,6 MiB</td><td class="num">10240,1 MiB</td></tr>
+  <tr><td>Memoria disponible mínima</td><td class="num">910,0 MiB</td><td class="num">3957,8 MiB</td><td class="num">9207,0 MiB</td></tr>
+  <tr><td>PSI full máximo</td><td class="num">3,86</td><td class="num">1,95</td><td class="num">0,0</td></tr>
+  <tr><td>Compacciones</td><td class="num">2</td><td class="num">0</td><td class="num">0</td></tr>
+  <tr><td>Herramientas (eventos de pi)</td><td class="num">bash 9 · read 6 · write 2 · edit 11</td><td class="num">bash 7 · read 3 · edit 1</td><td class="num">bash 6 · read 5 · write 2 · edit 5</td></tr>
+  <tr><td>Artefacto (bytes · sha256)</td><td class="num"><span class="brk">68851 · a5ffbfe3e559960df723731b3c04e9f3f728da3551ca9c423049f2e204318b35</span></td><td class="num"><span class="brk">68930 · 314754be976603fb21c8b5a68a9f4055515c1031d71f6b42b00438e4ded3c832</span></td><td class="num"><span class="brk">34095 · 7a9dcfe39cdb5bb2436a7515b682dc9143fdcd641c28d79a4bb31be6f18574d3</span></td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="sec-note">Memoria, swap y PSI: <span class="mono">monitor.jsonl</span> muestreado cada 3 s. Bytes y hash del artefacto: verificación independiente. La fila de swap del host compara el estado previo con el máximo alcanzado durante la corrida.</p>
+  </div>
+  </details>
+  </div>
+</section>
+<section id="f1" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">07</p>
+  <h2>Carrera sostenida: la residencia F1</h2>
+  <p>F1 no es una corrida de autoría sino una prueba de aguante: la receta EC64 residente y cortada, recibiendo ciclos fríos y cálidos a contexto alto, con Architect dentro de la misma máquina. Duró <strong>10185,4 s</strong>: por encima del objetivo de 9800 s y de los 9717 s de la residencia que había fallado antes.</p>
+  <div class="bar-block">
+  <p class="grp">Residencia medida frente a los dos umbrales</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>F1</b> · inicio 2026-11-24 17:05</span><span>10185,4 s de residencia</span></div>
+  <div class="bar tall" role="img" aria-label="Residencia de 10185,4 segundos; el objetivo de 9800 segundos y la caída anterior por memoria a 9717 segundos quedan ambos por detrás, al 96 y 95 por ciento de la barra"><span style="--w:100%"></span><i class="tick" style="--x:95.4%" title="Caída anterior por memoria: 9717 s"></i><i class="tick obj" style="--x:96.2%" title="Objetivo: 9800 s"></i></div>
+  <p class="bar-note"><span class="key">↫</span> objetivo: 9800,0 s &nbsp;·&nbsp; <span class="key">↞</span> caída anterior por memoria: 9717 s &nbsp;·&nbsp; escala 0–10185,4 s</p>
+  </div>
+  </div>
+  <ol class="tl">
+  <li>
+  <h3>Carga · 152,6 s</h3>
+  <p>La unidad toma la custodia y carga el modelo una sola vez, sin reintentos. El hostarranca con 10643 MiB disponibles, 2542 MiB de swap usada y PSI full 0,0.</p>
+  <p class="evid">Origen: <span class="mono">LAUNCH.json</span> y <span class="mono">monitor.jsonl</span></p>
+  </li>
+  <li>
+  <h3>10 ciclos con razonamiento encendido</h3>
+  <p>10 solicitudes frías enviadas y 10 correctas, más 9 cálidas enviadas y 9 correctas, sobre un contexto de trabajo de 56187 tokens. Espera fría mediana de 471,4 s y cálida de 4,33 s; prefill de 120,53 tok/s y decode de 25,69 tok/s; la caché de prefijo no baja de 0,99906 en las continuaciones.</p>
+  <p class="evid">Origen: métricas del servidor y eventos de pi, en la adjudicación de F1</p>
+  </li>
+  <li>
+  <h3>10 ciclos con razonamiento apagado</h3>
+  <p>10 frías enviadas y 10 correctas, 10 cálidas enviadas y 10 correctas, a contexto de 60085 tokens. Espera fría mediana de 508,2 s y cálida de 4,48 s; prefill de 119,05 tok/s y decode de 28,63 tok/s; caché mínima de 0,99909.</p>
+  <p class="evid">Origen: la misma adjudicación, ciclo a ciclo</p>
+  </li>
+  <li>
+  <h3>Restauración · 60,7 s</h3>
+  <p>Se detiene la unidad, se libera la custodia y el selector vuelve a cargar el modelo residente. La residencia termina ahí.</p>
+  <p class="evid">Origen: RESULT.json de la residencia</p>
+  </li>
+  </ol>
+  <figure class="chart" role="img" aria-label="G5: evolución de la memoria disponible y del swap del host, en MiB, durante los 170,8 minutos de la residencia F1, en 48 muestras. La memoria disponible arranca en 12337 MiB, cae a 4780 MiB en el minuto 3,6 y se estabiliza en torno a 2400 MiB hasta el final, donde recupera 11169 MiB. El swap del host se mueve entre 2386 y 3558 MiB y acompaña a la memoria: entre los minutos 7 y 167 la curva de memoria disponible queda por debajo de la del swap. Las dos curvas se cruzan en el tramo final, al liberarse la unidad.">
+  <p class="ch-t">G5 · La residencia minuto a minuto <span class="ch-u">MiB en el eje vertical · minutos desde el inicio en el horizontal · 48 muestras de 10185,4 s</span></p>
+  <ul class="ch-legend">
+  <li><i class="sw b"></i> memoria disponible (MiB)</li>
+  <li><i class="sw c"></i> swap usado del host (MiB)</li>
+  <li><i class="sw d"></i> criterio 3072 MiB · corte duro 700 MiB</li>
+  </ul>
+  <svg class="pl" viewBox="0 0 660 244" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+  <line class="gl" x1="34" y1="214" x2="632" y2="214"></line>
+  <line class="gl" x1="34" y1="148.7" x2="632" y2="148.7"></line>
+  <line class="gl" x1="34" y1="83.4" x2="632" y2="83.4"></line>
+  <line class="gl" x1="34" y1="18.2" x2="632" y2="18.2"></line>
+  <line class="mk" x1="34" y1="163.9" x2="632" y2="163.9"></line>
+  <line class="mk" x1="34" y1="202.6" x2="632" y2="202.6"></line>
+  <text class="ax" x="31" text-anchor="end" y="217">0</text>
+  <text class="ax" x="31" text-anchor="end" y="151.7">4000</text>
+  <text class="ax" x="31" text-anchor="end" y="86.4">8000</text>
+  <text class="ax" x="31" text-anchor="end" y="21.2">12000</text>
+  <text class="ax" x="4" y="10">MiB</text>
+  <text class="ax" x="36" y="160">criterio 3072 MiB</text>
+  <text class="ax" x="36" y="199">corte duro 700 MiB</text>
+  <polyline class="l2" points="34.0,172.5 46.6,168.0 59.2,168.8 71.8,167.8 84.8,167.8 97.4,167.2 110.0,167.3 122.9,167.3 135.5,160.6 148.1,160.6 161.1,160.6 173.7,160.6 186.3,160.7 199.3,162.5 211.9,160.6 224.8,160.6 237.4,155.9 250.4,169.6 263.0,169.6 275.6,169.3 288.2,169.3 301.1,169.3 314.1,168.0 326.7,168.0 339.3,168.0 351.9,168.0 364.5,168.0 377.5,164.0 390.1,164.1 403.0,164.1 415.6,164.1 428.6,167.2 441.2,167.9 454.1,168.0 466.7,168.0 479.3,168.0 492.3,168.5 504.9,168.5 517.5,168.5 530.5,168.5 543.1,161.9 555.7,162.3 568.6,162.3 581.2,162.3 593.8,162.3 606.8,167.2 619.4,167.6 632.0,175.1"></polyline>
+  <polyline class="l1" points="34.0,12.7 46.6,136.0 59.2,137.4 71.8,146.3 84.8,172.1 97.4,170.9 110.0,172.8 122.9,173.1 135.5,172.4 148.1,173.2 161.1,171.9 173.7,172.7 186.3,173.3 199.3,171.0 211.9,170.2 224.8,170.9 237.4,171.0 250.4,177.2 263.0,177.4 275.6,175.4 288.2,176.5 301.1,176.0 314.1,173.4 326.7,174.6 339.3,174.2 351.9,175.1 364.5,174.4 377.5,171.7 390.1,171.5 403.0,172.7 415.6,172.4 428.6,172.3 441.2,170.8 454.1,170.2 466.7,171.2 479.3,170.2 492.3,177.4 504.9,177.6 517.5,176.9 530.5,177.9 543.1,168.6 555.7,167.5 568.6,169.0 581.2,168.4 593.8,168.6 606.8,175.0 619.4,174.7 632.0,31.7"></polyline>
+  <text class="ax" x="34" y="228" text-anchor="start">0</text>
+  <text class="ax" x="183.5" y="228" text-anchor="middle">42,7</text>
+  <text class="ax" x="333" y="228" text-anchor="middle">85,4</text>
+  <text class="ax" x="482.5" y="228" text-anchor="middle">128,1</text>
+  <text class="ax" x="632" y="228" text-anchor="end">170,8 min</text>
+  </svg>
+  <p class="ch-f">Fuente: <span class="mono">serie_f1</span> en <span class="mono">SERIES.json</span> (48 puntos de una residencia de 10185,4 s). Escala vertical 0–12500 MiB; marcas en 3072 MiB y 700 MiB. El pico de crecimiento de swap de la unidad en la misma residencia fue de 2469 MiB.</p>
+  <p class="ch-n">Lectura: al minuto 0 el host tenía 12337 MiB disponibles y 2542 MiB de swap usados. En el minuto 3,6 la memoria ya había caído a 4780 MiB y a partir del minuto 7,2 se queda en una banda de 2211 a 2821 MiB, siempre por debajo del criterio de 3072 MiB y casi nunca por debajo de la marca de corte de 700 MiB. En esa banda la curva de memoria y la de swap se solapan: el host estaba viviendo de la misma franja de memoria que el modelo. El último punto (minuto 170,8, cierre de la residencia) vuelve a 11169 MiB disponibles y 2386 MiB de swap. Esta serie está muestreada cada pocos minutos: el mínimo absoluto de la residencia, 275 MiB, lo registró el monitor a 3 s y no aparece aquí.</p>
+  </figure>
+  <h3>Los dos modos, frente a frente <button class="btn" data-detall="#f1" type="button" aria-label="Expandir o contraer todos los bloques de detalle de la sección carrera sostenida">Expandir todo</button></h3>
+  <div class="bar-block">
+  <p class="grp">Prefill mediano · tok/s</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>encendido</b></span><span>120,53 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Prefill mediano con razonamiento encendido: 120,53 tokens por segundo"><span style="--w:100%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>apagado</b></span><span>119,05 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Prefill mediano con razonamiento apagado: 119,05 tokens por segundo"><span style="--w:98.8%"></span></div>
+  </div>
+  <p class="grp">Decode mediano · tok/s</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>encendido</b></span><span>25,69 tok/s</span></div>
+  <div class="bar" role="img" aria-label="Decode medio con razonamiento encendido: 25,69 tokens por segundo"><span style="--w:89.7%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>apagado</b></span><span>28,63 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode medio con razonamiento apagado: 28,63 tokens por segundo, el mayor de los dos modos"><span style="--w:100%"></span></div>
+  </div>
+  </div>
+  <p class="sec-note">Medianas por ciclo, recalculadas del journal del servidor. La espera fría mediana fue de 471,4 s con razonamiento y 508,2 s sin él; la cálida, de 4,33 s y 4,48 s.</p>
+  <figure class="chart" role="img" aria-label="G6: tiempo hasta el primer token, mediano, en ciclos fríos y cálidos de la residencia F1, sobre una escala de 0 a 508,2 segundos. Con razonamiento encendido: 471,4 s en frío y 4,33 s en caliente. Con razonamiento apagado: 508,2 s en frío y 4,48 s en caliente. Las barras cálidas no llegan al 1 % de la escala: son 108,9 y 113,4 veces más cortas que sus homólogas frías.">
+  <p class="ch-t">G6 · Primer token: ciclo frío frente a cálido <span class="ch-u">segundos (mediana por modo) · escala 0–508,2 s · la barra vacía del borde derecho es el máximo del grupo</span></p>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>encendido</b> · frío · 10 enviadas, 10 correctas</span><span>471,4 s</span></div>
+  <div class="bar" role="img" aria-label="Espera fría mediana con razonamiento encendido: 471,4 segundos, el 92,8 % de la escala"><span style="--w:92.8%"></span></div>
+  <div class="bar-hd"><span>Razonamiento <b>encendido</b> · cálido · 9 enviadas, 9 correctas</span><span>4,33 s</span></div>
+  <div class="bar alt" role="img" aria-label="Espera cálida mediana con razonamiento encendido: 4,33 segundos, el 0,9 % de la escala; 108,9 veces menos que su ciclo frío"><span style="--w:0.9%"></span></div>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span>Razonamiento <b>apagado</b> · frío · 10 enviadas, 10 correctas</span><span>508,2 s</span></div>
+  <div class="bar" role="img" aria-label="Espera fría mediana con razonamiento apagado: 508,2 segundos, la mayor del grupo y tope de la escala"><span style="--w:100%"></span></div>
+  <div class="bar-hd"><span>Razonamiento <b>apagado</b> · cálido · 10 enviadas, 10 correctas</span><span>4,48 s</span></div>
+  <div class="bar alt" role="img" aria-label="Espera cálida mediana con razonamiento apagado: 4,48 segundos, el 0,9 % de la escala; 113,4 veces menos que su ciclo frío"><span style="--w:0.9%"></span></div>
+  <p class="bar-note">caché de prefijo mínima en las continuaciones: 0,99906 con razonamiento y 0,99909 sin él</p>
+  </div>
+  <p class="ch-f">Fuente: <span class="mono">f1_modos</span> en <span class="mono">SERIES.json</span> (medianas por ciclo, recalculadas del journal del servidor y de los eventos de pi).</p>
+  <p class="ch-n">Lectura: la diferencia entre los dos modos es pequeña (471,4 s frente a 508,2 s en frío) y la diferencia dentro de cada modo es enorme: el ciclo cálido tarda 4,33 s y 4,48 s, es decir, 108,9 y 113,4 veces menos. Lo que se ahorró no fue computo del modelo sino volver a leer el mismo contexto: la caché de prefijo no bajó de 0,999 en las continuaciones. Las barras cálidas miden menos del 1 % del ancho; su número está escrito en la cabecera.</p>
+  </figure>
+  <details>
+  <summary aria-label="Abrir el detalle del host durante la residencia F1">El host durante las 10185 s · 3310 muestras</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Muestras del host durante la residencia F1">
+  <table>
+  <thead><tr><th scope="col">Medida</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Muestras del monitor</td><td class="num">3310 (cada 3 s)</td></tr>
+  <tr><td>Memoria disponible mínima</td><td class="num">275 MiB</td></tr>
+  <tr><td>Memoria disponible mediana</td><td class="num">2548 MiB</td></tr>
+  <tr><td>Muestras por debajo de 3 GiB</td><td class="num">93,3 %</td></tr>
+  <tr><td>Muestras por debajo de 1 GiB</td><td class="num">12</td></tr>
+  <tr><td>PSI full máximo</td><td class="num">4,48</td></tr>
+  <tr><td>Muestras con PSI sobre 2</td><td class="num">18</td></tr>
+  <tr><td>Muestras con PSI sobre 3</td><td class="num">3 (unas 9 s)</td></tr>
+  <tr><td>Crecimiento máximo de swap del host</td><td class="num">2705 MiB</td></tr>
+  <tr><td>Swap del host máxima usada</td><td class="num">5526 MiB</td></tr>
+  <tr><td>Swap libre mínima</td><td class="num">2666 MiB</td></tr>
+  <tr><td>Pico de crecimiento de swap de la unidad</td><td class="num">2469 MiB</td></tr>
+  <tr><td>Memoria de la unidad, pico</td><td class="num">11270 MiB</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="sec-note">Todo el bloque sale del <span class="mono">monitor.jsonl</span> de la residencia, adjudicado en <span class="mono">F1-ADJUDICATION.json</span>.</p>
+  </div>
+  </details>
+  <details>
+  <summary aria-label="Abrir los eventos nominales de guardas y el veredicto de F1">Eventos de guardas y veredicto de la residencia</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Eventos nominales de guardas a las 17:33">
+  <table>
+  <thead><tr><th scope="col">Reloj</th><th scope="col">Disparo</th><th scope="col">Crecimiento de swap</th><th scope="col">Memoria disponible</th><th scope="col">Exención del operador</th></tr></thead>
+  <tbody>
+  <tr><td class="num">17:33:00</td><td class="mono">host_512</td><td class="num">616,7 MiB</td><td class="num">414 MiB</td><td>no aplica</td></tr>
+  <tr><td class="num">17:33:00</td><td class="mono">unit_128</td><td class="num">694,7 MiB</td><td class="num">414 MiB</td><td>no aplica</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p>Eventos de lentitud o bloqueo registrados durante la residencia: <strong>ninguno</strong> (lista vacía en la adjudicación).</p>
+  <p>Veredicto textual de la residencia:</p>
+  <p class="verdict brk">PASS_SUSTAINED_NO_SLOWNESS_UNIT_SWAP_EXEMPTION_NOT_MET_HOST_HEADROOM_REVIEW</p>
+  </div>
+  </details>
+  </div>
+</section>
+<section id="veredictos" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">08</p>
+  <h2>Veredictos y límites <button class="btn" data-detall="#veredictos" type="button" aria-label="Expandir o contraer todos los bloques de detalle de la sección veredictos">Expandir todo</button></h2>
+  <p>Sin adornos: lo que quedó probado, lo que no se atrevió a afirmar y lo que se queda cerrado.</p>
+  <div class="vgrid">
+  <div class="ok">
+  <h3>Queda probado</h3>
+  <ul class="vlist">
+  <li>La receta EC64 sostuvo 10185 s de residencia, por encima de la anterior caída por memoria a los 9717 s.</li>
+  <li>39 solicitudes correctas, sin truncamiento, con caché de prefijo de 99,9% en las continuaciones.</li>
+  <li>La versión 2 del portal, escrita por la lane, no tiene desborde horizontal a 390, 768 ni 1600 px.</li>
+  </ul>
+  </div>
+  <div class="no">
+  <h3>No queda probado</h3>
+  <ul class="vlist">
+  <li>El piso publicado de 34,84 tok/s de decode (prompt corto) no se alcanzó a 56k–60k tokens ni se reemplaza.</li>
+  <li>El margen del host no fue holgado: con Architect residente la memoria disponible bajó a 275 MiB.</li>
+  <li>La causa de la lentitud de la receta v31 no está atribuida.</li>
+  </ul>
+  </div>
+  <div class="lock">
+  <h3>Queda cerrado</h3>
+  <ul class="vlist">
+  <li>más de 64K y 96K por bloques</li>
+  <li>dos solicitudes en la residencia v31 (puerto de la lane)</li>
+  <li>comparación 256/512</li>
+  <li>successor-prefetch-r2</li>
+  </ul>
+  </div>
+  </div>
+  <div class="callout" style="margin-top:28px">
+  <p style="margin-bottom:0"><strong>Hallazgo.</strong> <span class="mono">--cache-reuse</span> no tiene efecto en Flash-Next por ser multimodal; la caché de prefijo normal sí funciona.</p>
+  </div>
+  <details>
+  <summary aria-label="Abrir o cerrar las guardas de memoria y swap con las que se operó">Las guardas con las que se operó</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de guardas de memoria y swap">
+  <table>
+  <thead><tr><th scope="col">Guarda</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Swap del host por fase</td><td class="num">512 MiB</td></tr>
+  <tr><td>Swap de la unidad por fase</td><td class="num">128 MiB</td></tr>
+  <tr><td>Swap total del host</td><td class="num">8192 MiB</td></tr>
+  <tr><td>Criterio del operador</td><td>el swap de unidad mayor que 128 MiB con MemAvailable por encima de 3 GiB no es fallo; sí lo son la lentitud extrema, el bloqueo y la detención</td></tr>
+  <tr><td>Cortes duros</td><td>presupuesto de tiempo · 420 s sin eventos del cliente · MemAvailable bajo 700 MiB con la swap casi llena</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Adjudicación de guardas por fase">
+  <table style="min-width:560px">
+  <caption>Guardas por fase, adjudicación corrida a corrida</caption>
+  <thead><tr><th scope="col">Corrida</th><th scope="col">Fase</th><th scope="col">Adjudicación</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">autor_v1</td><td>carga</td><td><span class="badge bad">FAIL</span> swap del host +2789 MiB y swap de unidad 361,7 MiB</td></tr>
+  <tr><td class="mono">autor_v2</td><td>carga</td><td><span class="badge">PASS</span> swap del host +224,7 MiB y swap de unidad 94,5 MiB</td></tr>
+  </tbody>
+  </table>
+  </div>
+  </div>
+  </details>
+  <h3>La receta v31, la candidata lenta</h3>
+  <p>La lane <span class="mono">qwen38-flash-next-v31-candidate</span> a 40960 tokens pasó el smoke correcto pero resultó lenta, y su causa no está atribuida. Queda destinada a experimentos.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Parámetros y tiempos de la receta v31">
+  <table>
+  <thead><tr><th scope="col">Medida</th><th scope="col">Valor</th></tr></thead>
+  <tbody>
+  <tr><td>Lane y contexto</td><td><span class="mono">qwen38-flash-next-v31-candidate</span> · <span class="num">40960</span> tokens</td></tr>
+  <tr><td>Carga</td><td class="num">70,2 s</td></tr>
+  <tr><td>Espera fría (TTFT)</td><td class="num">200,32 s</td></tr>
+  <tr><td>Prefill en fría</td><td class="num">15,98 tok/s</td></tr>
+  <tr><td>Decode en fría</td><td class="num">7,47 tok/s</td></tr>
+  <tr><td>Espera cálida (TTFT)</td><td class="num">4,78 s</td></tr>
+  <tr><td>Caché en cálida</td><td class="num">0,9889</td></tr>
+  <tr><td>Decode en cálida</td><td class="num">10,37 tok/s</td></tr>
+  <tr><td>Restauración</td><td class="num">124,0 s</td></tr>
+  <tr><td>Estado</td><td>smoke correcto pero lenta; destinada a experimentos</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <div class="bar-block">
+  <p class="grp">v31 (fría) frente a EC64 en F1 (fría) · tok/s</p>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>v31</b> · prefill frío</span><span>15,98 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Prefill de la receta v31 en ciclo frío: 15,98 tokens por segundo, el 13 por ciento del valor de EC64 en la residencia"><span style="--w:13.3%"></span></div>
+  <p class="bar-note">Referencia: EC64 en F1, 120,53 tok/s · contextos distintos (40960 frente a 56k–60k), la barra es orientativa</p>
+  </div>
+  <div class="bar-row">
+  <div class="bar-hd"><span><b>v31</b> · decode fría</span><span>7,47 tok/s</span></div>
+  <div class="bar alt" role="img" aria-label="Decode de la receta v31 en ciclo frío: 7,47 tokens por segundo, el 29 por ciento del valor de EC64 con razonamiento encendido"><span style="--w:29.1%"></span></div>
+  <p class="bar-note">Referencia: EC64 en F1 con razonamiento encendido, 25,69 tok/s</p>
+  </div>
+  </div>
+  <h3>Decisiones del operador</h3>
+  <ul class="dec">
+  <li><span class="n">01</span>Aceptar operar EC64 con Architect residente; ventana sin Architect si hace falta para optimizar.</li>
+  <li><span class="n">02</span>Mantener <span class="mono">qwen38-flash-next-fast</span> con la secuencia EC64.</li>
+  <li><span class="n">03</span>Usar <span class="mono">qwen38-flash-next-v31-candidate</span> para probar recetas sin tocar las certificadas.</li>
+  </ul>
+  </div>
+</section>
+<section id="autoria" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">09</p>
+  <h2>Autoría de este documento <button class="btn" data-detall="#autoria" type="button" aria-label="Expandir o contraer los bloques de la sección de autoría">Expandir todo</button></h2>
+  <p class="lead">Este documento lo escribió la misma lane que se mide en él: <strong>Qwen3.8-Flash-Next (UD-IQ3_XXS)</strong>, en <span class="mono">qwen38-flash-next-fast</span> de MiniV, operado por pi-dev. Nadie más redactó el texto: el operador preparó los datos y verificó el resultado.</p>
+  <dl class="rows">
+  <div class="row">
+  <dt>Autor del texto</dt>
+  <dd><p>Qwen3.8-Flash-Next (UD-IQ3_XXS) · lane <span class="mono">qwen38-flash-next-fast</span> · agente <span class="mono">pi-dev</span>. El operador no escribió ninguna frase; aportó el paquete de datos y revisó la salida.</p></dd>
+  </div>
+  <div class="row">
+  <dt>Unidad de invocación</dt>
+  <dd><p>registrada en la evidencia privada</p></dd>
+  </div>
+  <div class="row">
+  <dt>Origen de las cifras</dt>
+  <dd><p><span class="mono">AUTORIA-METRICAS.json</span>, calculado desde <span class="mono">run1/METRICS.json</span> y <span class="mono">run1/evidence/{RESULT.json,monitor.jsonl}</span>; valores recalculados, no copiados a mano.</p></dd>
+  </div>
+  </dl>
+  <h3>Lo que se midió mientras se escribía</h3>
+  <div class="kpis">
+  <div class="kpi hero"><div><span class="lbl">Duración</span><span class="val">5471,1 <small>s</small></span></div><span class="src">duracion_s · 91,2 min (duracion_min)</span></div>
+  <div class="kpi"><span class="lbl">Primera respuesta</span><span class="val">147,7 <small>s</small></span><span class="src">primera_respuesta_s</span></div>
+  <div class="kpi"><span class="lbl">Solicitudes</span><span class="val">44</span><span class="src">solicitudes · pi_rc 0</span></div>
+  <div class="kpi"><span class="lbl">Turnos</span><span class="val">41</span><span class="src">turnos</span></div>
+  <div class="kpi"><span class="lbl">Compactaciones</span><span class="val">3</span><span class="src">compactaciones</span></div>
+  <div class="kpi"><span class="lbl">Contexto máximo</span><span class="val">53417</span><span class="src">contexto_max_tokens · truncado: false</span></div>
+  <div class="kpi"><span class="lbl">Tokens decodificados</span><span class="val">70482</span><span class="src">tokens_decodificacion</span></div>
+  <div class="kpi"><span class="lbl">Prefill nuevo</span><span class="val">327816</span><span class="src">tokens_prefill_nuevos</span></div>
+  <div class="kpi"><span class="lbl">Decode · mediana</span><span class="val">30,07 <small>tok/s</small></span><span class="src">decode_tps_mediana</span></div>
+  <div class="kpi"><span class="lbl">Decode · mínima</span><span class="val">21,84 <small>tok/s</small></span><span class="src">decode_tps_min</span></div>
+  <div class="kpi"><span class="lbl">Decode · máxima</span><span class="val">33,42 <small>tok/s</small></span><span class="src">decode_tps_max</span></div>
+  <div class="kpi wide"><span class="lbl">Prefill · mediana</span><span class="val">108,5 <small>tok/s</small></span><span class="src">prefill_tps_mediana · rango 71,2–130,2 tok/s</span></div>
+  <div class="kpi wide"><span class="lbl">Tamaño del archivo</span><span class="val">54940 <small>bytes</small></span><span class="src">archivo.bytes · 15 tablas · 6 detalles · 0 recursos externos</span></div>
+  </div>
+  <h3>Los tres pasajes, comparados</h3>
+  <p>La autoría no fue un solo tirón: fueron tres pasajes el mismo día, separados por cierres de sesión. El primero es el documento completo; los otros dos son los anexos que lo corrigieron. Los números de cada uno vienen de su propio <span class="mono">AUTORIA-METRICAS*.json</span>.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla comparativa de los tres pasajes de autoría">
+  <table style="min-width:900px">
+  <caption>Tres pasajes del mismo documento · 2026-11-24 · el primero es el cuerpo y los otros dos son sus anexos</caption>
+  <thead><tr><th scope="col">Pasaje</th><th scope="col">Duración</th><th scope="col">Primera respuesta</th><th scope="col">Solicitudes / turnos</th><th scope="col">Compactaciones</th><th scope="col">Contexto máximo</th><th scope="col">Prefill · mediana</th><th scope="col">Decode · mediana (mínima)</th><th scope="col">Swap del host · delta</th><th scope="col">Swap de la unidad · pico</th><th scope="col">Memoria disp. mínima</th><th scope="col">PSI · full avg10 máx</th><th scope="col">Sesión</th></tr></thead>
+  <tbody>
+  <tr><td><b>1</b> · el documento completo</td><td class="num">5471,1 s · 91,2 min</td><td class="num">147,7 s</td><td class="num">44 / 41</td><td class="num">3</td><td class="num">53417 · truncado: no</td><td class="num">108,5 tok/s</td><td class="num">30,07 (21,84) tok/s</td><td class="num">+5126 MiB</td><td class="num">5175 MiB</td><td class="num">300 MiB</td><td class="num">3,17</td><td><span class="badge bad">FAIL</span></td></tr>
+  <tr><td><b>2</b> · anexo 1: la sección de autoría</td><td class="num">637,0 s · 10,6 min</td><td class="num">141,0 s</td><td class="num">9 / 9</td><td class="num">0</td><td class="num">28374 · truncado: no</td><td class="num">118,5 tok/s</td><td class="num">31,26 (31,26) tok/s</td><td class="num">+480 MiB</td><td class="num">no registrado</td><td class="num">3771 MiB</td><td class="num">3,09</td><td><span class="badge">PASS</span></td></tr>
+  <tr><td><b>3</b> · anexo 2: ajustes para publicación</td><td class="num">802,2 s · 13,4 min</td><td class="num">163,2 s</td><td class="num">9 / 9</td><td class="num">0</td><td class="num">38206 · truncado: no</td><td class="num">118,7 tok/s</td><td class="num">31,09 (30,7) tok/s</td><td class="num">+166 MiB</td><td class="num">95 MiB</td><td class="num">3692 MiB</td><td class="num">4,27</td><td><span class="badge">PASS</span></td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p class="bar-note">El swap de unidad del pasaje 2 no aparece porque el monitor miró la unidad plantilla en vez de la de la lane (<span class="mono">unidad_swap_pico_nota</span>). La exención del swap de unidad (<span class="mono">exencion_swap_unidad_aplica</span>) no aplica en el pasaje 1 y sí en los pasajes 2 y 3. Las cargas iniciales de los tres pasajes dieron <span class="mono">PASS</span>: +417 MiB host y 95 MiB unidad en el 1, +480 MiB y 0 MiB en el 2, +166 MiB y 95 MiB en el 3.</p>
+  <p class="ch-n">Lectura: el pasaje 1 es ocho veces más largo que el 2 y seis veces más que el 3, con 44 solicitudes frente a 9 y con las tres compactaciones de contexto del día. Es también el único con memoria disponible en 300 MiB y el único cuyo swap creció por encima de los límites: 5126 MiB del host y 5175 MiB de la unidad. Los anexos, hechos con el modelo ya residente y con menos que reescribir, costaron una fracción: 480 MiB y 166 MiB de swap, 3771 MiB y 3692 MiB de memoria disponible. La decodificación apenas cambia entre los tres (30,07 · 31,26 · 31,09 tok/s) y el prefill sube levemente en los dos anexos (108,5 · 118,5 · 118,7 tok/s). El archivo cerrado pasó de 54940 a 63309 y 63260 bytes.</p>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de llamadas y errores por herramienta durante la autoría">
+  <table style="min-width:520px">
+  <caption>Herramientas llamadas durante la autoría</caption>
+  <thead><tr><th scope="col">Herramienta</th><th scope="col">Llamadas</th><th scope="col">Errores</th></tr></thead>
+  <tbody>
+  <tr><td class="mono">read</td><td class="num">9</td><td class="num">0</td></tr>
+  <tr><td class="mono">bash</td><td class="num">22</td><td class="num">0</td></tr>
+  <tr><td class="mono">write</td><td class="num">1</td><td class="num">0</td></tr>
+  <tr><td class="mono">edit</td><td class="num">9</td><td class="num">1</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <h3>Recursos del host durante la autoría</h3>
+  <div class="kpis">
+  <div class="kpi"><span class="lbl">Swap del host · antes</span><span class="val">2304 <small>MiB</small></span><span class="src">swap_host_pre_MiB</span></div>
+  <div class="kpi"><span class="lbl">Swap del host · al pico</span><span class="val">7430 <small>MiB</small></span><span class="src">swap_host_max_MiB · delta 5126 MiB</span></div>
+  <div class="kpi"><span class="lbl">Swap del host · al terminar</span><span class="val">2294 <small>MiB</small></span><span class="src">swap_host_fin_MiB</span></div>
+  <div class="kpi"><span class="lbl">Swap usado, máximo</span><span class="val">90,7 <small>%</small></span><span class="src">swap_uso_max_pct sobre 8191 MiB totales</span></div>
+  <div class="kpi"><span class="lbl">Memoria disponible mínima</span><span class="val">300 <small>MiB</small></span><span class="src">mem_disponible_min_MiB</span></div>
+  <div class="kpi"><span class="lbl">PSI máximo</span><span class="val">3,17</span><span class="src">psi_full_avg10_max y psi_some_avg10_max</span></div>
+  </div>
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de recursos del host y de la unidad durante la autoría">
+  <table style="min-width:560px">
+  <caption>Host y unidad, del arranque al cierre de la autoría</caption>
+  <thead><tr><th scope="col">Medida</th><th scope="col">Valor</th><th scope="col">Campo del JSON</th></tr></thead>
+  <tbody>
+  <tr><td>Memoria de la unidad, pico</td><td class="num">10939 MiB</td><td class="mono">unidad_mem_pico_MiB</td></tr>
+  <tr><td>Swap de la unidad, pico</td><td class="num">5175 MiB</td><td class="mono">unidad_swap_pico_MiB</td></tr>
+  <tr><td>Swap total del host</td><td class="num">8191 MiB</td><td class="mono">swap_total_MiB</td></tr>
+  <tr><td>Muestras con memoria disponible &lt; 3 GiB</td><td class="num">72,4 %</td><td class="mono">pct_muestras_mem_disp_menor_3GiB</td></tr>
+  <tr><td>SHA-256 del archivo antes de esta ampliación</td><td class="num"><span class="brk">5be69c8fa633d1305058aa73bc8c034cdc8486a5761e192a891a3d56afa50354</span></td><td class="mono">archivo.sha256</td></tr>
+  </tbody>
+  </table>
+  </div>
+  <details>
+  <summary aria-label="Abrir el veredicto de guardas de la sesión de autoría">Veredicto de guardas: carga inicial PASS · sesión de autoría FAIL</summary>
+  <div class="d-body">
+  <div class="scroll" role="region" tabindex="0" aria-label="Tabla de guardas de la sesión de autoría">
+  <table style="min-width:700px">
+  <thead><tr><th scope="col">Fase</th><th scope="col">Medido</th><th scope="col">Límite</th><th scope="col">Resultado</th></tr></thead>
+  <tbody>
+  <tr><td>Carga inicial · 153 s</td><td class="num">swap del host +417 MiB · swap de unidad 95 MiB</td><td class="num">+512 MiB host · 128 MiB unidad · 8192 MiB total</td><td><span class="badge">PASS</span></td></tr>
+  <tr><td>Sesión de autoría</td><td class="num">swap del host +5126 MiB · swap de unidad 5175 MiB · memoria disponible mínima 300 MiB</td><td class="num">+512 MiB host · 128 MiB unidad</td><td><span class="badge bad">FAIL</span></td></tr>
+  </tbody>
+  </table>
+  </div>
+  <p><strong>La carga inicial pasó. Durante la sesión de autoría el swap del host (+5126 MiB) y el de la unidad (5175 MiB) superaron sus límites de 512 MiB y 128 MiB, y la memoria disponible bajó hasta 300 MiB: el resultado es FAIL, la exención del swap de unidad no aplica y no se registró lentitud ni bloqueo.</strong></p>
+  <p class="verdict brk">carga_inicial PASS · sesion_autoria FAIL · exencion_swap_unidad_aplica false · lentitud_o_bloqueo: no registrado (cero cortes por ausencia de eventos; decodificación mínima 21.84 tok/s)</p>
+  </div>
+  </details>
+  <h3>Comparación con las ejecuciones anteriores</h3>
+  <p>Frente a <span class="mono">autor_v1</span> (3369,1 s), <span class="mono">autor_v2</span> (542,8 s) y la residencia F1 (10185,4 s) de la sección <a href="#metricas">Métricas</a>, la nota del JSON deja la comparación clara: esta autoría fue más larga y con más prefill que cualquier ejecución anterior documentada.</p>
+  </div>
+</section>
+<section id="fuentes" class="reveal">
+  <div class="shell prose">
+  <p class="sec-n">10</p>
+  <h2>Fuentes <button class="btn" data-detall="#fuentes" type="button" aria-label="Expandir o contraer el bloque de fuentes">Expandir todo</button></h2>
+  <p>Ningún número de este documento salió de otro sitio. Cada archivo y su hash SHA-256, tal como se registró en <span class="mono">FUENTES.md</span>.</p>
+  <details>
+  <summary aria-label="Abrir o cerrar el listado completo de fuentes">Ver el listado de fuentes y sus hashes</summary>
+  <div class="d-body">
+  <p class="sec-note" style="margin-bottom:16px">Cada número del paquete sale de uno de estos archivos, con el hash SHA-256 del archivo leído. Las rutas con <span class="mono">…/</span> son relativas a la carpeta <span class="mono">stack-home-id/</span>.</p>
+  <ul class="src-list">
+  <li><span class="f">…/flash-evidence/METRICS.json</span> — métricas de servidor, monitor y cliente de la corrida de autoría 1<span class="h">sha256 7db386f633a44f3ca47dc5053fc3c178eff68db184441fdd5d76c62695735ef3</span></li>
+  <li><span class="f">…/fix1/METRICS.json</span> — métricas de la corrida de corrección (versión 2)<span class="h">sha256 0c5a50712efc223a9cecb4d2d8020bc993d5898af6c064ded5e2e8d1f8ea3aed</span></li>
+  <li><span class="f">…/qwen-evidence/METRICS.json</span> — métricas de la corrida de Qwen 27B<span class="h">sha256 baa136c5d7ebc437084d5b2dd6578be7e1830a10226ec9cd990c2f185f63f9d4</span></li>
+  <li><span class="f">…/flash-evidence/evidence/abort.json</span> — motivo y instante del corte de la corrida 1<span class="h">sha256 adff9c6465b3c34d5ddce18875a64aeb82f9b338c2e0f39c2fce8e3653f27885</span></li>
+  <li><span class="f">…/flash-evidence/evidence/launch.json</span> — hora de inicio de la corrida 1<span class="h">sha256 9b58348777c99eae8fd20a6fbcc98bb3d2c287bf441009977ffe58d956b80029</span></li>
+  <li><span class="f">…/fix1/evidence/RESULT.json</span> — duración, primera salida y cierre de la versión 2<span class="h">sha256 fed5b4a6aedd70fe04cf8247dba39f939659155a1d0cb20490e53f042d86cf90</span></li>
+  <li><span class="f">…/qwen-evidence/evidence/RESULT.json</span> — duración y primera salida de Qwen 27B<span class="h">sha256 1957594d821e81669bc85ebd032831db379e7063050cc2b68bda9e06a0550e55</span></li>
+  <li><span class="f">…/GUARD-PHASE-ADJUDICATION.json</span> — guardas por fase (+512 MiB swap host / +128 MiB swap de unidad)<span class="h">sha256 4a64680243931da8be29624bf47281e683dc7b1d5db9078999f09b58859529e4</span></li>
+  <li><span class="f">…/live-id/F1-ADJUDICATION.json</span> — adjudicación de la residencia sostenida F1<span class="h">sha256 7e82930e3764f0fece21d25db7df466d1795f68312c349d3f2452001b6448c39</span></li>
+  <li><span class="f">…/live-id/f1-sustained-evidence/LAUNCH.json</span> — hora de inicio de F1<span class="h">sha256 615180611afb0aa46f617456f79191ae3791fd163b54d95c6b4169de623ad7db</span></li>
+  <li><span class="f">…/live-id/smoke-v31-r2b-evidence/SMOKE-RESULT-v31-r2b.json</span> — smoke de la receta v31 r2<span class="h">sha256 fd0ae2b7ac7573278d93b29dba2e1a808773ea35e37adfaef908e6be679a32c6</span></li>
+  <li><span class="f">…/fix1/evidence/launch.json</span> — hora de inicio de la versión 2<span class="h">sha256 b2f5a090199167cee86a5221e6d2769de4cb49134f9b32c1296de464c1ca29c7</span></li>
+  <li><span class="f">…/qwen-evidence/evidence/launch.json</span> — hora de inicio de Qwen 27B<span class="h">sha256 f92120a232745a2bc185930ecea7ea1a75c21e4d4e6c46006ab3ca0c9c8d31f4</span></li>
+  </ul>
+  <p class="sec-note" style="margin-bottom:8px">Datos de contexto tomados a mano de fuentes verificadas el 2026-11-24:</p>
+  <ul class="src-list">
+  <li>Hardware: README del repositorio público <span class="f">corsair-ai-workstation-300-64gb-benchmark-gallery</span> (procesador, gráficos, memoria).</li>
+  <li>Secuencia de <span class="f">qwen38-flash-next-fast</span>: catálogo <span class="f">miniv-lanes/config/miniv-lanes.json</span> de MiniV (leído 21:08 −05).</li>
+  <li>Lanes de pi-dev: <span class="f">models.json</span> del perfil pi-dev de MiniV (leído 21:08 −05) y definiciones del operador.</li>
+  <li>Carga de la corrida 1 (136 s) y de la versión 2 (158 s): INFORME-FINAL-N30-id.md.</li>
+  <li>Veredictos y decisiones: adjudicación F1 y mensajes del operador del 2026-11-24.</li>
+  </ul>
+  </div>
+  </details>
+  </div>
+</section>
+<script>
+(function(){
+var rm=false;try{rm=matchMedia('(prefers-reduced-motion: reduce)').matches}catch(e){}
+var rev=[].slice.call(document.querySelectorAll('.reveal'));
+if(rm||!('IntersectionObserver' in window)){rev.forEach(function(s){s.classList.add('in')})}
+else{var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{rootMargin:'0px 0px -8% 0px',threshold:.06});rev.forEach(function(s){io.observe(s)})}
+var links=[].slice.call(document.querySelectorAll('nav.top a')),by={};
+links.forEach(function(a){var i=(a.getAttribute('href')||'').slice(1);if(document.getElementById(i))by[i]=a});
+if('IntersectionObserver' in window){var so=new IntersectionObserver(function(es){es.forEach(function(e){var a=by[e.target.id];if(!a||!e.isIntersecting)return;links.forEach(function(l){l.removeAttribute('aria-current')});a.setAttribute('aria-current','true')})},{rootMargin:'-40% 0px -55% 0px',threshold:0});Object.keys(by).forEach(function(i){so.observe(document.getElementById(i))})}
+[].slice.call(document.querySelectorAll('button[data-detall]')).forEach(function(b){
+var it=[].slice.call(document.querySelectorAll(b.getAttribute('data-detall')+' details'));
+function lbl(){var o=it.filter(function(d){return d.open}).length;b.textContent=o?'Contraer todo':'Expandir todo';b.setAttribute('aria-label',(o?'Contraer':'Expandir')+' todos los bloques de detalle de la sección')}
+b.addEventListener('click',function(){var any=it.some(function(d){return !d.open});it.forEach(function(d){d.open=any});lbl()});lbl()});
+})();
+</script>
+<noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
+</main>
+<footer>
+  <div class="shell">
+  <p class="mark">FreakingJSON · Jeik · Arquitecto de Soluciones IA</p>
+  <p class="star">✦ TRUE KNOWLEDGE TRANSCENDS TO THE PUBLIC ✦</p>
+  <p class="by">Documento escrito por qwen38-flash-next-fast mediante pi-dev</p>
+  </div>
+</footer>
+<!-- fjson-gallery-integration:start -->
+<!-- Added by the gallery publisher: joins this page to the gallery's shared navigation and keeps the document's own sticky section nav below it. The document above is the verified artifact, byte for byte. -->
+<script src="../shared/nav.js" defer></script>
+<style>nav.top{top:var(--fjson-tnav-h,46px)}section{scroll-margin-top:calc(52px + var(--fjson-tnav-h,46px))}</style>
+<script>window.addEventListener('load',function(){var n=document.getElementById('fjson-transversal-nav');if(!n){return}var m=function(){document.documentElement.style.setProperty('--fjson-tnav-h',n.offsetHeight+'px')};m();window.addEventListener('resize',m)});</script>
+<!-- fjson-gallery-integration:end -->
+</body>
+</html>
