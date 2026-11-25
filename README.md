@@ -28,14 +28,22 @@ This repository publishes interactive benchmark evidence from a **Corsair AI Wor
 **Scope:** Flash-Next is an on-demand, non-default lane. `architect-35b-q6` remains the protected default. These numbers are dated observations on this workstation—not universal quality scores or promises for other hardware.
 
 - [Read the visual Flash-Next report](flash-next-expert-cache-20260912/index.html)
+- [Read the model-authored execution summary (2026-11-24/25)](flash-next-execution-20261124/index.html)
+- [Inspect the sustained 64K residency data (2026-11-24)](data/flash-next-ec64-sustained-20261124.json)
 - [Inspect the structured public data](data/flash-next-expert-cache-20260912.json)
 - [Open the public benchmark harness](https://github.com/n30j0su3/fjson-local-model-benchmark)
+
+**Sustained 64K residency (2026-11-24):** `qwen38-flash-next-fast` with the EC64 recipe (64K context, 32 expert-cache slots, draft-mtp 2/1) held one continuous 10,185 s residency with `architect-35b-q6` resident: 39/39 correct requests at 56k–60k prompt tokens, cold decode medians of 25.7 / 28.6 tok/s (reasoning on/off), warm first token ≈4.3–4.5 s and a native 60.7 s restore. Host memory headroom was thin (MemAvailable minimum 275 MiB); this is a stability observation, not a speed certification, and the 34.84 tok/s short-prompt rung is unchanged.
+
+**Model-authored execution summary (2026-11-24/25):** [`flash-next-execution-20261124/index.html`](flash-next-execution-20261124/index.html) is an executive summary of how `qwen38-flash-next-fast` and the 27B lane are run on this workstation, **written by Flash-Next itself** through a coding agent on its own EC64 lane (four supervised passes: first document, authorship-metrics section, publication adjustments, and the owner's follow-up: verdict card layout, six charts, three-pass comparison and real terminal launch commands; the fourth pass ended by its 90-minute time budget right after its last applied edit, and the operator checked every commissioned item on the artifact). The operator prepared the data packet, verified every visible number against it and ran the browser QA; the wording is the model's own. The published page is that verified artifact byte for byte, plus one publisher-added navigation block. Its authoring metrics are in [`data/flash-next-ec64-sustained-20261124.json`](data/flash-next-ec64-sustained-20261124.json).
 
 ## Public reports
 
 | Report | Date | Scope |
 |---|---|---|
 | [Flash-Next Expert Cache](flash-next-expert-cache-20260912/index.html) | 2026-09-12 | Current decode, prefill, context ladder and public boundaries |
+| [How Flash-Next and 27B are run here](flash-next-execution-20261124/index.html) | 2026-11-24/25 | Executive summary SPA written by Flash-Next itself (EC64 recipe, sustained residency, guards, own authoring metrics, launch commands) |
+| [Flash-Next EC64 sustained residency](data/flash-next-ec64-sustained-20261124.json) | 2026-11-24 | Structured data: one 10,185 s continuous 64K residency with the default model resident; host headroom review |
 | [Historical evidence closure](miniv-historical-closure-20260821/index.html) | 2026-08-21 | Sanitized dated snapshot; not current routing |
 | [Qwen3.8 27B intake](qwen38-intake-20260815/index.html) | 2026-08-15 | Q4/Q6 candidate evidence |
 | [Architect editorial export](benchmarks/architect-35b-q6-full-editorial-20260815/report/index.html) | 2026-08-15 | Public-safe D1 and D3 artifact export |
